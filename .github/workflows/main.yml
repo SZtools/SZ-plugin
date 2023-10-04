@@ -1,0 +1,39 @@
+name: Update XML on Release
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+  update-xml:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Create ZIP Archive
+        run: |
+          git clone https://giactitti:$API_TOKEN_GITHUB@github.com/SZtools/SZ-plugin.git to_zip
+          cd to_zip
+          zip -r sz_module.zip ./sz_module
+          cd ..
+          
+          TAG_NAME=${{ github.event.release.tag_name }}
+          # Clone the repository where the XML file is stored
+          git clone https://giactitti:$API_TOKEN_GITHUB@github.com/SZtools/SZtools.github.io.git xml-repo
+
+          # Modify the XML file with the desired version
+          sed -i 's/name="SZ" version=\"[^\"]*\"/name="SZ" version="'"$TAG_NAME"'"/' xml-repo/SZ/sz.xml
+          cp -f ./to_zip/sz_module.zip ./xml-repo/SZ/
+          
+          # Commit and push the changes
+          cd xml-repo
+          git config user.name "giactitti"
+          git config user.email "giacomotitti@gmail.com"
+          git commit -am "Update XML version"
+          git remote set-url origin https://giactitti:$API_TOKEN_GITHUB@github.com/SZtools/SZtools.github.io.git
+          git push origin
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.GIT_PAT_TOKEN }}
