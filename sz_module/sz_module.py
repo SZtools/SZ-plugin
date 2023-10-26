@@ -36,6 +36,8 @@ import inspect
 
 from qgis.core import QgsProcessingAlgorithm, QgsApplication
 from .sz_module_provider import classeProvider
+from .utils import first_installation
+from qgis.PyQt.QtCore import QSettings
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 
@@ -47,6 +49,7 @@ class classePlugin(object):
 
     def __init__(self):
         self.provider = None
+        self.plugin_settings = QSettings("SZ-tools", "SZ")
 
     def initProcessing(self):
         """Init Processing provider for QGIS >= 3.8."""
@@ -54,7 +57,11 @@ class classePlugin(object):
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
+        if not self.plugin_settings.value("installed"):
+            first_installation.requirements()
+            self.plugin_settings.setValue("installed", True)
         self.initProcessing()
 
     def unload(self):
+        self.plugin_settings.remove("installed")
         QgsApplication.processingRegistry().removeProvider(self.provider)
