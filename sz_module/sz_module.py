@@ -35,7 +35,9 @@ import sys
 import inspect
 
 from qgis.core import QgsProcessingAlgorithm, QgsApplication
-from .sz_module_provider import classeProvider
+from qgis.PyQt.QtCore import QSettings
+from qgis.utils import iface
+
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 
@@ -47,14 +49,28 @@ class classePlugin(object):
 
     def __init__(self):
         self.provider = None
+        dir=(os.path.dirname(os.path.abspath(__file__)))
+        with open(dir+'/metadata.txt','r') as file:
+            for line in file:
+                if line.startswith('version='):
+                    version = line.strip().split('version=')[1].strip()
+        self.plugin_settings = QSettings("SZ", str(version))
 
     def initProcessing(self):
+        from .sz_module_provider import classeProvider
+
         """Init Processing provider for QGIS >= 3.8."""
         self.provider = classeProvider()
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
+        from .utils import first_installation
+
+        if not self.plugin_settings.value("installed"):
+            first_installation.requirements()
+            self.plugin_settings.setValue("installed", True)
         self.initProcessing()
 
     def unload(self):
+        #self.plugin_settings.remove("installed")
         QgsApplication.processingRegistry().removeProvider(self.provider)
