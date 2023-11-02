@@ -78,7 +78,7 @@ import matplotlib.pyplot as plt
 import csv
 from processing.algs.gdal.GdalUtils import GdalUtils
 #import plotly.express as px
-import chart_studio
+#import chart_studio
 import plotly.offline
 import plotly.graph_objs as go
 #import geopandas as gd
