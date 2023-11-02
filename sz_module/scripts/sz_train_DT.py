@@ -173,7 +173,7 @@ class DTAlgorithm(QgsProcessingAlgorithm):
                 'crs': outputs['crs'],
                 'OUT': parameters['out']
             }
-            self.save(alg_params)
+            SZ_utils.save(alg_params)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
@@ -184,7 +184,7 @@ class DTAlgorithm(QgsProcessingAlgorithm):
             'crs': outputs['crs'],
             'OUT': parameters['out1']
         }
-        self.save(alg_params)
+        SZ_utils.save(alg_params)
 
         if parameters['testN']==0:
             alg_params = {
@@ -192,14 +192,14 @@ class DTAlgorithm(QgsProcessingAlgorithm):
                 'OUT':parameters['folder']
 
             }
-            self.stampfit(alg_params)
+            SZ_utils.stampfit(alg_params)
         else:
             alg_params = {
                 'train': outputs['trainsi'],
                 'test': outputs['testsi'],
                 'OUT':parameters['folder']
             }
-            self.stampcv(alg_params)
+            SZ_utils.stampcv(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():

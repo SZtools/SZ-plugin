@@ -93,6 +93,8 @@ import tempfile
 # pd.set_option('display.max_columns', 20)
 # #pd.set_option('display.max_rows', 20)
 # from IPython.display import display
+from sz_module.utils import SZ_utils
+
 
 
 class FRAlgorithm(QgsProcessingAlgorithm):
@@ -199,7 +201,7 @@ class FRAlgorithm(QgsProcessingAlgorithm):
             'lsd' : parameters['fieldlsd'],
             'testN':parameters['testN']
         }
-        outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs']=self.load(alg_params)
+        outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs']=SZ_utils.load_simple(alg_params)
 
         alg_params = {
             'train': outputs['train'],
@@ -221,7 +223,7 @@ class FRAlgorithm(QgsProcessingAlgorithm):
                 'crs': outputs['crs'],
                 'OUT': parameters['out']
             }
-            self.save(alg_params)
+            SZ_utils.save(alg_params)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
@@ -232,7 +234,7 @@ class FRAlgorithm(QgsProcessingAlgorithm):
             'crs': outputs['crs'],
             'OUT': parameters['out1']
         }
-        self.save(alg_params)
+        SZ_utils.save(alg_params)
 
         if parameters['testN']==0:
             alg_params = {
@@ -240,7 +242,7 @@ class FRAlgorithm(QgsProcessingAlgorithm):
                 'OUT':parameters['folder']
 
             }
-            self.stampfit(alg_params)
+            SZ_utils.stampfit(alg_params)
         else:
             alg_params = {
                 'train': outputs['trainsi'],
@@ -248,7 +250,7 @@ class FRAlgorithm(QgsProcessingAlgorithm):
                 'OUT':parameters['folder']
 
             }
-            self.stampcv(alg_params)
+            SZ_utils.stampcv(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():

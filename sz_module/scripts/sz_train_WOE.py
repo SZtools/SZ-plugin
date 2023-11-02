@@ -93,6 +93,8 @@ from sklearn.metrics import cohen_kappa_score
 # #pd.set_option('display.max_rows', 20)
 # from IPython.display import display
 import tempfile
+from sz_module.utils import SZ_utils
+
 
 
 class WOEAlgorithm(QgsProcessingAlgorithm):
@@ -266,7 +268,7 @@ class WOEAlgorithm(QgsProcessingAlgorithm):
             #'INPUT_INT': parameters['BufferRadiousInPxl'],
             #'INPUT_INT_1': parameters['minSlopeAcceptable'],
         }
-        outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs']=self.load(alg_params)
+        outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs']=SZ_utils.load_simple(alg_params)
 
         alg_params = {
             'train': outputs['train'],
@@ -288,7 +290,7 @@ class WOEAlgorithm(QgsProcessingAlgorithm):
                 'crs': outputs['crs'],
                 'OUT': parameters['out']
             }
-            self.save(alg_params)
+            SZ_utils.save(alg_params)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
@@ -299,7 +301,7 @@ class WOEAlgorithm(QgsProcessingAlgorithm):
             'crs': outputs['crs'],
             'OUT': parameters['out1']
         }
-        self.save(alg_params)
+        SZ_utils.save(alg_params)
 
         if parameters['testN']==0:
             alg_params = {
@@ -308,7 +310,7 @@ class WOEAlgorithm(QgsProcessingAlgorithm):
                 #'txt':parameters['out1']
 
             }
-            self.stampfit(alg_params)
+            SZ_utils.stampfit(alg_params)
         else:
             alg_params = {
                 'train': outputs['trainsi'],
@@ -318,7 +320,7 @@ class WOEAlgorithm(QgsProcessingAlgorithm):
                 #'txt':parameters['out1']
 
             }
-            self.stampcv(alg_params)
+            SZ_utils.stampcv(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
@@ -335,7 +337,7 @@ class WOEAlgorithm(QgsProcessingAlgorithm):
         #self.indexing(alg_params)
         #self.vector()
         #del self.oout
-        #outputs['cleaninventory']=self.saveV(alg_params)
+        #outputs['cleaninventory']=SZ_utils.saveV(alg_params)
         results['out'] = parameters['out']
         results['out1'] = parameters['out1']
         #del self.raster
@@ -412,56 +414,56 @@ class WOEAlgorithm(QgsProcessingAlgorithm):
 
         return results
 
-    def load(self,parameters):
-        layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
-        crs=layer.crs()
-        campi=[]
-        for field in layer.fields():
-            campi.append(field.name())
-        campi.append('geom')
-        gdp=pd.DataFrame(columns=campi,dtype=float)
-        features = layer.getFeatures()
-        count=0
-        feat=[]
-        for feature in features:
-            attr=feature.attributes()
-            #print(attr)
-            geom = feature.geometry()
-            #print(type(geom.asWkt()))
-            feat=attr+[geom.asWkt()]
-            #print(feat)
-            gdp.loc[len(gdp)] = feat
-            #gdp = gdp.append(feat, ignore_index=True)
-            count=+ 1
-        gdp.to_csv(self.f+'/file.csv')
-        del gdp
-        gdp=pd.read_csv(self.f+'/file.csv')
-        #print(feat)
-        #print(gdp['S'].dtypes)
-        gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-        df=gdp[parameters['field1']]
-        nomi=list(df.head())
-        #print(list(df['Sf']),'1')
-        lsd=gdp[parameters['lsd']]
-        lsd[lsd>0]=1
-        df['y']=lsd#.astype(int)
-        df['ID']=gdp['ID']
-        df['geom']=gdp['geom']
-        df=df.dropna(how='any',axis=0)
-        X=[parameters['field1']]
-        if parameters['testN']==0:
-            train=df
-            test=pd.DataFrame(columns=nomi,dtype=float)
-        else:
-            # split the data into train and test set
-            per=int(np.ceil(df.shape[0]*parameters['testN']/100))
-            #print(per)
-            train, test = train_test_split(df, test_size=per, random_state=42, shuffle=True)
-            #X_train, X_test, y_train, y_test = train_test_split(X, df['y'] , test_size=per, random_state=42)
-        #print(X_train,y_train,df)
-        #df = df.sample(frac=parameters['test'],replace=False)
-        #df['ID']=df['ID'].astype('Int32')
-        return train, test, nomi,crs
+    # def load(self,parameters):
+    #     layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
+    #     crs=layer.crs()
+    #     campi=[]
+    #     for field in layer.fields():
+    #         campi.append(field.name())
+    #     campi.append('geom')
+    #     gdp=pd.DataFrame(columns=campi,dtype=float)
+    #     features = layer.getFeatures()
+    #     count=0
+    #     feat=[]
+    #     for feature in features:
+    #         attr=feature.attributes()
+    #         #print(attr)
+    #         geom = feature.geometry()
+    #         #print(type(geom.asWkt()))
+    #         feat=attr+[geom.asWkt()]
+    #         #print(feat)
+    #         gdp.loc[len(gdp)] = feat
+    #         #gdp = gdp.append(feat, ignore_index=True)
+    #         count=+ 1
+    #     gdp.to_csv(self.f+'/file.csv')
+    #     del gdp
+    #     gdp=pd.read_csv(self.f+'/file.csv')
+    #     #print(feat)
+    #     #print(gdp['S'].dtypes)
+    #     gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
+    #     df=gdp[parameters['field1']]
+    #     nomi=list(df.head())
+    #     #print(list(df['Sf']),'1')
+    #     lsd=gdp[parameters['lsd']]
+    #     lsd[lsd>0]=1
+    #     df['y']=lsd#.astype(int)
+    #     df['ID']=gdp['ID']
+    #     df['geom']=gdp['geom']
+    #     df=df.dropna(how='any',axis=0)
+    #     X=[parameters['field1']]
+    #     if parameters['testN']==0:
+    #         train=df
+    #         test=pd.DataFrame(columns=nomi,dtype=float)
+    #     else:
+    #         # split the data into train and test set
+    #         per=int(np.ceil(df.shape[0]*parameters['testN']/100))
+    #         #print(per)
+    #         train, test = train_test_split(df, test_size=per, random_state=42, shuffle=True)
+    #         #X_train, X_test, y_train, y_test = train_test_split(X, df['y'] , test_size=per, random_state=42)
+    #     #print(X_train,y_train,df)
+    #     #df = df.sample(frac=parameters['test'],replace=False)
+    #     #df['ID']=df['ID'].astype('Int32')
+    #     return train, test, nomi,crs
 
     def woe(self,parameters):
         df=parameters['train']
@@ -507,225 +509,225 @@ class WOEAlgorithm(QgsProcessingAlgorithm):
         test['SI']=test[nomi].sum(axis=1)
         return(df,test)
 
-    def stampfit(self,parameters):
-        df=parameters['df']
-        y_true=df['y']
-        scores=df['SI']
-        #W=df['w']
-        ################################figure
-        #fpr1, tpr1, tresh1 = roc_curve(y_true,scores,sample_weight=W)
-        fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
-        norm=(scores-scores.min())/(scores.max()-scores.min())
+    # def stampfit(self,parameters):
+    #     df=parameters['df']
+    #     y_true=df['y']
+    #     scores=df['SI']
+    #     #W=df['w']
+    #     ################################figure
+    #     #fpr1, tpr1, tresh1 = roc_curve(y_true,scores,sample_weight=W)
+    #     fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
+    #     norm=(scores-scores.min())/(scores.max()-scores.min())
 
-        #fpr2, tpr2, tresh2 = roc_curve(self.y_true,self.norm)
-        #print(tresh1)
+    #     #fpr2, tpr2, tresh2 = roc_curve(self.y_true,self.norm)
+    #     #print(tresh1)
 
-        #fprv, tprv, treshv = roc_curve(self.y_v,self.scores_v)
-        #fprt, tprt, tresht = roc_curve(self.y_t,self.scores_t)
+    #     #fprv, tprv, treshv = roc_curve(self.y_v,self.scores_v)
+    #     #fprt, tprt, tresht = roc_curve(self.y_t,self.scores_t)
 
-        #print self.fpr
-        #print self.tpr
-        #print self.classes
-        #aucv=roc_auc_score(self.y_v, self.scores_v, None)
-        #auct=roc_auc_score(self.y_t, self.scores_t, None)
-        r=roc_auc_score(y_true, scores)
+    #     #print self.fpr
+    #     #print self.tpr
+    #     #print self.classes
+    #     #aucv=roc_auc_score(self.y_v, self.scores_v, None)
+    #     #auct=roc_auc_score(self.y_t, self.scores_t, None)
+    #     r=roc_auc_score(y_true, scores)
 
-        fig=plt.figure()
-        lw = 2
-        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f)' %r)
-        #plt.plot(self.fpr, self.tpr, 'ro')
-        #plt.plot(self.fpr, self.tpr, color='darkorange',lw=lw, label='Classified dataset (AUC = %0.2f)' % self.fitness)
-        plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title('ROC')
-        plt.legend(loc="lower right")
-        #plt.show()
-        try:
-            fig.savefig(parameters['OUT']+'/fig01.png')
-        except:
-            os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/fig01.png')
-        # fig=plt.figure()
-        # frequency, bins = np.histogram(norm)
-        # frequency=(frequency/len(norm))*100
-        # bincenters = 0.5*(bins[1:]+bins[:-1])
-        # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
-        # #plt.plot(bincenters,frequency,'-')#segmented curve
-        # #print(bincenters,frequency)
-        #
-        # #xnew = interpolate.splrep(bincenters, frequency, s=0)
-        # xnew = np.linspace(bincenters.min(),bincenters.max())
-        # #print(bincenters, xnew)
-        # power_smooth=interpolate.splev(bincenters, xnew, der=0)
-        # #power_smooth = spline(bincenters,frequency,xnew)
-        # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'LSI')
-        # plt.xlabel('Standardized Susceptibility Index')
-        # plt.ylabel('Area %')
-        # plt.title('')
-        # plt.legend(loc="upper right")
-        # #plt.show()
-        # fig.savefig(parameters['OUT']+'/fig02.png')
+    #     fig=plt.figure()
+    #     lw = 2
+    #     plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f)' %r)
+    #     #plt.plot(self.fpr, self.tpr, 'ro')
+    #     #plt.plot(self.fpr, self.tpr, color='darkorange',lw=lw, label='Classified dataset (AUC = %0.2f)' % self.fitness)
+    #     plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
+    #     plt.xlim([0.0, 1.0])
+    #     plt.ylim([0.0, 1.05])
+    #     plt.xlabel('False Positive Rate')
+    #     plt.ylabel('True Positive Rate')
+    #     plt.title('ROC')
+    #     plt.legend(loc="lower right")
+    #     #plt.show()
+    #     try:
+    #         fig.savefig(parameters['OUT']+'/fig01.png')
+    #     except:
+    #         os.mkdir(parameters['OUT'])
+    #         fig.savefig(parameters['OUT']+'/fig01.png')
+    #     # fig=plt.figure()
+    #     # frequency, bins = np.histogram(norm)
+    #     # frequency=(frequency/len(norm))*100
+    #     # bincenters = 0.5*(bins[1:]+bins[:-1])
+    #     # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
+    #     # #plt.plot(bincenters,frequency,'-')#segmented curve
+    #     # #print(bincenters,frequency)
+    #     #
+    #     # #xnew = interpolate.splrep(bincenters, frequency, s=0)
+    #     # xnew = np.linspace(bincenters.min(),bincenters.max())
+    #     # #print(bincenters, xnew)
+    #     # power_smooth=interpolate.splev(bincenters, xnew, der=0)
+    #     # #power_smooth = spline(bincenters,frequency,xnew)
+    #     # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'LSI')
+    #     # plt.xlabel('Standardized Susceptibility Index')
+    #     # plt.ylabel('Area %')
+    #     # plt.title('')
+    #     # plt.legend(loc="upper right")
+    #     # #plt.show()
+    #     # fig.savefig(parameters['OUT']+'/fig02.png')
 
-    def stampcv(self,parameters):
-        train=parameters['train']
-        y_t=train['y']
-        scores_t=train['SI']
+    # def stampcv(self,parameters):
+    #     train=parameters['train']
+    #     y_t=train['y']
+    #     scores_t=train['SI']
 
-        test=parameters['test']
-        y_v=test['y']
-        scores_v=test['SI']
-        lw = 2
-        #W=df['w']
-        ################################figure
-        #fpr1, tpr1, tresh1 = roc_curve(y_true,scores,sample_weight=W)
-        #fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
-        #fpr2, tpr2, tresh2 = roc_curve(self.y_true,self.norm)
-        #print(tresh1)
+    #     test=parameters['test']
+    #     y_v=test['y']
+    #     scores_v=test['SI']
+    #     lw = 2
+    #     #W=df['w']
+    #     ################################figure
+    #     #fpr1, tpr1, tresh1 = roc_curve(y_true,scores,sample_weight=W)
+    #     #fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
+    #     #fpr2, tpr2, tresh2 = roc_curve(self.y_true,self.norm)
+    #     #print(tresh1)
 
-        fprv, tprv, treshv = roc_curve(y_v,scores_v)
-        fprt, tprt, tresht = roc_curve(y_t,scores_t)
+    #     fprv, tprv, treshv = roc_curve(y_v,scores_v)
+    #     fprt, tprt, tresht = roc_curve(y_t,scores_t)
 
-        #print self.fpr
-        #print self.tpr
-        #print self.classes
-        aucv=roc_auc_score(y_v, scores_v)
-        auct=roc_auc_score(y_t, scores_t)
-        #r=roc_auc_score(y_true, scores, None)
-        normt=(scores_t-scores_t.min())/(scores_t.max()-scores_t.min())
-        normv=(scores_v-scores_v.min())/(scores_v.max()-scores_v.min())
+    #     #print self.fpr
+    #     #print self.tpr
+    #     #print self.classes
+    #     aucv=roc_auc_score(y_v, scores_v)
+    #     auct=roc_auc_score(y_t, scores_t)
+    #     #r=roc_auc_score(y_true, scores, None)
+    #     normt=(scores_t-scores_t.min())/(scores_t.max()-scores_t.min())
+    #     normv=(scores_v-scores_v.min())/(scores_v.max()-scores_v.min())
 
-        fig=plt.figure()
-        plt.plot(fprv, tprv, color='green',lw=lw, label= 'Prediction performance (AUC = %0.2f)' %aucv)
-        plt.plot(fprt, tprt, color='red',lw=lw, label= 'Success performance (AUC = %0.2f)' %auct)
-        plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title('ROC')
-        plt.legend(loc="lower right")
-        #plt.show()
-        try:
-            fig.savefig(parameters['OUT']+'/fig02.pdf')
-        except:
-            os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/fig02.pdf')
+    #     fig=plt.figure()
+    #     plt.plot(fprv, tprv, color='green',lw=lw, label= 'Prediction performance (AUC = %0.2f)' %aucv)
+    #     plt.plot(fprt, tprt, color='red',lw=lw, label= 'Success performance (AUC = %0.2f)' %auct)
+    #     plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
+    #     plt.xlim([0.0, 1.0])
+    #     plt.ylim([0.0, 1.05])
+    #     plt.xlabel('False Positive Rate')
+    #     plt.ylabel('True Positive Rate')
+    #     plt.title('ROC')
+    #     plt.legend(loc="lower right")
+    #     #plt.show()
+    #     try:
+    #         fig.savefig(parameters['OUT']+'/fig02.pdf')
+    #     except:
+    #         os.mkdir(parameters['OUT'])
+    #         fig.savefig(parameters['OUT']+'/fig02.pdf')
 
-        # fig=plt.figure()
-        # frequency, bins = np.histogram(normt)
-        # frequency=(frequency/len(normt))*100
-        # bincenters = 0.5*(bins[1:]+bins[:-1])
-        # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
-        # #plt.plot(bincenters,frequency,'-')#segmented curve
-        # xnew = np.linspace(bincenters.min(),bincenters.max())
-        # power_smooth=interpolate.splev(bincenters, xnew, der=0)
-        # #power_smooth = spline(bincenters,frequency,xnew)
-        # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'Train SI')
-        # plt.xlabel('Standardized Susceptibility Index')
-        # plt.ylabel('Area %')
-        # plt.title('')
-        # plt.legend(loc="upper right")
-        # fig.savefig(parameters['OUT']+'/fig02.png') # Use fig. here
-        # #plt.show()
-        #
-        # fig=plt.figure()
-        # frequency, bins = np.histogram(normv)
-        # frequency=(frequency/len(normv))*100
-        # bincenters = 0.5*(bins[1:]+bins[:-1])
-        # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
-        # #plt.plot(bincenters,frequency,'-')#segmented curve
-        # xnew = np.linspace(bincenters.min(),bincenters.max())
-        # power_smooth=interpolate.splev(bincenters, xnew, der=0)
-        # #power_smooth = spline(bincenters,frequency,xnew)
-        # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'Test SI')
-        # plt.xlabel('Standardized Susceptibility Index')
-        # plt.ylabel('Area %')
-        # plt.title('')
-        # plt.legend(loc="upper right")
-        # fig.savefig(parameters['OUT']+'/fig03.png') # Use fig. here
+    #     # fig=plt.figure()
+    #     # frequency, bins = np.histogram(normt)
+    #     # frequency=(frequency/len(normt))*100
+    #     # bincenters = 0.5*(bins[1:]+bins[:-1])
+    #     # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
+    #     # #plt.plot(bincenters,frequency,'-')#segmented curve
+    #     # xnew = np.linspace(bincenters.min(),bincenters.max())
+    #     # power_smooth=interpolate.splev(bincenters, xnew, der=0)
+    #     # #power_smooth = spline(bincenters,frequency,xnew)
+    #     # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'Train SI')
+    #     # plt.xlabel('Standardized Susceptibility Index')
+    #     # plt.ylabel('Area %')
+    #     # plt.title('')
+    #     # plt.legend(loc="upper right")
+    #     # fig.savefig(parameters['OUT']+'/fig02.png') # Use fig. here
+    #     # #plt.show()
+    #     #
+    #     # fig=plt.figure()
+    #     # frequency, bins = np.histogram(normv)
+    #     # frequency=(frequency/len(normv))*100
+    #     # bincenters = 0.5*(bins[1:]+bins[:-1])
+    #     # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
+    #     # #plt.plot(bincenters,frequency,'-')#segmented curve
+    #     # xnew = np.linspace(bincenters.min(),bincenters.max())
+    #     # power_smooth=interpolate.splev(bincenters, xnew, der=0)
+    #     # #power_smooth = spline(bincenters,frequency,xnew)
+    #     # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'Test SI')
+    #     # plt.xlabel('Standardized Susceptibility Index')
+    #     # plt.ylabel('Area %')
+    #     # plt.title('')
+    #     # plt.legend(loc="upper right")
+    #     # fig.savefig(parameters['OUT']+'/fig03.png') # Use fig. here
 
-    def save(self,parameters):
+    # def save(self,parameters):
 
-        #print(parameters['nomi'])
-        df=parameters['df']
-        nomi=list(df.head())
-        # define fields for feature attributes. A QgsFields object is needed
-        fields = QgsFields()
+    #     #print(parameters['nomi'])
+    #     df=parameters['df']
+    #     nomi=list(df.head())
+    #     # define fields for feature attributes. A QgsFields object is needed
+    #     fields = QgsFields()
 
-        #fields.append(QgsField('ID', QVariant.Int))
+    #     #fields.append(QgsField('ID', QVariant.Int))
 
-        for field in nomi:
-            if field=='ID':
-                fields.append(QgsField(field, QVariant.Int))
-            if field=='geom':
-                continue
-            if field=='y':
-                fields.append(QgsField(field, QVariant.Int))
-            else:
-                fields.append(QgsField(field, QVariant.Double))
+    #     for field in nomi:
+    #         if field=='ID':
+    #             fields.append(QgsField(field, QVariant.Int))
+    #         if field=='geom':
+    #             continue
+    #         if field=='y':
+    #             fields.append(QgsField(field, QVariant.Int))
+    #         else:
+    #             fields.append(QgsField(field, QVariant.Double))
 
-        #crs = QgsProject.instance().crs()
-        transform_context = QgsProject.instance().transformContext()
-        save_options = QgsVectorFileWriter.SaveVectorOptions()
-        save_options.driverName = 'GPKG'
-        save_options.fileEncoding = 'UTF-8'
+    #     #crs = QgsProject.instance().crs()
+    #     transform_context = QgsProject.instance().transformContext()
+    #     save_options = QgsVectorFileWriter.SaveVectorOptions()
+    #     save_options.driverName = 'GPKG'
+    #     save_options.fileEncoding = 'UTF-8'
 
-        writer = QgsVectorFileWriter.create(
-          parameters['OUT'],
-          fields,
-          QgsWkbTypes.Polygon,
-          parameters['crs'],
-          transform_context,
-          save_options
-        )
+    #     writer = QgsVectorFileWriter.create(
+    #       parameters['OUT'],
+    #       fields,
+    #       QgsWkbTypes.Polygon,
+    #       parameters['crs'],
+    #       transform_context,
+    #       save_options
+    #     )
 
-        if writer.hasError() != QgsVectorFileWriter.NoError:
-            print("Error when creating shapefile: ",  writer.errorMessage())
-        for i, row in df.iterrows():
-            fet = QgsFeature()
-            fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
-            fet.setAttributes(list(map(float,list(df.loc[ i, df.columns != 'geom']))))
-            writer.addFeature(fet)
+    #     if writer.hasError() != QgsVectorFileWriter.NoError:
+    #         print("Error when creating shapefile: ",  writer.errorMessage())
+    #     for i, row in df.iterrows():
+    #         fet = QgsFeature()
+    #         fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
+    #         fet.setAttributes(list(map(float,list(df.loc[ i, df.columns != 'geom']))))
+    #         writer.addFeature(fet)
 
-        # delete the writer to flush features to disk
-        del writer
+    #     # delete the writer to flush features to disk
+    #     del writer
 
-    def addmap(self,parameters):
-        context=parameters()
-        fileName = parameters['trainout']
-        layer = QgsVectorLayer(fileName,"train","ogr")
-        subLayers =layer.dataProvider().subLayers()
+    # def addmap(self,parameters):
+    #     context=parameters()
+    #     fileName = parameters['trainout']
+    #     layer = QgsVectorLayer(fileName,"train","ogr")
+    #     subLayers =layer.dataProvider().subLayers()
 
-        for subLayer in subLayers:
-            name = subLayer.split('!!::!!')[1]
-            print(name,'name')
-            uri = "%s|layername=%s" % (fileName, name,)
-            print(uri,'uri')
-            # Create layer
-            sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-            if not sub_vlayer.isValid():
-                print('layer failed to load')
-            # Add layer to map
-            context.temporaryLayerStore().addMapLayer(sub_vlayer)
-            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
+    #     for subLayer in subLayers:
+    #         name = subLayer.split('!!::!!')[1]
+    #         print(name,'name')
+    #         uri = "%s|layername=%s" % (fileName, name,)
+    #         print(uri,'uri')
+    #         # Create layer
+    #         sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
+    #         if not sub_vlayer.isValid():
+    #             print('layer failed to load')
+    #         # Add layer to map
+    #         context.temporaryLayerStore().addMapLayer(sub_vlayer)
+    #         context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
 
-            #QgsProject.instance().addMapLayer(sub_vlayer)
-            #iface.mapCanvas().refresh()
+    #         #QgsProject.instance().addMapLayer(sub_vlayer)
+    #         #iface.mapCanvas().refresh()
 
 
-        # fileName = parameters['out']
-        # layer = QgsVectorLayer(fileName,"test","ogr")
-        # subLayers =layer.dataProvider().subLayers()
-        #
-        # for subLayer in subLayers:
-        #     name = subLayer.split('!!::!!')[1]
-        #     uri = "%s|layername=%s" % (fileName, name,)
-        #     # Create layer
-        #     sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-        #     if not sub_vlayer.isValid():
-        #         print('layer failed to load')
-        #     # Add layer to map
-        #     QgsProject.instance().addMapLayer(sub_vlayer)
+    #     # fileName = parameters['out']
+    #     # layer = QgsVectorLayer(fileName,"test","ogr")
+    #     # subLayers =layer.dataProvider().subLayers()
+    #     #
+    #     # for subLayer in subLayers:
+    #     #     name = subLayer.split('!!::!!')[1]
+    #     #     uri = "%s|layername=%s" % (fileName, name,)
+    #     #     # Create layer
+    #     #     sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
+    #     #     if not sub_vlayer.isValid():
+    #     #         print('layer failed to load')
+    #     #     # Add layer to map
+    #     #     QgsProject.instance().addMapLayer(sub_vlayer)
