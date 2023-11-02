@@ -31,7 +31,7 @@ class first_installation():
                         #iface.messageBar().pushMessage('SZ:',f'{library} is installed!',Qgis.Success)
                         #MessageHandler.success(f'QGINLA: {library} is installed!')
                         #iface.messageBar().pushMessage("QGINLA:",f'installing {library}...',Qgis.Info, duration=5)
-                        first_installation.install(iface,library,version)
+                        first_installation.install(library,version)
                     else:
                         print(installed_version,version)
                         if str(installed_version)==str(version):
