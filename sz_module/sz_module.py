@@ -34,7 +34,7 @@ import os
 import sys
 import inspect
 
-from qgis.core import QgsProcessingAlgorithm, QgsApplication
+from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QSettings
 from qgis.utils import iface
 
