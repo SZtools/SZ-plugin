@@ -32,6 +32,10 @@ __revision__ = '$Format:%H$'
 
 from qgis.core import QgsProcessingProvider
 from qgis.PyQt.QtGui import QIcon
+from sz_module.images.cqp_resources_rc import qInitResources
+qInitResources()  # necessary to be able to access your images
+
+
 #from .scripts.roc import rocAlgorithm
 from .scripts.sz_train_WOE import WOEAlgorithm
 from .scripts.sz_train_WOE_cv import WOEcvAlgorithm
@@ -139,7 +143,7 @@ class classeProvider(QgsProcessingProvider):
         Should return a QIcon which is used for your provider inside
         the Processing toolbox.
         """
-        return QIcon('icon.svg')
+        return QIcon(':/icon')
 
     def longName(self):
         """
