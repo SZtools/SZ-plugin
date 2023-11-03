@@ -41,6 +41,40 @@ class Algorithms():
         train['SI']=prob_fit
         return(train,test)
     
+    def RF_simple(self,parameters):
+        sc = StandardScaler()
+        nomi=parameters['nomi']
+        train=parameters['train']
+        test=parameters['testy']
+        X_train = sc.fit_transform(train[nomi])
+        classifier = RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0)
+        classifier.fit(X_train,train['y'])
+        prob_fit=classifier.predict_proba(X_train)[::,1]
+        if parameters['testN']>0:
+            X_test = sc.transform(test[nomi])
+            predictions = classifier.predict(X_test)
+            prob_predic=classifier.predict_proba(X_test)[::,1]
+            test['SI']=prob_predic
+        train['SI']=prob_fit
+        return(train,test)
+    
+    def SVC_simple(self,parameters):
+        sc = StandardScaler()
+        nomi=parameters['nomi']
+        train=parameters['train']
+        test=parameters['testy']
+        X_train = sc.fit_transform(train[nomi])
+        classifier = SVC(kernel = 'linear', random_state = 0,probability=True)
+        classifier.fit(X_train,train['y'])
+        prob_fit=classifier.predict_proba(X_train)[::,1]
+        if parameters['testN']>0:
+            X_test = sc.transform(test[nomi])
+            predictions = classifier.predict(X_test)
+            prob_predic=classifier.predict_proba(X_test)[::,1]
+            test['SI']=prob_predic
+        train['SI']=prob_fit
+        return(train,test)
+    
     def fr_simple(self,parameters):
         df=parameters['train']
         test=parameters['testy']
@@ -128,37 +162,116 @@ class Algorithms():
         test['SI']=test[nomi].sum(axis=1)
         return(df,test)
     
-    def RF_simple(self,parameters):
-        sc = StandardScaler()
-        nomi=parameters['nomi']
-        train=parameters['train']
-        test=parameters['testy']
-        X_train = sc.fit_transform(train[nomi])
-        classifier = RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0)
-        classifier.fit(X_train,train['y'])
-        prob_fit=classifier.predict_proba(X_train)[::,1]
-        if parameters['testN']>0:
-            X_test = sc.transform(test[nomi])
-            predictions = classifier.predict(X_test)
-            prob_predic=classifier.predict_proba(X_test)[::,1]
-            test['SI']=prob_predic
-        train['SI']=prob_fit
-        return(train,test)
+    ####################################
     
-    def SVC_simple(self,parameters):
-        sc = StandardScaler()
-        nomi=parameters['nomi']
-        train=parameters['train']
-        test=parameters['testy']
-        X_train = sc.fit_transform(train[nomi])
-        classifier = SVC(kernel = 'linear', random_state = 0,probability=True)
-        classifier.fit(X_train,train['y'])
-        prob_fit=classifier.predict_proba(X_train)[::,1]
-        if parameters['testN']>0:
-            X_test = sc.transform(test[nomi])
-            predictions = classifier.predict(X_test)
-            prob_predic=classifier.predict_proba(X_test)[::,1]
-            test['SI']=prob_predic
-        train['SI']=prob_fit
-        return(train,test)
+    def LR_cv(self,classifier,X,y,train,test):
+        classifier.fit(X[train], y[train])
+        prob_predic=classifier.predict_proba(X[test])[::,1]
+        regression_coeff=classifier.coef_
+        regression_intercept=classifier.intercept_
+        coeff=np.hstack((regression_intercept,regression_coeff[0]))
+        print(coeff,'regression coeff')
+        #prob_fit=classifier.predict_proba(X[train])[::,1]
+        return prob_predic,coeff
+    
+    def DT_cv(self,classifier,X,y,train,test):
+        classifier.fit(X[train], y[train])
+        prob_predic=classifier.predict_proba(X[test])[::,1]
+        return prob_predic
+    
+    def RF_cv(self,classifier,X,y,train,test):
+        classifier.fit(X[train], y[train])
+        prob_predic=classifier.predict_proba(X[test])[::,1]
+        #prob_fit=classifier.predict_proba(X[train])[::,1]
+        return prob_predic
+    
+    def SVC_cv(self,classifier,X,y,train,test):
+        classifier.fit(X[train], y[train])
+        prob_predic=classifier.predict_proba(X[test])[::,1]
+        #prob_fit=classifier.predict_proba(X[train])[::,1]
+        return prob_predic
+    
+    def fr_cv(self,train,test,frame,nomes,txt):
+        df=frame.loc[train,:]
+        test=frame.loc[test,:]
+        nomi=nomes
+        Npx1=None
+        Npx2=None
+        Npx3=None
+        Npx4=None
+        file = open(txt,'w')#################save W+, W- and Wf
+        file.write('covariate,class,Npx1,Npx2,Npx3,Npx4,Wf\n')
+        for ii in nomi:
+            classi=df[ii].unique()
+            for i in classi:
+                dd=pd.DataFrame()
+                dd = df.apply(lambda x : True if x['y'] == 1 and x[ii] == i else False, axis = 1)
+                Npx1 = len(dd[dd == True].index)
+                dd=pd.DataFrame()
+                dd = df.apply(lambda x : True if x[ii] == i else False, axis = 1)
+                Npx2 = len(dd[dd == True].index)
+                dd=pd.DataFrame()
+                dd = df.apply(lambda x : True if x['y'] == 1 else False, axis = 1)
+                Npx3 = len(dd[dd == True].index)
+                dd=pd.DataFrame()
+                Npx4 = df.shape[0]#len(dd[dd == True].index)
+                if Npx1==0 or Npx3==0:
+                    Wf=0.
+                else:
+                    Wf=(np.divide((np.divide(Npx1,Npx2)),(np.divide(Npx3,Npx4))))
+                var=[ii,i,Npx1,Npx2,Npx3,Npx4,Wf]
+                file.write(','.join(str(e) for e in var)+'\n')#################save W+, W- and Wf
+                df[ii][df[ii]==i]=float(Wf)
+                test[ii][test[ii]==i]=float(Wf)
+        file.close()
+        df['SI']=df[nomi].sum(axis=1)
+        test['SI']=test[nomi].sum(axis=1)
+        return(test['SI'])
+    
+    def woe_cv(self,train,test,frame,nomes,txt):
+        df=frame.loc[train,:]
+        test=frame.loc[test,:]
+        nomi=nomes
+        Npx1=None
+        Npx2=None
+        Npx3=None
+        Npx4=None
+        file = open(txt,'w')#################save W+, W- and Wf
+        file.write('covariate,class,Npx1,Npx2,Npx3,Npx4,W+,W-,Wf\n')
+        for ii in nomi:
+            classi=df[ii].unique()
+            for i in classi:
+                dd=pd.DataFrame()
+                dd = df.apply(lambda x : True if x['y'] == 1 and x[ii] == i else False, axis = 1)
+                Npx1 = len(dd[dd == True].index)
+                dd=pd.DataFrame()
+                dd = df.apply(lambda x : True if x['y'] == 1 and x[ii] != i else False, axis = 1)
+                Npx2 = len(dd[dd == True].index)
+                dd=pd.DataFrame()
+                dd = df.apply(lambda x : True if x['y'] == 0 and x[ii] == i else False, axis = 1)
+                Npx3 = len(dd[dd == True].index)
+                dd=pd.DataFrame()
+                dd = df.apply(lambda x : True if x['y'] == 0 and x[ii] != i else False, axis = 1)
+                Npx4 = len(dd[dd == True].index)
+                if Npx1==0 or Npx3==0:
+                    Wplus=0.
+                else:
+                    Wplus=math.log((Npx1/(Npx1+Npx2))/(Npx3/(Npx3+Npx4)))
+                if Npx2==0 or Npx4==0:
+                    Wminus=0.
+                else:
+                    Wminus=math.log((Npx2/(Npx1+Npx2))/(Npx4/(Npx3+Npx4)))
+                Wf=Wplus-Wminus
+                var=[ii,i,Npx1,Npx2,Npx3,Npx4,Wplus,Wminus,Wf]
+                file.write(','.join(str(e) for e in var)+'\n')#################save W+, W- and Wf
+                df[ii][df[ii]==i]=float(Wf)
+                test[ii][test[ii]==i]=float(Wf)
+            #df.to_csv(self.f+'/file'+ii+'.csv')
+        file.close()
+        df['SI']=df[nomi].sum(axis=1)
+        test['SI']=test[nomi].sum(axis=1)
+        return(test['SI'])
+
+    
+
     

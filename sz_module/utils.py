@@ -22,6 +22,10 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedKFold
+
+
 
 class first_installation():
 
@@ -352,3 +356,38 @@ class SZ_utils():
             # Add layer to map
             context.temporaryLayerStore().addMapLayer(sub_vlayer)
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
+
+    def cross_validation(parameters,df,nomi,classifier):
+        x=df[parameters['field1']]
+        y=df['y']
+        sc = StandardScaler()#####scaler
+        X = sc.fit_transform(x)
+        train_ind={}
+        test_ind={}
+        prob={}
+        cofl=[]
+        df["SI"] = np.nan
+        if parameters['testN']>1:
+            cv = StratifiedKFold(n_splits=parameters['testN'])
+            for i, (train, test) in enumerate(cv.split(X, y)):
+                train_ind[i]=train
+                test_ind[i]=test
+                prob[i],coeff=self.algorithms[alg](alg_params)(classifier,X,y,train,test)
+                df.loc[test,'SI']=prob[i]
+                cofl.append(coeff)
+        elif parameters['testN']==1:
+            train=np.arange(len(y))
+            test=np.arange(len(y))
+            prob[0],coeff=self.algorithms[alg](alg_params)(classifier,X,y,train,test)
+            df.loc[test,'SI']=prob[0]
+            test_ind[0]=test
+            cofl.append(coeff)
+        if not os.path.exists(parameters['fold']):
+            os.mkdir(parameters['fold'])
+        with open(parameters['fold']+'/r_coeffs.csv', 'w') as f:
+            write = csv.writer(f)
+            ll=['intercept']
+            lll=ll+nomi
+            write.writerow(lll)
+            write.writerows(cofl)
+        return prob,test_ind,df

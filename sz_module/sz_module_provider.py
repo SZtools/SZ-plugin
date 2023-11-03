@@ -109,6 +109,12 @@ from .scripts.classcovdeciles import classcovdecAlgorithm
 from sz_module.scripts.sz_train_simple import CoreAlgorithm
 from sz_module.scripts.algorithms import Algorithms
 
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+
 
 class classeProvider(QgsProcessingProvider):
 
@@ -361,6 +367,15 @@ class Instance(QgsProcessingAlgorithm):
             'DT_cv':Algorithms.DT_cv,
         }
 
+        self.classifier={
+            'woe_cv':None,
+            'SVC_cv':SVC(kernel = 'linear', random_state = 0,probability=True),
+            'RF_cv':RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0),
+            'LR_cv':LogisticRegression(),
+            'fr_cv':None,
+            'DT_cv':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
+        }
+
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)
 
@@ -387,6 +402,6 @@ class Instance(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         result={}
-        result=self.dict_of_scripts['function'].process(parameters, context, feedback, alg=self.dict_of_scripts['alg'])
+        result=self.dict_of_scripts['function'].process(parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
         return result
         

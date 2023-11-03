@@ -2,7 +2,7 @@
 #coding=utf-8
 """
 /***************************************************************************
-    LRAlgorithm
+    LRcvAlgorithm
         begin                : 2021-11
         copyright            : (C) 2021 by Giacomo Titti,
                                Padova, November 2021
@@ -10,7 +10,7 @@
  ***************************************************************************/
 
 /***************************************************************************
-    LRAlgorithm
+    LRcvAlgorithm
     Copyright (C) 2021 by Giacomo Titti, Padova, November 2021
 
     This program is free software: you can redistribute it and/or modify
@@ -92,28 +92,25 @@ from sklearn.metrics import cohen_kappa_score
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
-# pd.set_option('display.max_columns', 20)
-# #pd.set_option('display.max_rows', 20)
-# from IPython.display import display
+from sklearn.model_selection import StratifiedKFold
+
 import tempfile
 from sz_module.utils import SZ_utils
 
-from sklearn.tree import DecisionTreeClassifier
 
-from sz_module.scripts.algorithms import Algorithms
 
-class CoreAlgorithm():
-   
+class LRcvAlgorithm():
+
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
-        self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Percentage of test sample (0 to fit, > 0 to cross-validate)'), type=QgsProcessingParameterNumber.Integer,defaultValue=30))
-        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test [mandatory if Test percentage > 0]',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
-        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT1, 'Output train/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
+        self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV (1 to fit or > 1 to cross-validate)'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2))
+        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
     def process(self, parameters, context, feedback, algorithm=None, classifier=None):
+
         self.f=tempfile.gettempdir()
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
@@ -123,8 +120,10 @@ class CoreAlgorithm():
         parameters['covariates']=source.source()
         if parameters['covariates'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
+
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
+
 
         parameters['field1'] = self.parameterAsFields(parameters, self.STRING, context)
         if parameters['field1'] is None:
@@ -137,138 +136,87 @@ class CoreAlgorithm():
         parameters['testN'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['testN'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
-
+ 
         parameters['out'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
         if parameters['out'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
 
-        parameters['out1'] = self.parameterAsFileOutput(parameters, self.OUTPUT1, context)
-        if parameters['out1'] is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT1))
-
         parameters['folder'] = self.parameterAsString(parameters, self.OUTPUT3, context)
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
-        
+
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
-            'testN':parameters['testN']
         }
-        outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs']=SZ_utils.load_simple(alg_params)
 
-        alg_params = {
-            'train': outputs['train'],
-            'testy': outputs['testy'],
-            'nomi':outputs['nomes'],
-            'testN':parameters['testN']
-
-        }
-        outputs['trainsi'],outputs['testsi']=algorithm(alg_params)
+        outputs['df'],outputs['nomi'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
 
-        if parameters['testN']>0:
-            alg_params = {
-                'df': outputs['testsi'],
-                'crs': outputs['crs'],
-                'OUT': parameters['out']
-            }
-            SZ_utils.save(alg_params)
+        alg_params = {
+            'field1': parameters['field1'],
+            'testN':parameters['testN'],
+            'fold':parameters['folder']
+        }
+
+        outputs['prob'],outputs['test_ind']=SZ_utils.cross_validation(parameters,outputs['df'],outputs['nomi'],classifier)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
 
-        alg_params = {
-            'df': outputs['trainsi'],
-            'crs': outputs['crs'],
-            'OUT': parameters['out1']
-        }
-        SZ_utils.save(alg_params)
-
-        if parameters['testN']==0:
+        if parameters['testN']>0:
             alg_params = {
-                'df': outputs['trainsi'],
-                'OUT':parameters['folder']
-
+                'df': outputs['df'],
+                'crs': outputs['crs'],
+                'OUT': parameters['out']
             }
-            SZ_utils.stampfit(alg_params)
-        else:
-            alg_params = {
-                'train': outputs['trainsi'],
-                'test': outputs['testsi'],
-                'OUT':parameters['folder']
-            }
-            SZ_utils.stamp_simple(alg_params)
+            SZ_utils.save(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
             return {}
+
+        alg_params = {
+            'test_ind': outputs['test_ind'],
+            'df': outputs['df'],
+            'OUT':parameters['folder']
+        }
+        SZ_utils.stamp_cv(alg_params)
+
+        feedback.setCurrentStep(4)
+        if feedback.isCanceled():
+            return {}
+
         results['out'] = parameters['out']
-        results['out1'] = parameters['out1']
-
-        if parameters['testN']>0:
-            fileName = parameters['out1']
-            layer = QgsVectorLayer(fileName,"train","ogr")
-            subLayers =layer.dataProvider().subLayers()
-
-            for subLayer in subLayers:
-                name = subLayer.split('!!::!!')[1]
-                print(name,'name')
-                uri = "%s|layername=%s" % (fileName, name,)
-                print(uri,'uri')
-                # Create layer
-                sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-                if not sub_vlayer.isValid():
-                    print('layer failed to load')
-                # Add layer to map
-                context.temporaryLayerStore().addMapLayer(sub_vlayer)
-                context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('train', context.project(),'LAYER'))
 
 
-            fileName = parameters['out']
-            layer1 = QgsVectorLayer(fileName,"test","ogr")
-            subLayers =layer1.dataProvider().subLayers()
+        fileName = parameters['out']
+        layer1 = QgsVectorLayer(fileName,"test","ogr")
+        subLayers =layer1.dataProvider().subLayers()
 
-            for subLayer in subLayers:
-                name = subLayer.split('!!::!!')[1]
-                print(name,'name')
-                uri = "%s|layername=%s" % (fileName, name,)
-                print(uri,'uri')
-                # Create layer
-                sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-                if not sub_vlayer.isValid():
-                    print('layer failed to load')
-                # Add layer to map
-                context.temporaryLayerStore().addMapLayer(sub_vlayer)
-                context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('test', context.project(),'LAYER1'))
+        for subLayer in subLayers:
+            name = subLayer.split('!!::!!')[1]
+            print(name,'name')
+            uri = "%s|layername=%s" % (fileName, name,)
+            print(uri,'uri')
+            # Create layer
+            sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
+            if not sub_vlayer.isValid():
+                print('layer failed to load')
+            # Add layer to map
+            context.temporaryLayerStore().addMapLayer(sub_vlayer)
+            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('test', context.project(),'LAYER1'))
 
-        else:
-            fileName = parameters['out1']
-            layer = QgsVectorLayer(fileName,"fitting","ogr")
-            subLayers =layer.dataProvider().subLayers()
-
-            for subLayer in subLayers:
-                name = subLayer.split('!!::!!')[1]
-                print(name,'name')
-                uri = "%s|layername=%s" % (fileName, name,)
-                print(uri,'uri')
-                # Create layer
-                sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-                if not sub_vlayer.isValid():
-                    print('layer failed to load')
-                # Add layer to map
-                context.temporaryLayerStore().addMapLayer(sub_vlayer)
-                context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('fitting', context.project(),'LAYER'))
-
-        feedback.setCurrentStep(3)
+        feedback.setCurrentStep(5)
         if feedback.isCanceled():
             return {}
 
         return results
 
-    
+
+
