@@ -93,37 +93,9 @@ import tempfile
 from sz_module.utils import SZ_utils
 
 
-class FRcvAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'covariates'
-    STRING = 'field1'
-    STRING2 = 'fieldlsd'
-    NUMBER = 'testN'
-    OUTPUT = 'OUTPUT'
-    OUTPUT2 = 'OUTPUT2'
-    OUTPUT3 = 'OUTPUT3'
-
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
-
-    def createInstance(self):
-        return FRcvAlgorithm()
-
-    def name(self):
-        return 'Fit-CV_FRcv'
-
-    def displayName(self):
-        return self.tr('02 FR Fitting/CrossValid')
-
-    def group(self):
-        return self.tr('SI k-fold')
-
-    def groupId(self):
-        return 'SI_k-fold'
-
-    def shortHelpString(self):
-        return self.tr("This function apply Frequency Ratio to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one")
-
-    def initAlgorithm(self, config=None):
+class FRcvAlgorithm():
+   
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
 
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
@@ -133,8 +105,7 @@ class FRcvAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT2, 'Calculated weights','*.txt', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
-
-    def processAlgorithm(self, parameters, context, feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}

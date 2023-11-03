@@ -77,11 +77,8 @@ from qgis import *
 import matplotlib.pyplot as plt
 import csv
 from processing.algs.gdal.GdalUtils import GdalUtils
-#import plotly.express as px
-#import chart_studio
 import plotly.offline
 import plotly.graph_objs as go
-#import geopandas as gd
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve, auc
@@ -89,51 +86,44 @@ from sklearn.metrics import roc_auc_score
 from scipy import interpolate
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import cohen_kappa_score
-# pd.set_option('display.max_columns', 20)
-# #pd.set_option('display.max_rows', 20)
-# from IPython.display import display
 import tempfile
 from sz_module.utils import SZ_utils
 
 
 
-class WOEAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'covariates'
-    STRING = 'field1'
-    #STRING1 = 'field2'
-    STRING2 = 'fieldlsd'
-    #INPUT1 = 'Slope'
-    #EXTENT = 'Extension'
-    NUMBER = 'testN'
-    #NUMBER1 = 'minSlopeAcceptable'
-    OUTPUT = 'OUTPUT'
-    OUTPUT1 = 'OUTPUT1'
-    OUTPUT2 = 'OUTPUT2'
-    OUTPUT3 = 'OUTPUT3'
+class WOEAlgorithm():
+    # INPUT = 'covariates'
+    # STRING = 'field1'
+    # STRING2 = 'fieldlsd'
+    # NUMBER = 'testN'
+    # OUTPUT = 'OUTPUT'
+    # OUTPUT1 = 'OUTPUT1'
+    # OUTPUT2 = 'OUTPUT2'
+    # OUTPUT3 = 'OUTPUT3'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return WOEAlgorithm()
+    # def createInstance(self):
+    #     return WOEAlgorithm()
 
-    def name(self):
-        return 'Fit-CV'
+    # def name(self):
+    #     return 'Fit-CV'
 
-    def displayName(self):
-        return self.tr('01 WoE Fitting/CrossValid')
+    # def displayName(self):
+    #     return self.tr('01 WoE Fitting/CrossValid')
 
-    def group(self):
-        return self.tr('SI')
+    # def group(self):
+    #     return self.tr('SI')
 
-    def groupId(self):
-        return 'SI'
+    # def groupId(self):
+    #     return 'SI'
 
-    def shortHelpString(self):
-        return self.tr("This function apply Weight of Evidence to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero")
+    # def shortHelpString(self):
+    #     return self.tr("This function apply Weight of Evidence to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero")
 
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
 
         #self.addParameter( QgsProcessingParameterFeatureSource(self.INPUT,self.tr('Covariates'),[QgsProcessing.TypeVectorPolygon],defaultValue='covariatesclassed'))
@@ -156,7 +146,7 @@ class WOEAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
 
         feedback = QgsProcessingMultiStepFeedback(1, feedback)

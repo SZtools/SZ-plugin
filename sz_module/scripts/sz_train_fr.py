@@ -90,49 +90,13 @@ from scipy import interpolate
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import cohen_kappa_score
 import tempfile
-# pd.set_option('display.max_columns', 20)
-# #pd.set_option('display.max_rows', 20)
-# from IPython.display import display
 from sz_module.utils import SZ_utils
 
 
 
-class FRAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'covariates'
-    STRING = 'field1'
-    #STRING1 = 'field2'
-    STRING2 = 'fieldlsd'
-    #INPUT1 = 'Slope'
-    #EXTENT = 'Extension'
-    NUMBER = 'testN'
-    #NUMBER1 = 'minSlopeAcceptable'
-    OUTPUT = 'OUTPUT'
-    OUTPUT1 = 'OUTPUT1'
-    OUTPUT2 = 'OUTPUT2'
-    OUTPUT3 ='OUTPUT3'
+class FRAlgorithm():
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
-
-    def createInstance(self):
-        return FRAlgorithm()
-
-    def name(self):
-        return 'FR_Fit-CV'
-
-    def displayName(self):
-        return self.tr('02 FR Fitting/CrossValid')
-
-    def group(self):
-        return self.tr('SI')
-
-    def groupId(self):
-        return 'SI'
-
-    def shortHelpString(self):
-        return self.tr("This function apply Frequency Ratio to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero")
-
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
 
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
@@ -146,7 +110,7 @@ class FRAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
 
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
@@ -160,10 +124,6 @@ class FRAlgorithm(QgsProcessingAlgorithm):
 
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-
-
-
-
 
         parameters['field1'] = self.parameterAsFields(parameters, self.STRING, context)
         if parameters['field1'] is None:
@@ -194,7 +154,6 @@ class FRAlgorithm(QgsProcessingAlgorithm):
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
 
-        # Intersectionpoly
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field1'],

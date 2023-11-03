@@ -105,42 +105,42 @@ from sklearn.model_selection import StratifiedKFold
 import tempfile
 
 
-class RFcvAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'covariates'
-    STRING = 'field1'
-    #STRING1 = 'field2'
-    STRING2 = 'fieldlsd'
-    #INPUT1 = 'Slope'
-    #EXTENT = 'Extension'
-    NUMBER = 'testN'
-    #NUMBER1 = 'minSlopeAcceptable'
-    OUTPUT = 'OUTPUT'
-    #OUTPUT1 = 'OUTPUT1'
-    #OUTPUT2 = 'OUTPUT2'
-    OUTPUT3 = 'OUTPUT3'
+class RFcvAlgorithm():
+    # INPUT = 'covariates'
+    # STRING = 'field1'
+    # #STRING1 = 'field2'
+    # STRING2 = 'fieldlsd'
+    # #INPUT1 = 'Slope'
+    # #EXTENT = 'Extension'
+    # NUMBER = 'testN'
+    # #NUMBER1 = 'minSlopeAcceptable'
+    # OUTPUT = 'OUTPUT'
+    # #OUTPUT1 = 'OUTPUT1'
+    # #OUTPUT2 = 'OUTPUT2'
+    # OUTPUT3 = 'OUTPUT3'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return RFcvAlgorithm()
+    # def createInstance(self):
+    #     return RFcvAlgorithm()
 
-    def name(self):
-        return 'Fit-CV_RFcv'
+    # def name(self):
+    #     return 'Fit-CV_RFcv'
 
-    def displayName(self):
-        return self.tr('04 RF Fitting/CrossValid')
+    # def displayName(self):
+    #     return self.tr('04 RF Fitting/CrossValid')
 
-    def group(self):
-        return self.tr('SI k-fold')
+    # def group(self):
+    #     return self.tr('SI k-fold')
 
-    def groupId(self):
-        return 'SI_k-fold'
+    # def groupId(self):
+    #     return 'SI_k-fold'
 
-    def shortHelpString(self):
-        return self.tr("This function apply Random Forest to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one")
+    # def shortHelpString(self):
+    #     return self.tr("This function apply Random Forest to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
 
         #self.addParameter( QgsProcessingParameterFeatureSource(self.INPUT,self.tr('Covariates'),[QgsProcessing.TypeVectorPolygon],defaultValue='covariatesclassed'))
@@ -167,7 +167,7 @@ class RFcvAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}

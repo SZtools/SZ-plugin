@@ -101,195 +101,50 @@ import tempfile
 
 
 class DTcvAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'covariates'
-    STRING = 'field1'
-    #STRING1 = 'field2'
-    STRING2 = 'fieldlsd'
-    #INPUT1 = 'Slope'
-    #EXTENT = 'Extension'
-    NUMBER = 'testN'
-    #NUMBER1 = 'minSlopeAcceptable'
-    OUTPUT = 'OUTPUT'
-    #OUTPUT1 = 'OUTPUT1'
-    #OUTPUT2 = 'OUTPUT2'
-    OUTPUT3 = 'OUTPUT3'
-
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
-
-    def createInstance(self):
-        return DTcvAlgorithm()
-
-    def name(self):
-        return 'Fit-CV_DTcv'
-
-    def displayName(self):
-        return self.tr('06 DT Fitting/CrossValid')
-
-    def group(self):
-        return self.tr('SI k-fold')
-
-    def groupId(self):
-        return 'SI_k-fold'
-
-    def shortHelpString(self):
-        return self.tr("This function apply Decision Tree to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one")
-
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
-
-        #self.addParameter( QgsProcessingParameterFeatureSource(self.INPUT,self.tr('Covariates'),[QgsProcessing.TypeVectorPolygon],defaultValue='covariatesclassed'))
-
-
-
-
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
-        #self.addParameter(QgsProcessingParameterField(self.STRING1, 'Last field of covariates', parentLayerParameterName=self.INPUT, defaultValue=None))
-        #self.addParameter(QgsProcessingParameterField('field', 'field', type=QgsProcessingParameterField.Any, parentLayerParameterName='v', allowMultiple=True, defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
-
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV (1 to fit or > 1 to cross-validate)'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2))
-
-
-
-        #self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT, 'Output layer', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, defaultValue=None))
-
-        #self.addParameter(QgsProcessingParameterVectorDestination(self.OUTPUT, self.tr('Output layer'), type=QgsProcessing.TypeVectorPolygon, createByDefault=True, defaultValue=None))
-
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
-        #self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT1, 'Output train/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
-        #self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT2, 'Calculated weights','*.txt', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
-
-    def processAlgorithm(self, parameters, context, feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
         outputs = {}
-
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
         if parameters['covariates'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-
-
-
-        # source = self.parameterAsVectorLayer(
-        #     parameters,
-        #     self.INPUT,
-        #     context
-        # )
-        # parameters['covariates']=source.source()
-
-        # If source was not found, throw an exception to indicate that the algorithm
-        # encountered a fatal error. The exception text can be any string, but in this
-        # case we use the pre-built invalidSourceError method to return a standard
-        # helper text for when a source cannot be evaluated
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-
-
-
-
-
         parameters['field1'] = self.parameterAsFields(parameters, self.STRING, context)
         if parameters['field1'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING))
-
-        #parameters['field2'] = self.parameterAsString(parameters, self.STRING1, context)
-        #if parameters['field2'] is None:
-        #    raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING1))
-
         parameters['fieldlsd'] = self.parameterAsString(parameters, self.STRING2, context)
         if parameters['fieldlsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING2))
-
-        # parameters['poly'] = self.parameterAsExtent(parameters, self.EXTENT, context)
-        # if parameters['poly'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.EXTENT))
-        #
         parameters['testN'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['testN'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
-        #
-        # parameters['minSlopeAcceptable'] = self.parameterAsInt(parameters, self.NUMBER1, context)
-        # if parameters['minSlopeAcceptable'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER1))
-
-
-        # (parameters['out'], dest_id) = self.parameterAsSink(
-        #     parameters,
-        #     self.OUTPUT,
-        #     context,
-        #     source.fields(),
-        #     source.wkbType(),
-        #     source.sourceCrs()
-        # )
-        #
-        # # Send some information to the user
-        # feedback.pushInfo('CRS is {}'.format(source.sourceCrs().authid()))
-        #
-        # # If sink was not created, throw an exception to indicate that the algorithm
-        # # encountered a fatal error. The exception text can be any string, but in this
-        # # case we use the pre-built invalidSinkError method to return a standard
-        # # helper text for when a sink cannot be evaluated
-        # if parameters['out'] is None:
-        #     raise QgsProcessingException(self.invalidSinkError(parameters, self.OUTPUT))
-
-        #(parameters['out'],id,a)=self.parameterAsSink(parameters,self.OUTPUT,context,source.fields(),source.wkbType(),source.sourceCrs())
-
-        # outFile = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
-        # parameters['out'], outputFormat = GdalUtils.ogrConnectionStringAndFormat(outFile, context)
-        # if parameters['out'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
-
         parameters['out'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
         if parameters['out'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
-
-        # parameters['out1'] = self.parameterAsFileOutput(parameters, self.OUTPUT1, context)
-        # if parameters['out1'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT1))
-        #
-        # parameters['out2'] = self.parameterAsFileOutput(parameters, self.OUTPUT2, context)
-        # if parameters['out2'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT2))
-
         parameters['folder'] = self.parameterAsString(parameters, self.OUTPUT3, context)
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
-
-        #print(a)
-        # Intersectionpoly
         alg_params = {
-            #'INPUT_RASTER_LAYER': parameters['Slope'],
-            #'INPUT_EXTENT': parameters['Extension'],
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field1'],
-            #'field2': parameters['field2'],
             'lsd' : parameters['fieldlsd'],
             'testN':parameters['testN']
-            #'INPUT_INT': parameters['BufferRadiousInPxl'],
-            #'INPUT_INT_1': parameters['minSlopeAcceptable'],
         }
-
         outputs['prob'],outputs['test_ind'],outputs['df'],outputs['nomi'],outputs['crs']=self.load(alg_params)
-
-        # alg_params = {
-        #     'train': outputs['train'],
-        #     'testy': outputs['testy'],
-        #     'nomi':outputs['nomes'],
-        #     'txt':parameters['out2'],
-        #     'testN':parameters['testN']
-        #
-        # }
-        #outputs['trainsi'],outputs['testsi']=self.LR(alg_params)
-
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
-
         if parameters['testN']>0:
             alg_params = {
                 'df': outputs['df'],
@@ -301,72 +156,18 @@ class DTcvAlgorithm(QgsProcessingAlgorithm):
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
-
-        # alg_params = {
-        #     'df': outputs['trainsi'],
-        #     'crs': outputs['crs'],
-        #     'OUT': parameters['out1']
-        # }
-        #self.save(alg_params)
-
-        # if parameters['testN']==0:
-        #     alg_params = {
-        #         'df': outputs['trainsi'],
-        #         'OUT':parameters['folder']
-        #         #'txt':parameters['out1']
-        #
-        #     }
-        #     self.stampfit(alg_params)
-        # else:
         alg_params = {
             'test_ind': outputs['test_ind'],
             'df': outputs['df'],
             'OUT':parameters['folder']
-            #'OUT':parameters['folder']
-            #'txt':parameters['out1']
-
         }
         SZ_utils.stamp_cv(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
             return {}
-        #
-        # alg_params = {
-        #     'trainout': parameters['out1'],
-        #     'context': context
-        # }
-        # self.addmap(alg_params)
 
-
-        #self.importingandcounting(alg_params)
-        #self.indexing(alg_params)
-        #self.vector()
-        #del self.oout
-        #outputs['cleaninventory']=self.saveV(alg_params)
         results['out'] = parameters['out']
-        #results['out1'] = parameters['out1']
-        #del self.raster
-
-        #if parameters['testN']>0:
-            # fileName = parameters['out1']
-            # layer = QgsVectorLayer(fileName,"train","ogr")
-            # subLayers =layer.dataProvider().subLayers()
-            #
-            # for subLayer in subLayers:
-            #     name = subLayer.split('!!::!!')[1]
-            #     print(name,'name')
-            #     uri = "%s|layername=%s" % (fileName, name,)
-            #     print(uri,'uri')
-            #     # Create layer
-            #     sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-            #     if not sub_vlayer.isValid():
-            #         print('layer failed to load')
-            #     # Add layer to map
-            #     context.temporaryLayerStore().addMapLayer(sub_vlayer)
-            #     context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('train', context.project(),'LAYER'))
-
-
         fileName = parameters['out']
         layer1 = QgsVectorLayer(fileName,"test","ogr")
         subLayers =layer1.dataProvider().subLayers()
@@ -383,41 +184,9 @@ class DTcvAlgorithm(QgsProcessingAlgorithm):
             # Add layer to map
             context.temporaryLayerStore().addMapLayer(sub_vlayer)
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('test', context.project(),'LAYER1'))
-
-        # else:
-        #     fileName = parameters['out1']
-        #     layer = QgsVectorLayer(fileName,"fitting","ogr")
-        #     subLayers =layer.dataProvider().subLayers()
-        #
-        #     for subLayer in subLayers:
-        #         name = subLayer.split('!!::!!')[1]
-        #         print(name,'name')
-        #         uri = "%s|layername=%s" % (fileName, name,)
-        #         print(uri,'uri')
-        #         # Create layer
-        #         sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-        #         if not sub_vlayer.isValid():
-        #             print('layer failed to load')
-        #         # Add layer to map
-        #         context.temporaryLayerStore().addMapLayer(sub_vlayer)
-        #         context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('fitting', context.project(),'LAYER'))
-
-
-
-
-
-        # layer=QgsVectorLayer(parameters['out1'],"train","ogr")
-        # context.temporaryLayerStore().addMapLayer(layer)
-        # context.addLayerToLoadOnCompletion(layer.id(), QgsProcessingContext.LayerDetails('SQL layer', context.project(),'LAYER'))
-        # print(l1)
-        # QgsProject.instance().addMapLayer(l1)
-        # l2=QgsVectorLayer(parameters['out'],"test","ogr")
-        # QgsProject.instance().addMapLayer(l2)
-
         feedback.setCurrentStep(4)
         if feedback.isCanceled():
             return {}
-
         return results
 
     def load(self,parameters):
@@ -433,23 +202,16 @@ class DTcvAlgorithm(QgsProcessingAlgorithm):
         feat=[]
         for feature in features:
             attr=feature.attributes()
-            #print(attr)
             geom = feature.geometry()
-            #print(type(geom.asWkt()))
             feat=attr+[geom.asWkt()]
-            #print(feat)
             gdp.loc[len(gdp)] = feat
-            #gdp = gdp.append(feat, ignore_index=True)
             count=+ 1
         gdp.to_csv(self.f+'/file.csv')
         del gdp
         gdp=pd.read_csv(self.f+'/file.csv')
-        #print(feat)
-        #print(gdp['S'].dtypes)
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
         df=gdp[parameters['field1']]
         nomi=list(df.head())
-        #print(list(df['Sf']),'1')
         lsd=gdp[parameters['lsd']]
         lsd[lsd>0]=1
         df['y']=lsd#.astype(int)
@@ -457,16 +219,6 @@ class DTcvAlgorithm(QgsProcessingAlgorithm):
         df['geom']=gdp['geom']
         df=df.dropna(how='any',axis=0)
         x=df[parameters['field1']]
-        # if parameters['testN']==0:
-        #     train=df
-        #     test=pd.DataFrame(columns=nomi,dtype=float)
-        # else:
-        #     # split the data into train and test set
-        #     per=int(np.ceil(df.shape[0]*parameters['testN']/100))
-        #     #print(per)
-        #     train, test = train_test_split(df, test_size=per, random_state=42, shuffle=True)
-        #     #X_train, X_test, y_train, y_test = train_test_split(X, df['y'] , test_size=per, random_state=42)
-
         y=df['y']
         sc = StandardScaler()#####scaler
         X = sc.fit_transform(x)
@@ -489,37 +241,11 @@ class DTcvAlgorithm(QgsProcessingAlgorithm):
             df.loc[test,'SI']=prob[0]
             test_ind[0]=test
         return prob,test_ind,df,nomi,crs
-            #print(train_ind)
-            #print(df)
-            #print(ciao)
 
     def DT(self,classifier,X,y,train,test):
         classifier.fit(X[train], y[train])
         prob_predic=classifier.predict_proba(X[test])[::,1]
-        #prob_fit=classifier.predict_proba(X[train])[::,1]
         return prob_predic
-
-
-        # from sklearn.model_selection import cross_val_predict
-        # sc = StandardScaler()
-        # nomi=parameters['nomi']
-        # train=parameters['train']
-        # test=parameters['testy']
-        # X_train = sc.fit_transform(train[nomi])
-        # logistic_regression = LogisticRegression()
-        # logistic_regression.fit(X_train,train['y'])
-        # prob_fit=logistic_regression.predict_proba(X_train)[::,1]
-        # if parameters['testN']>0:
-        #     X_test = sc.transform(test[nomi])
-        #     #predictions = logistic_regression.predict(X_test)
-        #     predictions = cross_val_predict(logistic_regression, X_test, test['y'], cv=3)
-        #     prob_predic = cross_val_predict(logistic_regression, X_test, test['y'], cv=3, method='predict_proba')[::,1]
-        #     #prob_predic=logistic_regression.predict_proba(X_test)[::,1]
-        #     print(predictions)
-        #     print(prob_predic)
-        #     test['SI']=prob_predic
-        # train['SI']=prob_fit
-        # return(train,test)
 
     # def stampfit(self,parameters):
     #     df=parameters['df']

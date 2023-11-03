@@ -30,13 +30,52 @@ __copyright__ = '(C) 2021 by Giacomo Titti'
 
 __revision__ = '$Format:%H$'
 
-from qgis.core import QgsProcessingProvider
+
+#####################
+from qgis.core import (QgsProcessing,
+                       QgsFeatureSink,
+                       QgsProcessingException,
+                       QgsProcessingAlgorithm,
+                       QgsProcessingParameterFeatureSource,
+                       QgsProcessingParameterFeatureSink,
+                       QgsProcessingParameterRasterLayer,
+                       QgsMessageLog,
+                       Qgis,
+                       QgsProcessingMultiStepFeedback,
+                       QgsProcessingParameterNumber,
+                       QgsProcessingParameterFileDestination,
+                       QgsProcessingParameterVectorLayer,
+                       QgsVectorLayer,
+                       QgsRasterLayer,
+                       QgsProject,
+                       QgsField,
+                       QgsFields,
+                       QgsVectorFileWriter,
+                       QgsWkbTypes,
+                       QgsFeature,
+                       QgsGeometry,
+                       QgsPointXY,
+                       QgsProcessingParameterField,
+                       QgsProcessingParameterString,
+                       QgsProcessingParameterFolderDestination,
+                       QgsProcessingParameterField,
+                       QgsProcessingParameterVectorDestination,
+                       QgsProcessingContext
+                       )
+
+#####################
+
+
+
+
+from qgis.core import QgsProcessingProvider,QgsProcessingAlgorithm
+from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from sz_module.images.cqp_resources_rc import qInitResources
 qInitResources()  # necessary to be able to access your images
 
 
-#from .scripts.roc import rocAlgorithm
+from .scripts.roc import rocAlgorithm
 from .scripts.sz_train_WOE import WOEAlgorithm
 from .scripts.sz_train_WOE_cv import WOEcvAlgorithm
 from .scripts.sz_train_fr import FRAlgorithm
@@ -65,9 +104,15 @@ from .scripts.tptn import FPAlgorithm
 from .scripts.classcovtxt import classcovtxtAlgorithm
 from .scripts.classcovdeciles import classcovdecAlgorithm
 
+#dict_of_scripts={}
+
+from sz_module.scripts.sz_train_simple import CoreAlgorithm
+from sz_module.scripts.algorithms import Algorithms
 
 
 class classeProvider(QgsProcessingProvider):
+
+    
 
     def __init__(self):
         """
@@ -87,39 +132,172 @@ class classeProvider(QgsProcessingProvider):
         Loads all algorithms belonging to this provider.
         """
 
-        self.addAlgorithm(WOEAlgorithm())
-        self.addAlgorithm(WOEcvAlgorithm())
-        self.addAlgorithm(FRAlgorithm())
-        self.addAlgorithm(FRcvAlgorithm())
-        self.addAlgorithm(LRAlgorithm())
-        self.addAlgorithm(LRcvAlgorithm())
-        self.addAlgorithm(DTAlgorithm())
-        self.addAlgorithm(DTcvAlgorithm())
-        self.addAlgorithm(SVCAlgorithm())
-        self.addAlgorithm(SVCcvAlgorithm())
-        self.addAlgorithm(RFAlgorithm())
-        self.addAlgorithm(RFcvAlgorithm())
-        self.addAlgorithm(classcovtxtAlgorithm())
-        self.addAlgorithm(classcovdecAlgorithm())
-        ##self.addAlgorithm(polytogridAlgorithm())
-        #self.addAlgorithm(pointtogridAlgorithm())
-        self.addAlgorithm(statistic())
+        dict_of_scripts={
+            'alg': 'woe_simple',
+            'function': CoreAlgorithm,
+            'name':'Fit-CV_WOE',
+            'displayName':'01 WoE Fitting/CrossValid',
+            'group':'SI',
+            'groupId':'SI',
+            'shortHelpString':"This function apply Weight of Evidence to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
 
-        #self.addAlgorithm(classAlgorithm())
-        #self.addAlgorithm(rocAlgorithm())
-        #self.addAlgorithm(matrixAlgorithm())
+        dict_of_scripts={
+            'alg': 'woe_cv',
+            'function': WOEcvAlgorithm,
+            'name':'Fit-CV_WOEcv',
+            'displayName':'01 WoE Fitting/CrossValid',
+            'group':'SI k-fold',
+            'groupId':'SI k-fold',
+            'shortHelpString':"This function apply Weight of Evidence to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
 
-        self.addAlgorithm(cleankernelAlgorithm())
-        self.addAlgorithm(statistickernel())
-        self.addAlgorithm(samplerAlgorithm())
-        self.addAlgorithm(rasterstatkernelAlgorithm())
+        dict_of_scripts={
+            'alg': 'SVC_simple',
+            'function': CoreAlgorithm,
+            'name':'Fit-CV_SVC',
+            'displayName':'05 SVM Fitting/CrossValid',
+            'group':'SI',
+            'groupId':'SI',
+            'shortHelpString':"This function apply Support Vector Machine to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
 
-        self.addAlgorithm(classvAlgorithm())
-        self.addAlgorithm(classvAlgorithmW())
-        self.addAlgorithm(FPAlgorithm())
+        dict_of_scripts={
+            'alg': 'SVC_cv',
+            'function': SVCcvAlgorithm,
+            'name':'Fit-CV_SVCcv',
+            'displayName':'05 SVM Fitting/CrossValid',
+            'group':'SI k-fold',
+            'groupId':'SI k-fold',
+            'shortHelpString':"This function apply Support Vector Machine to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
 
-        # add additional algorithms here
-        # self.addAlgorithm(MyOtherAlgorithm())
+        dict_of_scripts={
+            'alg': 'RF_simple',
+            'function': CoreAlgorithm,
+            'name':'Fit-CV_RF',
+            'displayName':'04 RF Fitting/CrossValid',
+            'group':'SI',
+            'groupId':'SI',
+            'shortHelpString':"This function apply Random Forest to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'RF_cv',
+            'function': RFcvAlgorithm,
+            'name':'Fit-CV_RFcv',
+            'displayName':'04 RF Fitting/CrossValid',
+            'group':'SI k-fold',
+            'groupId':'SI k-fold',
+            'shortHelpString':"This function apply Random Forest to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'LR_simple',
+            'function': CoreAlgorithm,
+            'name':'Fit-CV_LR',
+            'displayName':'03 LR Fitting/CrossValid',
+            'group':'SI',
+            'groupId':'SI',
+            'shortHelpString':"This function apply Logistic Regression to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'LR_cv',
+            'function': LRcvAlgorithm,
+            'name':'Fit-CV_LRcv',
+            'displayName':'03 LR Fitting/CrossValid',
+            'group':'SI k-fold',
+            'groupId':'SI k-fold',
+            'shortHelpString':"This function apply Logistic Regression to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'fr_simple',
+            'function': CoreAlgorithm,
+            'name':'Fit-CV_FR',
+            'displayName':'02 FR Fitting/CrossValid',
+            'group':'SI',
+            'groupId':'SI',
+            'shortHelpString':"This function apply Frequency Ratio to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'fr_cv',
+            'function': FRcvAlgorithm,
+            'name':'Fit-CV_FRcv',
+            'displayName':'02 FR Fitting/CrossValid',
+            'group':'SI k-fold',
+            'groupId':'SI k-fold',
+            'shortHelpString':"This function apply Frequency Ratio to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'DT_simple',
+            'function': CoreAlgorithm,
+            'name':'Fit-CV_DT',
+            'displayName':'06 DT Fitting/CrossValid',
+            'group':'SI',
+            'groupId':'SI',
+            'shortHelpString':"This function apply Decision Tree to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'DT_cv',
+            'function': DTcvAlgorithm,
+            'name':'Fit-CV_DTcv',
+            'displayName':'06 DT Fitting/CrossValid',
+            'group':'SI k-fold',
+            'groupId':'SI k-fold',
+            'shortHelpString':"This function apply Decision Tree to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+
+        # self.addAlgorithm(WOEAlgorithm())
+        # self.addAlgorithm(WOEcvAlgorithm())
+        # self.addAlgorithm(FRAlgorithm())
+        # self.addAlgorithm(FRcvAlgorithm())
+        # self.addAlgorithm(LRAlgorithm())
+        # self.addAlgorithm(LRcvAlgorithm())
+        # self.addAlgorithm(DTAlgorithm())
+        # self.addAlgorithm(DTcvAlgorithm())
+        # self.addAlgorithm(SVCAlgorithm())
+        # self.addAlgorithm(SVCcvAlgorithm())
+        # self.addAlgorithm(RFAlgorithm())
+        # self.addAlgorithm(RFcvAlgorithm())
+        # self.addAlgorithm(classcovtxtAlgorithm())
+        # self.addAlgorithm(classcovdecAlgorithm())
+        # ##self.addAlgorithm(polytogridAlgorithm())
+        # #self.addAlgorithm(pointtogridAlgorithm())
+        # self.addAlgorithm(statistic())
+
+        # #self.addAlgorithm(classAlgorithm())
+        # #self.addAlgorithm(rocAlgorithm())
+        # #self.addAlgorithm(matrixAlgorithm())
+
+        # self.addAlgorithm(cleankernelAlgorithm())
+        # self.addAlgorithm(statistickernel())
+        # self.addAlgorithm(samplerAlgorithm())
+        # self.addAlgorithm(rasterstatkernelAlgorithm())
+
+        # self.addAlgorithm(classvAlgorithm())
+        # self.addAlgorithm(classvAlgorithmW())
+        # self.addAlgorithm(FPAlgorithm())
+
+        # # add additional algorithms here
+        # # self.addAlgorithm(MyOtherAlgorithm())
 
     def id(self):
         """
@@ -153,3 +331,62 @@ class classeProvider(QgsProcessingProvider):
         implementation returns the same string as name().
         """
         return self.name()
+
+class Instance(QgsProcessingAlgorithm):
+    INPUT = 'covariates'
+    STRING = 'field1'
+    STRING2 = 'fieldlsd'
+    NUMBER = 'testN'
+    OUTPUT = 'OUTPUT'
+    OUTPUT1 = 'OUTPUT1'
+    OUTPUT2 = 'OUTPUT2'
+    OUTPUT3 = 'OUTPUT3'
+    
+    def __init__(self, dict_of_scripts):
+        super().__init__()
+        self.dict_of_scripts = dict_of_scripts
+        #self.class_function=self.dict_of_scripts['function']()
+        self.algorithms={
+            'woe_simple':Algorithms.woe_simple,
+            'woe_cv':Algorithms.woe_cv,
+            'SCV_simple':Algorithms.SVC_simple,
+            'SVC_cv':Algorithms.SVC_cv,
+            'RF_simple':Algorithms.RF_simple,
+            'RF_cv':Algorithms.RF_cv,
+            'LR_simple':Algorithms.LR_simple,
+            'LR_cv':Algorithms.LR_cv,
+            'fr_simple':Algorithms.fr_simple,
+            'fr_cv':Algorithms.fr_cv,
+            'DT_simple':Algorithms.DT_simple,
+            'DT_cv':Algorithms.DT_cv,
+        }
+
+    def tr(self, string):
+        return QCoreApplication.translate('Processing', string)
+
+    def createInstance(self):
+        return Instance(self.dict_of_scripts)
+
+    def name(self):
+        return self.dict_of_scripts['name']
+
+    def displayName(self):
+        return self.tr(self.dict_of_scripts['displayName'])
+
+    def group(self):
+        return self.tr(self.dict_of_scripts['group'])
+
+    def groupId(self):
+        return self.dict_of_scripts['groupId']
+
+    def shortHelpString(self):
+        return self.tr(self.dict_of_scripts['shortHelpString'])
+
+    def initAlgorithm(self, config=None):
+        self.dict_of_scripts['function'].init(self, config=None)
+
+    def processAlgorithm(self, parameters, context, feedback):
+        result={}
+        result=self.dict_of_scripts['function'].process(parameters, context, feedback, alg=self.dict_of_scripts['alg'])
+        return result
+        
