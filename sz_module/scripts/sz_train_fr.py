@@ -250,7 +250,7 @@ class FRAlgorithm(QgsProcessingAlgorithm):
                 'OUT':parameters['folder']
 
             }
-            SZ_utils.stampcv(alg_params)
+            SZ_utils.stamp_simple(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
@@ -476,7 +476,7 @@ class FRAlgorithm(QgsProcessingAlgorithm):
     #     # #plt.show()
     #     # fig.savefig(parameters['OUT']+'/fig02.png')
 
-    # def stampcv(self,parameters):
+    # def stamp_simple(self,parameters):
     #     train=parameters['train']
     #     y_t=train['y']
     #     scores_t=train['SI']

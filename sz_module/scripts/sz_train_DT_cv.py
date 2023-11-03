@@ -326,7 +326,7 @@ class DTcvAlgorithm(QgsProcessingAlgorithm):
             #'txt':parameters['out1']
 
         }
-        self.stampcv(alg_params)
+        SZ_utils.stamp_cv(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
@@ -583,90 +583,90 @@ class DTcvAlgorithm(QgsProcessingAlgorithm):
     #     # #plt.show()
     #     # fig.savefig(parameters['OUT']+'/fig02.png')
 
-    def stampcv(self,parameters):
-        df=parameters['df']
-        test_ind=parameters['test_ind']
+    # def stampcv(self,parameters):
+    #     df=parameters['df']
+    #     test_ind=parameters['test_ind']
 
-        #test=parameters['test']
-        y_v=df['y']
-        scores_v=df['SI']
-        lw = 2
-        #W=df['w']
-        ################################figure
-        #fpr1, tpr1, tresh1 = roc_curve(y_true,scores,sample_weight=W)
-        #fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
-        #fpr2, tpr2, tresh2 = roc_curve(self.y_true,self.norm)
-        #print(tresh1)
-        fig=plt.figure()
-        #print(len(test_ind))
-        #print(test_ind)
-        plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
-        for i in range(len(test_ind)):
+    #     #test=parameters['test']
+    #     y_v=df['y']
+    #     scores_v=df['SI']
+    #     lw = 2
+    #     #W=df['w']
+    #     ################################figure
+    #     #fpr1, tpr1, tresh1 = roc_curve(y_true,scores,sample_weight=W)
+    #     #fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
+    #     #fpr2, tpr2, tresh2 = roc_curve(self.y_true,self.norm)
+    #     #print(tresh1)
+    #     fig=plt.figure()
+    #     #print(len(test_ind))
+    #     #print(test_ind)
+    #     plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
+    #     for i in range(len(test_ind)):
 
-            fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
-            #fprt, tprt, tresht = roc_curve(y_t,scores_t)
+    #         fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
+    #         #fprt, tprt, tresht = roc_curve(y_t,scores_t)
 
-            #print self.fpr
-            #print self.tpr
-            #print self.classes
-            aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
-            print('ROC '+ str(i) +' AUC=',aucv)
-            #auct=roc_auc_score(y_t, scores_t, None)
-            #r=roc_auc_score(y_true, scores, None)
-            #normt=(scores_t-scores_t.min())/(scores_t.max()-scores_t.min())
-            #normv=(scores_v-scores_v.min())/(scores_v.max()-scores_v.min())
+    #         #print self.fpr
+    #         #print self.tpr
+    #         #print self.classes
+    #         aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
+    #         print('ROC '+ str(i) +' AUC=',aucv)
+    #         #auct=roc_auc_score(y_t, scores_t, None)
+    #         #r=roc_auc_score(y_true, scores, None)
+    #         #normt=(scores_t-scores_t.min())/(scores_t.max()-scores_t.min())
+    #         #normv=(scores_v-scores_v.min())/(scores_v.max()-scores_v.min())
 
 
 
-            plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' (AUC = %0.2f)' %aucv)
-            #plt.plot(fprt, tprt, color='red',lw=lw, label= 'Success performance (AUC = %0.2f)' %auct)
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        #plt.title('ROC')
-        plt.legend(loc="lower right")
-        #plt.show()
-        print('ROC curve figure = ',parameters['OUT']+'/fig02.pdf')
-        try:
-            fig.savefig(parameters['OUT']+'/fig02.pdf')
+    #         plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' (AUC = %0.2f)' %aucv)
+    #         #plt.plot(fprt, tprt, color='red',lw=lw, label= 'Success performance (AUC = %0.2f)' %auct)
+    #     plt.xlim([0.0, 1.0])
+    #     plt.ylim([0.0, 1.05])
+    #     plt.xlabel('False Positive Rate')
+    #     plt.ylabel('True Positive Rate')
+    #     #plt.title('ROC')
+    #     plt.legend(loc="lower right")
+    #     #plt.show()
+    #     print('ROC curve figure = ',parameters['OUT']+'/fig02.pdf')
+    #     try:
+    #         fig.savefig(parameters['OUT']+'/fig02.pdf')
 
-        except:
-            os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/fig02.pdf')
+    #     except:
+    #         os.mkdir(parameters['OUT'])
+    #         fig.savefig(parameters['OUT']+'/fig02.pdf')
 
-        # fig=plt.figure()
-        # frequency, bins = np.histogram(normt)
-        # frequency=(frequency/len(normt))*100
-        # bincenters = 0.5*(bins[1:]+bins[:-1])
-        # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
-        # #plt.plot(bincenters,frequency,'-')#segmented curve
-        # xnew = np.linspace(bincenters.min(),bincenters.max())
-        # power_smooth=interpolate.splev(bincenters, xnew, der=0)
-        # #power_smooth = spline(bincenters,frequency,xnew)
-        # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'Train SI')
-        # plt.xlabel('Standardized Susceptibility Index')
-        # plt.ylabel('Area %')
-        # plt.title('')
-        # plt.legend(loc="upper right")
-        # fig.savefig(parameters['OUT']+'/fig02.png') # Use fig. here
-        # #plt.show()
-        #
-        # fig=plt.figure()
-        # frequency, bins = np.histogram(normv)
-        # frequency=(frequency/len(normv))*100
-        # bincenters = 0.5*(bins[1:]+bins[:-1])
-        # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
-        # #plt.plot(bincenters,frequency,'-')#segmented curve
-        # xnew = np.linspace(bincenters.min(),bincenters.max())
-        # power_smooth=interpolate.splev(bincenters, xnew, der=0)
-        # #power_smooth = spline(bincenters,frequency,xnew)
-        # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'Test SI')
-        # plt.xlabel('Standardized Susceptibility Index')
-        # plt.ylabel('Area %')
-        # plt.title('')
-        # plt.legend(loc="upper right")
-        # fig.savefig(parameters['OUT']+'/fig03.png') # Use fig. here
+    #     # fig=plt.figure()
+    #     # frequency, bins = np.histogram(normt)
+    #     # frequency=(frequency/len(normt))*100
+    #     # bincenters = 0.5*(bins[1:]+bins[:-1])
+    #     # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
+    #     # #plt.plot(bincenters,frequency,'-')#segmented curve
+    #     # xnew = np.linspace(bincenters.min(),bincenters.max())
+    #     # power_smooth=interpolate.splev(bincenters, xnew, der=0)
+    #     # #power_smooth = spline(bincenters,frequency,xnew)
+    #     # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'Train SI')
+    #     # plt.xlabel('Standardized Susceptibility Index')
+    #     # plt.ylabel('Area %')
+    #     # plt.title('')
+    #     # plt.legend(loc="upper right")
+    #     # fig.savefig(parameters['OUT']+'/fig02.png') # Use fig. here
+    #     # #plt.show()
+    #     #
+    #     # fig=plt.figure()
+    #     # frequency, bins = np.histogram(normv)
+    #     # frequency=(frequency/len(normv))*100
+    #     # bincenters = 0.5*(bins[1:]+bins[:-1])
+    #     # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
+    #     # #plt.plot(bincenters,frequency,'-')#segmented curve
+    #     # xnew = np.linspace(bincenters.min(),bincenters.max())
+    #     # power_smooth=interpolate.splev(bincenters, xnew, der=0)
+    #     # #power_smooth = spline(bincenters,frequency,xnew)
+    #     # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'Test SI')
+    #     # plt.xlabel('Standardized Susceptibility Index')
+    #     # plt.ylabel('Area %')
+    #     # plt.title('')
+    #     # plt.legend(loc="upper right")
+    #     # fig.savefig(parameters['OUT']+'/fig03.png') # Use fig. here
 
     def save(self,parameters):
 

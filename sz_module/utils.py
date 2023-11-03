@@ -167,6 +167,44 @@ class SZ_utils():
             train, test = train_test_split(df, test_size=per, random_state=42, shuffle=True)
         return train, test, nomi,crs
     
+    def load_cv(directory,parameters):
+        layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
+        crs=layer.crs()
+        campi=[]
+        for field in layer.fields():
+            campi.append(field.name())
+        campi.append('geom')
+        gdp=pd.DataFrame(columns=campi,dtype=float)
+        features = layer.getFeatures()
+        count=0
+        feat=[]
+        for feature in features:
+            attr=feature.attributes()
+            #print(attr)
+            geom = feature.geometry()
+            #print(type(geom.asWkt()))
+            feat=attr+[geom.asWkt()]
+            #print(feat)
+            gdp.loc[len(gdp)] = feat
+            #gdp = gdp.append(feat, ignore_index=True)
+            count=+ 1
+        gdp.to_csv(directory+'/file.csv')
+        del gdp
+        gdp=pd.read_csv(directory+'/file.csv')
+        #print(feat)
+        #print(gdp['S'].dtypes)
+        gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
+        df=gdp[parameters['field1']]
+        nomi=list(df.head())
+        #print(list(df['Sf']),'1')
+        lsd=gdp[parameters['lsd']]
+        lsd[lsd>0]=1
+        df['y']=lsd#.astype(int)
+        df['ID']=gdp['ID']
+        df['geom']=gdp['geom']
+        df=df.dropna(how='any',axis=0)
+        return(df,nomi,crs)
+    
 
     def stampfit(parameters):
         df=parameters['df']
@@ -192,8 +230,36 @@ class SZ_utils():
         except:
             os.mkdir(parameters['OUT'])
             fig.savefig(parameters['OUT']+'/fig01.png')
+
+    def stamp_cv(parameters):
+        df=parameters['df']
+        test_ind=parameters['test_ind']
+        y_v=df['y']
+        scores_v=df['SI']
+        lw = 2
+        ################################figure
+        fig=plt.figure()
+        plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
+        for i in range(len(test_ind)):
+            fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
+            aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
+            print('ROC '+ str(i) +' AUC=',aucv)
+            plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' (AUC = %0.2f)' %aucv)
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.legend(loc="lower right")
+        #plt.show()
+        print('ROC curve figure = ',parameters['OUT']+'/fig02.pdf')
+        try:
+            fig.savefig(parameters['OUT']+'/fig02.pdf')
+        except:
+            os.mkdir(parameters['OUT'])
+            fig.savefig(parameters['OUT']+'/fig02.pdf')
+
     
-    def stampcv(parameters):
+    def stamp_simple(parameters):
         train=parameters['train']
         y_t=train['y']
         scores_t=train['SI']

@@ -320,7 +320,7 @@ class WOEAlgorithm(QgsProcessingAlgorithm):
                 #'txt':parameters['out1']
 
             }
-            SZ_utils.stampcv(alg_params)
+            SZ_utils.stamp_simple(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
@@ -571,7 +571,7 @@ class WOEAlgorithm(QgsProcessingAlgorithm):
     #     # #plt.show()
     #     # fig.savefig(parameters['OUT']+'/fig02.png')
 
-    # def stampcv(self,parameters):
+    # def stamp_simple(self,parameters):
     #     train=parameters['train']
     #     y_t=train['y']
     #     scores_t=train['SI']

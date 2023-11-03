@@ -331,7 +331,7 @@ class RFcvAlgorithm(QgsProcessingAlgorithm):
             #'txt':parameters['out1']
 
         }
-        self.stampcv(alg_params)
+        SZ_utils.stamp_cv(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
