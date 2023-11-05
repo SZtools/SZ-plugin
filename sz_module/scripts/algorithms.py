@@ -4,10 +4,12 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 import pandas as pd
+import numpy as np
+import math
 
 class Algorithms():
 
-    def LR_simple(self,parameters):
+    def LR_simple(parameters):
         sc = StandardScaler()
         nomi=parameters['nomi']
         train=parameters['train']
@@ -24,7 +26,7 @@ class Algorithms():
         train['SI']=prob_fit
         return(train,test)
         
-    def DT_simple(self,parameters):
+    def DT_simple(parameters):
         sc = StandardScaler()
         nomi=parameters['nomi']
         train=parameters['train']
@@ -41,7 +43,7 @@ class Algorithms():
         train['SI']=prob_fit
         return(train,test)
     
-    def RF_simple(self,parameters):
+    def RF_simple(parameters):
         sc = StandardScaler()
         nomi=parameters['nomi']
         train=parameters['train']
@@ -58,7 +60,7 @@ class Algorithms():
         train['SI']=prob_fit
         return(train,test)
     
-    def SVC_simple(self,parameters):
+    def SVC_simple(parameters):
         sc = StandardScaler()
         nomi=parameters['nomi']
         train=parameters['train']
@@ -75,7 +77,7 @@ class Algorithms():
         train['SI']=prob_fit
         return(train,test)
     
-    def fr_simple(self,parameters):
+    def fr_simple(parameters):
         df=parameters['train']
         test=parameters['testy']
         nomi=parameters['nomi']
@@ -118,7 +120,7 @@ class Algorithms():
         test['SI']=test[nomi].sum(axis=1)
         return(df,test)
     
-    def woe_simple(self,parameters):
+    def woe_simple(parameters):
         df=parameters['train']
         test=parameters['testy']
         nomi=parameters['nomi']
@@ -164,7 +166,7 @@ class Algorithms():
     
     ####################################
     
-    def LR_cv(self,classifier,X,y,train,test):
+    def LR_cv(classifier,X,y,train,test):
         classifier.fit(X[train], y[train])
         prob_predic=classifier.predict_proba(X[test])[::,1]
         regression_coeff=classifier.coef_
@@ -174,24 +176,34 @@ class Algorithms():
         #prob_fit=classifier.predict_proba(X[train])[::,1]
         return prob_predic,coeff
     
-    def DT_cv(self,classifier,X,y,train,test):
+    def DT_cv(classifier,X,y,train,test):
         classifier.fit(X[train], y[train])
         prob_predic=classifier.predict_proba(X[test])[::,1]
-        return prob_predic
+        # regression_coeff=classifier.coef_
+        # regression_intercept=classifier.intercept_
+        # coeff=np.hstack((regression_intercept,regression_coeff[0]))
+        # print(coeff,'regression coeff')
+        return prob_predic,None
     
-    def RF_cv(self,classifier,X,y,train,test):
+    def RF_cv(classifier,X,y,train,test):
         classifier.fit(X[train], y[train])
         prob_predic=classifier.predict_proba(X[test])[::,1]
-        #prob_fit=classifier.predict_proba(X[train])[::,1]
-        return prob_predic
+        # regression_coeff=classifier.coef_
+        # regression_intercept=classifier.intercept_
+        # coeff=np.hstack((regression_intercept,regression_coeff[0]))
+        # print(coeff,'regression coeff')
+        return prob_predic,None
     
-    def SVC_cv(self,classifier,X,y,train,test):
+    def SVC_cv(classifier,X,y,train,test):
         classifier.fit(X[train], y[train])
         prob_predic=classifier.predict_proba(X[test])[::,1]
-        #prob_fit=classifier.predict_proba(X[train])[::,1]
-        return prob_predic
+        regression_coeff=classifier.coef_
+        regression_intercept=classifier.intercept_
+        coeff=np.hstack((regression_intercept,regression_coeff[0]))
+        print(coeff,'regression coeff')
+        return prob_predic,coeff
     
-    def fr_cv(self,train,test,frame,nomes,txt):
+    def fr_cv(train,test,frame,nomes,txt):
         df=frame.loc[train,:]
         test=frame.loc[test,:]
         nomi=nomes
@@ -226,9 +238,9 @@ class Algorithms():
         file.close()
         df['SI']=df[nomi].sum(axis=1)
         test['SI']=test[nomi].sum(axis=1)
-        return(test['SI'])
+        return(test['SI'],None)
     
-    def woe_cv(self,train,test,frame,nomes,txt):
+    def woe_cv(train,test,frame,nomes,txt):
         df=frame.loc[train,:]
         test=frame.loc[test,:]
         nomi=nomes
@@ -270,7 +282,7 @@ class Algorithms():
         file.close()
         df['SI']=df[nomi].sum(axis=1)
         test['SI']=test[nomi].sum(axis=1)
-        return(test['SI'])
+        return(test['SI'],None)
 
     
 

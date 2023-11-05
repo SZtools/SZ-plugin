@@ -32,41 +32,9 @@ __revision__ = '$Format:%H$'
 
 
 #####################
-from qgis.core import (QgsProcessing,
-                       QgsFeatureSink,
-                       QgsProcessingException,
+from qgis.core import (QgsProcessingException,
                        QgsProcessingAlgorithm,
-                       QgsProcessingParameterFeatureSource,
-                       QgsProcessingParameterFeatureSink,
-                       QgsProcessingParameterRasterLayer,
-                       QgsMessageLog,
-                       Qgis,
-                       QgsProcessingMultiStepFeedback,
-                       QgsProcessingParameterNumber,
-                       QgsProcessingParameterFileDestination,
-                       QgsProcessingParameterVectorLayer,
-                       QgsVectorLayer,
-                       QgsRasterLayer,
-                       QgsProject,
-                       QgsField,
-                       QgsFields,
-                       QgsVectorFileWriter,
-                       QgsWkbTypes,
-                       QgsFeature,
-                       QgsGeometry,
-                       QgsPointXY,
-                       QgsProcessingParameterField,
-                       QgsProcessingParameterString,
-                       QgsProcessingParameterFolderDestination,
-                       QgsProcessingParameterField,
-                       QgsProcessingParameterVectorDestination,
-                       QgsProcessingContext
                        )
-
-#####################
-
-
-
 
 from qgis.core import QgsProcessingProvider,QgsProcessingAlgorithm
 from qgis.PyQt.QtCore import QCoreApplication
@@ -74,51 +42,26 @@ from qgis.PyQt.QtGui import QIcon
 from sz_module.images.cqp_resources_rc import qInitResources
 qInitResources()  # necessary to be able to access your images
 
-
 from .scripts.roc import rocAlgorithm
-from .scripts.sz_train_WOE import WOEAlgorithm
-from .scripts.sz_train_WOE_cv import WOEcvAlgorithm
-from .scripts.sz_train_fr import FRAlgorithm
-from .scripts.sz_train_fr_cv import FRcvAlgorithm
-from .scripts.sz_train_LR import LRAlgorithm
-from .scripts.sz_train_LR_cv import LRcvAlgorithm
-from .scripts.sz_train_RF import RFAlgorithm
-from .scripts.sz_train_RF_cv import RFcvAlgorithm
-from .scripts.sz_train_DT import DTAlgorithm
-from .scripts.sz_train_DT_cv import DTcvAlgorithm
-from .scripts.sz_train_SVC import SVCAlgorithm
-from .scripts.sz_train_SVC_cv import SVCcvAlgorithm
-##from .scripts.polytogrid import polytogridAlgorithm
-#from .scripts.pointtogrid import pointtogridAlgorithm
 from .scripts.lsdanalysis import statistic
-#from .scripts.class_counter import classAlgorithm
 from .scripts.cleaning import cleankernelAlgorithm
 from .scripts.graphs_lsdstats_kernel import statistickernel
 from .scripts.randomsampler3 import samplerAlgorithm
 from .scripts.stat31 import rasterstatkernelAlgorithm
-#from .scripts.statmatrix2 import matrixAlgorithm
 from .scripts.classvector import classvAlgorithm
 from .scripts.classvectorw import classvAlgorithmW
 from .scripts.tptn import FPAlgorithm
-
 from .scripts.classcovtxt import classcovtxtAlgorithm
 from .scripts.classcovdeciles import classcovdecAlgorithm
-
-#dict_of_scripts={}
-
 from sz_module.scripts.sz_train_simple import CoreAlgorithm
+from sz_module.scripts.sz_train_cv import CoreAlgorithm_cv
 from sz_module.scripts.algorithms import Algorithms
-
-from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 
-
 class classeProvider(QgsProcessingProvider):
-
-    
 
     def __init__(self):
         """
@@ -151,7 +94,7 @@ class classeProvider(QgsProcessingProvider):
 
         dict_of_scripts={
             'alg': 'woe_cv',
-            'function': WOEcvAlgorithm,
+            'function': CoreAlgorithm_cv,
             'name':'Fit-CV_WOEcv',
             'displayName':'01 WoE Fitting/CrossValid',
             'group':'SI k-fold',
@@ -173,7 +116,7 @@ class classeProvider(QgsProcessingProvider):
 
         dict_of_scripts={
             'alg': 'SVC_cv',
-            'function': SVCcvAlgorithm,
+            'function': CoreAlgorithm_cv,
             'name':'Fit-CV_SVCcv',
             'displayName':'05 SVM Fitting/CrossValid',
             'group':'SI k-fold',
@@ -195,7 +138,7 @@ class classeProvider(QgsProcessingProvider):
 
         dict_of_scripts={
             'alg': 'RF_cv',
-            'function': RFcvAlgorithm,
+            'function': CoreAlgorithm_cv,
             'name':'Fit-CV_RFcv',
             'displayName':'04 RF Fitting/CrossValid',
             'group':'SI k-fold',
@@ -217,7 +160,7 @@ class classeProvider(QgsProcessingProvider):
 
         dict_of_scripts={
             'alg': 'LR_cv',
-            'function': LRcvAlgorithm,
+            'function': CoreAlgorithm_cv,
             'name':'Fit-CV_LRcv',
             'displayName':'03 LR Fitting/CrossValid',
             'group':'SI k-fold',
@@ -239,7 +182,7 @@ class classeProvider(QgsProcessingProvider):
 
         dict_of_scripts={
             'alg': 'fr_cv',
-            'function': FRcvAlgorithm,
+            'function': CoreAlgorithm_cv,
             'name':'Fit-CV_FRcv',
             'displayName':'02 FR Fitting/CrossValid',
             'group':'SI k-fold',
@@ -261,7 +204,7 @@ class classeProvider(QgsProcessingProvider):
 
         dict_of_scripts={
             'alg': 'DT_cv',
-            'function': DTcvAlgorithm,
+            'function': CoreAlgorithm_cv,
             'name':'Fit-CV_DTcv',
             'displayName':'06 DT Fitting/CrossValid',
             'group':'SI k-fold',
@@ -270,40 +213,27 @@ class classeProvider(QgsProcessingProvider):
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
+        self.addAlgorithm(classcovtxtAlgorithm())
+        self.addAlgorithm(classcovdecAlgorithm())
+        ##self.addAlgorithm(polytogridAlgorithm())
+        #self.addAlgorithm(pointtogridAlgorithm())
+        self.addAlgorithm(statistic())
 
-        # self.addAlgorithm(WOEAlgorithm())
-        # self.addAlgorithm(WOEcvAlgorithm())
-        # self.addAlgorithm(FRAlgorithm())
-        # self.addAlgorithm(FRcvAlgorithm())
-        # self.addAlgorithm(LRAlgorithm())
-        # self.addAlgorithm(LRcvAlgorithm())
-        # self.addAlgorithm(DTAlgorithm())
-        # self.addAlgorithm(DTcvAlgorithm())
-        # self.addAlgorithm(SVCAlgorithm())
-        # self.addAlgorithm(SVCcvAlgorithm())
-        # self.addAlgorithm(RFAlgorithm())
-        # self.addAlgorithm(RFcvAlgorithm())
-        # self.addAlgorithm(classcovtxtAlgorithm())
-        # self.addAlgorithm(classcovdecAlgorithm())
-        # ##self.addAlgorithm(polytogridAlgorithm())
-        # #self.addAlgorithm(pointtogridAlgorithm())
-        # self.addAlgorithm(statistic())
+        #self.addAlgorithm(classAlgorithm())
+        #self.addAlgorithm(rocAlgorithm())
+        #self.addAlgorithm(matrixAlgorithm())
 
-        # #self.addAlgorithm(classAlgorithm())
-        # #self.addAlgorithm(rocAlgorithm())
-        # #self.addAlgorithm(matrixAlgorithm())
+        self.addAlgorithm(cleankernelAlgorithm())
+        self.addAlgorithm(statistickernel())
+        self.addAlgorithm(samplerAlgorithm())
+        self.addAlgorithm(rasterstatkernelAlgorithm())
 
-        # self.addAlgorithm(cleankernelAlgorithm())
-        # self.addAlgorithm(statistickernel())
-        # self.addAlgorithm(samplerAlgorithm())
-        # self.addAlgorithm(rasterstatkernelAlgorithm())
+        self.addAlgorithm(classvAlgorithm())
+        self.addAlgorithm(classvAlgorithmW())
+        self.addAlgorithm(FPAlgorithm())
 
-        # self.addAlgorithm(classvAlgorithm())
-        # self.addAlgorithm(classvAlgorithmW())
-        # self.addAlgorithm(FPAlgorithm())
-
-        # # add additional algorithms here
-        # # self.addAlgorithm(MyOtherAlgorithm())
+        # add additional algorithms here
+        # self.addAlgorithm(MyOtherAlgorithm())
 
     def id(self):
         """
@@ -374,6 +304,12 @@ class Instance(QgsProcessingAlgorithm):
             'LR_cv':LogisticRegression(),
             'fr_cv':None,
             'DT_cv':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
+            'woe_simple':None,
+            'SCV_simple':None,
+            'RF_simple':None,
+            'LR_simple':None,
+            'fr_simple':None,
+            'DT_simple':None,
         }
 
     def tr(self, string):
@@ -402,6 +338,9 @@ class Instance(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         result={}
-        result=self.dict_of_scripts['function'].process(parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
+        print('printali',self.algorithms[self.dict_of_scripts['alg']])
+        print('second', self.classifier[self.dict_of_scripts['alg']])
+        print(self.dict_of_scripts['function'])
+        result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
         return result
         

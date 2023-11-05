@@ -33,73 +33,26 @@ __date__ = '2021-11-01'
 __copyright__ = '(C) 2021 by Giacomo Titti'
 import sys
 sys.setrecursionlimit(10000)
-from qgis.PyQt.QtCore import QCoreApplication,QVariant
 from qgis.core import (QgsProcessing,
-                       QgsFeatureSink,
                        QgsProcessingException,
-                       QgsProcessingAlgorithm,
-                       QgsProcessingParameterFeatureSource,
-                       QgsProcessingParameterFeatureSink,
-                       QgsProcessingParameterRasterLayer,
-                       QgsMessageLog,
-                       Qgis,
                        QgsProcessingMultiStepFeedback,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterVectorLayer,
                        QgsVectorLayer,
-                       QgsRasterLayer,
-                       QgsProject,
-                       QgsField,
-                       QgsFields,
-                       QgsVectorFileWriter,
-                       QgsWkbTypes,
-                       QgsFeature,
-                       QgsGeometry,
-                       QgsPointXY,
                        QgsProcessingParameterField,
-                       QgsProcessingParameterString,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterField,
-                       QgsProcessingParameterVectorDestination,
                        QgsProcessingContext
                        )
 from qgis.core import *
 from qgis.utils import iface
-from qgis import processing
-from osgeo import gdal,ogr,osr
-import numpy as np
-import math
-import operator
-import random
 from qgis import *
-# ##############################
-import matplotlib.pyplot as plt
-import csv
 from processing.algs.gdal.GdalUtils import GdalUtils
-#import plotly.express as px
-#import chart_studio
-import plotly.offline
-import plotly.graph_objs as go
-#import geopandas as gd
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_curve, auc
-from sklearn.metrics import roc_auc_score
-from scipy import interpolate
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import cohen_kappa_score
-
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import StratifiedKFold
-
 import tempfile
 from sz_module.utils import SZ_utils
 
-
-
-class LRcvAlgorithm():
+class CoreAlgorithm_cv():
 
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
@@ -163,7 +116,7 @@ class LRcvAlgorithm():
             'fold':parameters['folder']
         }
 
-        outputs['prob'],outputs['test_ind']=SZ_utils.cross_validation(parameters,outputs['df'],outputs['nomi'],classifier)
+        outputs['prob'],outputs['test_ind']=SZ_utils.cross_validation(alg_params,outputs['df'],outputs['nomi'],algorithm,classifier)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
