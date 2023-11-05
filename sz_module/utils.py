@@ -1,11 +1,30 @@
 import subprocess
 import os
-from qgis.gui import QgsMessageBar
 from qgis.core import Qgis
 from qgis.utils import iface
 import sys
+sys.setrecursionlimit(10000)
 import tempfile
 from datetime import datetime
+from qgis.core import QgsVectorLayer
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from qgis.PyQt.QtCore import QVariant
+from qgis.core import *
+from qgis import *
+# ##############################
+import matplotlib.pyplot as plt
+from processing.algs.gdal.GdalUtils import GdalUtils
+import plotly.graph_objs as go
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_auc_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedKFold
+from sz_module.scripts.algorithms import Algorithms
+import csv
 
 class first_installation():
 
@@ -31,7 +50,7 @@ class first_installation():
                         #iface.messageBar().pushMessage('SZ:',f'{library} is installed!',Qgis.Success)
                         #MessageHandler.success(f'QGINLA: {library} is installed!')
                         #iface.messageBar().pushMessage("QGINLA:",f'installing {library}...',Qgis.Info, duration=5)
-                        first_installation.install(iface,library,version)
+                        first_installation.install(library,version)
                     else:
                         print(installed_version,version)
                         if str(installed_version)==str(version):
@@ -108,3 +127,267 @@ class first_installation():
             pass
 
         return None
+    
+
+class SZ_utils():
+
+    def load_simple(directory,parameters):
+        layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
+        crs=layer.crs()
+        campi=[]
+        for field in layer.fields():
+            campi.append(field.name())
+        campi.append('geom')
+        gdp=pd.DataFrame(columns=campi,dtype=float)
+        features = layer.getFeatures()
+        count=0
+        feat=[]
+        for feature in features:
+            attr=feature.attributes()
+            geom = feature.geometry()
+            feat=attr+[geom.asWkt()]
+            gdp.loc[len(gdp)] = feat
+            count=+ 1
+        gdp.to_csv(directory+'/file.csv')
+        del gdp
+        gdp=pd.read_csv(directory+'/file.csv')
+        gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
+        df=gdp[parameters['field1']]
+        nomi=list(df.head())
+        lsd=gdp[parameters['lsd']]
+        lsd[lsd>0]=1
+        df['y']=lsd#.astype(int)
+        df['ID']=gdp['ID']
+        df['geom']=gdp['geom']
+        df=df.dropna(how='any',axis=0)
+        X=[parameters['field1']]
+        if parameters['testN']==0:
+            train=df
+            test=pd.DataFrame(columns=nomi,dtype=float)
+        else:
+            # split the data into train and test set
+            per=int(np.ceil(df.shape[0]*parameters['testN']/100))
+            train, test = train_test_split(df, test_size=per, random_state=42, shuffle=True)
+        return train, test, nomi,crs
+    
+    def load_cv(directory,parameters):
+        layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
+        crs=layer.crs()
+        campi=[]
+        for field in layer.fields():
+            campi.append(field.name())
+        campi.append('geom')
+        gdp=pd.DataFrame(columns=campi,dtype=float)
+        features = layer.getFeatures()
+        count=0
+        feat=[]
+        for feature in features:
+            attr=feature.attributes()
+            #print(attr)
+            geom = feature.geometry()
+            #print(type(geom.asWkt()))
+            feat=attr+[geom.asWkt()]
+            #print(feat)
+            gdp.loc[len(gdp)] = feat
+            #gdp = gdp.append(feat, ignore_index=True)
+            count=+ 1
+        gdp.to_csv(directory+'/file.csv')
+        del gdp
+        gdp=pd.read_csv(directory+'/file.csv')
+        #print(feat)
+        #print(gdp['S'].dtypes)
+        gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
+        df=gdp[parameters['field1']]
+        nomi=list(df.head())
+        #print(list(df['Sf']),'1')
+        lsd=gdp[parameters['lsd']]
+        lsd[lsd>0]=1
+        df['y']=lsd#.astype(int)
+        df['ID']=gdp['ID']
+        df['geom']=gdp['geom']
+        df=df.dropna(how='any',axis=0)
+        return(df,nomi,crs)
+    
+
+    def stampfit(parameters):
+        df=parameters['df']
+        y_true=df['y']
+        scores=df['SI']
+        ################################figure
+        fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
+        norm=(scores-scores.min())/(scores.max()-scores.min())
+        r=roc_auc_score(y_true, scores)
+
+        fig=plt.figure()
+        lw = 2
+        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f)' %r)
+        plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC')
+        plt.legend(loc="lower right")
+        try:
+            fig.savefig(parameters['OUT']+'/fig01.png')
+        except:
+            os.mkdir(parameters['OUT'])
+            fig.savefig(parameters['OUT']+'/fig01.png')
+
+    def stamp_cv(parameters):
+        df=parameters['df']
+        test_ind=parameters['test_ind']
+        y_v=df['y']
+        scores_v=df['SI']
+        lw = 2
+        ################################figure
+        fig=plt.figure()
+        plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
+        for i in range(len(test_ind)):
+            fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
+            aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
+            print('ROC '+ str(i) +' AUC=',aucv)
+            plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' (AUC = %0.2f)' %aucv)
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.legend(loc="lower right")
+        #plt.show()
+        print('ROC curve figure = ',parameters['OUT']+'/fig02.pdf')
+        try:
+            fig.savefig(parameters['OUT']+'/fig02.pdf')
+        except:
+            os.mkdir(parameters['OUT'])
+            fig.savefig(parameters['OUT']+'/fig02.pdf')
+
+    
+    def stamp_simple(parameters):
+        train=parameters['train']
+        y_t=train['y']
+        scores_t=train['SI']
+
+        test=parameters['test']
+        y_v=test['y']
+        scores_v=test['SI']
+        lw = 2
+        
+        fprv, tprv, treshv = roc_curve(y_v,scores_v)
+        fprt, tprt, tresht = roc_curve(y_t,scores_t)
+
+        aucv=roc_auc_score(y_v, scores_v)
+        auct=roc_auc_score(y_t, scores_t)
+        normt=(scores_t-scores_t.min())/(scores_t.max()-scores_t.min())
+        normv=(scores_v-scores_v.min())/(scores_v.max()-scores_v.min())
+
+        fig=plt.figure()
+        plt.plot(fprv, tprv, color='green',lw=lw, label= 'Prediction performance (AUC = %0.2f)' %aucv)
+        plt.plot(fprt, tprt, color='red',lw=lw, label= 'Success performance (AUC = %0.2f)' %auct)
+        plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC')
+        plt.legend(loc="lower right")
+        #plt.show()
+        try:
+            fig.savefig(parameters['OUT']+'/fig02.pdf')
+        except:
+            os.mkdir(parameters['OUT'])
+            fig.savefig(parameters['OUT']+'/fig02.pdf')
+
+    def save(parameters):
+
+        df=parameters['df']
+        nomi=list(df.head())
+        fields = QgsFields()
+
+        for field in nomi:
+            if field=='ID':
+                fields.append(QgsField(field, QVariant.Int))
+            if field=='geom':
+                continue
+            if field=='y':
+                fields.append(QgsField(field, QVariant.Int))
+            else:
+                fields.append(QgsField(field, QVariant.Double))
+
+        transform_context = QgsProject.instance().transformContext()
+        save_options = QgsVectorFileWriter.SaveVectorOptions()
+        save_options.driverName = 'GPKG'
+        save_options.fileEncoding = 'UTF-8'
+
+        writer = QgsVectorFileWriter.create(
+          parameters['OUT'],
+          fields,
+          QgsWkbTypes.Polygon,
+          parameters['crs'],
+          transform_context,
+          save_options
+        )
+
+        if writer.hasError() != QgsVectorFileWriter.NoError:
+            print("Error when creating shapefile: ",  writer.errorMessage())
+        for i, row in df.iterrows():
+            fet = QgsFeature()
+            fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
+            fet.setAttributes(list(map(float,list(df.loc[ i, df.columns != 'geom']))))
+            writer.addFeature(fet)
+
+        del writer
+
+    def addmap(parameters):
+        context=parameters()
+        fileName = parameters['trainout']
+        layer = QgsVectorLayer(fileName,"train","ogr")
+        subLayers =layer.dataProvider().subLayers()
+
+        for subLayer in subLayers:
+            name = subLayer.split('!!::!!')[1]
+            print(name,'name')
+            uri = "%s|layername=%s" % (fileName, name,)
+            print(uri,'uri')
+            # Create layer
+            sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
+            if not sub_vlayer.isValid():
+                print('layer failed to load')
+            # Add layer to map
+            context.temporaryLayerStore().addMapLayer(sub_vlayer)
+            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
+
+    def cross_validation(parameters,df,nomi,algorithm,classifier):
+        x=df[parameters['field1']]
+        y=df['y']
+        sc = StandardScaler()#####scaler
+        X = sc.fit_transform(x)
+        train_ind={}
+        test_ind={}
+        prob={}
+        cofl=[]
+        df["SI"] = np.nan
+        if parameters['testN']>1:
+            cv = StratifiedKFold(n_splits=parameters['testN'])
+            for i, (train, test) in enumerate(cv.split(X, y)):
+                train_ind[i]=train
+                test_ind[i]=test
+                prob[i],coeff=algorithm(classifier,X,y,train,test)
+                df.loc[test,'SI']=prob[i]
+                cofl.append(coeff)
+        elif parameters['testN']==1:
+            train=np.arange(len(y))
+            test=np.arange(len(y))
+            prob[0],coeff=algorithm(classifier,X,y,train,test)
+            df.loc[test,'SI']=prob[0]
+            test_ind[0]=test
+            cofl.append(coeff)
+        if not os.path.exists(parameters['fold']):
+            os.mkdir(parameters['fold'])
+        if not coeff==None:
+            with open(parameters['fold']+'/r_coeffs.csv', 'w') as f:
+                write = csv.writer(f)
+                ll=['intercept']
+                lll=ll+nomi
+                write.writerow(lll)
+                write.writerows(cofl)
+        return prob,test_ind
