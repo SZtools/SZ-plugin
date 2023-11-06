@@ -25,6 +25,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold
 from sz_module.scripts.algorithms import Algorithms
 import csv
+from pygam import LogisticGAM, s, f
+
 
 class first_installation():
 
@@ -391,3 +393,16 @@ class SZ_utils():
                 write.writerow(lll)
                 write.writerows(cofl)
         return prob,test_ind
+    
+    def GAM_formula(parameters,spline):
+        GAM_sel = parameters['nomi']
+        spl = spline
+        splines = f(0)
+        dtypes = []
+        for i in range(len(GAM_sel)):
+            splines = splines + s(i, n_splines=spl)
+            if GAM_sel in parameters['continuous']:
+                dtypes = dtypes + 'numerical'
+            elif GAM_sel in parameters['categorical']:
+                dtypes = dtypes + 'categorical'
+        return splines,dtypes

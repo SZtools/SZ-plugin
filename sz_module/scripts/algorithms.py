@@ -6,6 +6,9 @@ from sklearn.svm import SVC
 import pandas as pd
 import numpy as np
 import math
+from pygam import LogisticGAM
+import pickle
+
 
 class Algorithms():
 
@@ -163,6 +166,46 @@ class Algorithms():
         df['SI']=df[nomi].sum(axis=1)
         test['SI']=test[nomi].sum(axis=1)
         return(df,test)
+    
+    # def GAM(parameters):
+    #     nomi=parameters['nomi']
+    #     X = parameters['df'][nomi].to_numpy()
+    #     y = parameters['df'].PresAbs.to_numpy()
+    #     lams = np.empty(len(nomi))
+    #     lams.fill(0.5)
+    #     gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
+    #     gam.gridsearch(X, y, lam=lams)
+        
+
+    #     # save
+    #     filename = folder_models+'/cv_fold_'+hazard+'_'+str(n_fold)+'.pkl'
+    #     with open(filename, 'wb') as filez:
+    #         pickle.dump(gam, filez)
+    #     return gam
+    
+    def GAM_simple(parameters):
+        sc = StandardScaler()
+        nomi=parameters['nomi']
+        train=parameters['train']
+        test=parameters['testy']
+        X_train = sc.fit_transform(train[nomi])
+
+        lams = np.empty(len(nomi))
+        lams.fill(0.5)
+        gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
+        gam.gridsearch(X_train, train['y'], lam=lams)
+        prob_fit=gam.predict_proba(X_train)[::,1]
+
+        if parameters['testN']>0:
+            X_test = sc.transform(test[nomi])
+            prob_predic=gam.predict_proba(X_test)[::,1]
+            test['SI']=prob_predic
+        train['SI']=prob_fit
+
+        filename = parameters['fold']+'/gam_coeff.pkl'
+        with open(filename, 'wb') as filez:
+            pickle.dump(gam, filez)
+        return(train,test)
     
     ####################################
     

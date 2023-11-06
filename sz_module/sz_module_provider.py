@@ -55,6 +55,7 @@ from .scripts.classcovtxt import classcovtxtAlgorithm
 from .scripts.classcovdeciles import classcovdecAlgorithm
 from sz_module.scripts.sz_train_simple import CoreAlgorithm
 from sz_module.scripts.sz_train_cv import CoreAlgorithm_cv
+from sz_module.scripts.sz_train_simple_GAM import CoreAlgorithmGAM
 from sz_module.scripts.algorithms import Algorithms
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -213,6 +214,17 @@ class classeProvider(QgsProcessingProvider):
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
+        dict_of_scripts={
+            'alg': 'GAM_simple',
+            'function': CoreAlgorithmGAM,
+            'name':'Fit-CV_GAM',
+            'displayName':'07 GAM Fitting/CrossValid',
+            'group':'SI',
+            'groupId':'SI',
+            'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
         self.addAlgorithm(classcovtxtAlgorithm())
         self.addAlgorithm(classcovdecAlgorithm())
         ##self.addAlgorithm(polytogridAlgorithm())
@@ -271,8 +283,10 @@ class classeProvider(QgsProcessingProvider):
 class Instance(QgsProcessingAlgorithm):
     INPUT = 'covariates'
     STRING = 'field1'
+    STRING1 = 'field2'
     STRING2 = 'fieldlsd'
     NUMBER = 'testN'
+    NUMBER1 = 'num1'
     OUTPUT = 'OUTPUT'
     OUTPUT1 = 'OUTPUT1'
     OUTPUT2 = 'OUTPUT2'
