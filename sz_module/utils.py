@@ -358,7 +358,9 @@ class SZ_utils():
             context.temporaryLayerStore().addMapLayer(sub_vlayer)
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
 
-    def cross_validation(parameters,df,nomi,algorithm,classifier):
+    def cross_validation(parameters,algorithm,classifier):
+        df=parameters['df']
+        nomi=parameters['nomi']
         x=df[parameters['field1']]
         y=df['y']
         sc = StandardScaler()#####scaler
@@ -373,7 +375,10 @@ class SZ_utils():
             for i, (train, test) in enumerate(cv.split(X, y)):
                 train_ind[i]=train
                 test_ind[i]=test
-                prob[i],coeff=algorithm(classifier,X,y,train,test)
+                if algorithm==Algorithms.GAM_cv:
+                    prob[i],coeff=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi)
+                else:
+                    prob[i],coeff=algorithm(classifier,X,y,train,test)
                 df.loc[test,'SI']=prob[i]
                 cofl.append(coeff)
         elif parameters['testN']==1:
@@ -406,3 +411,5 @@ class SZ_utils():
             elif GAM_sel in parameters['categorical']:
                 dtypes = dtypes + 'categorical'
         return splines,dtypes
+    
+    

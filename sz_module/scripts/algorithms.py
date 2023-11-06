@@ -8,6 +8,7 @@ import numpy as np
 import math
 from pygam import LogisticGAM
 import pickle
+import os
 
 
 class Algorithms():
@@ -201,8 +202,10 @@ class Algorithms():
             prob_predic=gam.predict_proba(X_test)[::,1]
             test['SI']=prob_predic
         train['SI']=prob_fit
-
+        if not os.path.exists(parameters['fold']):
+            os.mkdir(parameters['fold'])
         filename = parameters['fold']+'/gam_coeff.pkl'
+
         with open(filename, 'wb') as filez:
             pickle.dump(gam, filez)
         return(train,test)
@@ -326,6 +329,14 @@ class Algorithms():
         df['SI']=df[nomi].sum(axis=1)
         test['SI']=test[nomi].sum(axis=1)
         return(test['SI'],None)
+    
+    def GAM_cv(classifier,X,y,train,test,splines=None,dtypes=None,nomi=None):
+        lams = np.empty(len(nomi))
+        lams.fill(0.5)
+        gam = classifier(splines, dtypes)
+        gam.gridsearch(X[train], y[train], lam=lams)
+        prob_predic=gam.predict_proba(X[test])[::,1]
+        return prob_predic,None
 
     
 

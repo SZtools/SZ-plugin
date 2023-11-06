@@ -52,12 +52,14 @@ from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
 from sz_module.utils import SZ_utils
 
-class CoreAlgorithm_cv():
+class CoreAlgorithmGAM_cv():
 
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
-        self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
+        self.addParameter(QgsProcessingParameterField(self.STRING, 'Continuous independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
+        self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
+        self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Splines grade'), type=QgsProcessingParameterNumber.Integer,defaultValue=10))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV (1 to fit or > 1 to cross-validate)'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
@@ -77,14 +79,21 @@ class CoreAlgorithm_cv():
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
 
-
         parameters['field1'] = self.parameterAsFields(parameters, self.STRING, context)
         if parameters['field1'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING))
+        
+        parameters['field2'] = self.parameterAsFields(parameters, self.STRING1, context)
+        if parameters['field2'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING1))
 
         parameters['fieldlsd'] = self.parameterAsString(parameters, self.STRING2, context)
         if parameters['fieldlsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING2))
+        
+        parameters['num1'] = self.parameterAsInt(parameters, self.NUMBER1, context)
+        if parameters['num1'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER1))
 
         parameters['testN'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['testN'] is None:
@@ -118,7 +127,7 @@ class CoreAlgorithm_cv():
             'df':outputs['df']
         }
 
-        outputs['prob'],outputs['test_ind']=SZ_utils.cross_validation(alg_params,algorithm,classifier)
+        outputs['prob'],outputs['test_ind']=SZ_utils.cross_validation_GAM(alg_params,algorithm,classifier)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():

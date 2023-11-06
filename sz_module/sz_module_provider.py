@@ -61,6 +61,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
+from pygam import LogisticGAM
 
 class classeProvider(QgsProcessingProvider):
 
@@ -309,6 +310,8 @@ class Instance(QgsProcessingAlgorithm):
             'fr_cv':Algorithms.fr_cv,
             'DT_simple':Algorithms.DT_simple,
             'DT_cv':Algorithms.DT_cv,
+            'GAM_simple':Algorithms.GAM_simple,
+            'GAM_cv':Algorithms.GAM_cv,
         }
 
         self.classifier={
@@ -318,12 +321,14 @@ class Instance(QgsProcessingAlgorithm):
             'LR_cv':LogisticRegression(),
             'fr_cv':None,
             'DT_cv':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
+            'GAM_cv':LogisticGAM,
             'woe_simple':None,
             'SCV_simple':None,
             'RF_simple':None,
             'LR_simple':None,
             'fr_simple':None,
             'DT_simple':None,
+            'GAM_simple':None,
         }
 
     def tr(self, string):
@@ -352,9 +357,6 @@ class Instance(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         result={}
-        print('printali',self.algorithms[self.dict_of_scripts['alg']])
-        print('second', self.classifier[self.dict_of_scripts['alg']])
-        print(self.dict_of_scripts['function'])
         result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
         return result
         
