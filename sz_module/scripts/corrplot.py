@@ -55,7 +55,7 @@ import pandas as pd
 import tempfile
 import seaborn as sns
 
-class LRAlgorithm(QgsProcessingAlgorithm):
+class CorrAlgorithm(QgsProcessingAlgorithm):
     INPUT = 'covariates'
     STRING = 'field1'
     OUTPUT3 = 'OUTPUT3'
@@ -64,13 +64,13 @@ class LRAlgorithm(QgsProcessingAlgorithm):
         return QCoreApplication.translate('Processing', string)
 
     def createInstance(self):
-        return LRAlgorithm()
+        return CorrAlgorithm()
 
     def name(self):
         return 'Correlation plot'
 
     def displayName(self):
-        return self.tr('10 Correlation plot')
+        return self.tr('08 Correlation plot')
 
     def group(self):
         return self.tr('Data preparation')
@@ -113,7 +113,7 @@ class LRAlgorithm(QgsProcessingAlgorithm):
             'field1': parameters['field1'],
         }
 
-        outputs['df'],outputs['nomi'],outputs['crs']=self.load(self.f,alg_params)
+        outputs['df'],outputs['nomi'],outputs['crs']=self.load(alg_params)
         
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
@@ -135,7 +135,7 @@ class LRAlgorithm(QgsProcessingAlgorithm):
         return results
     
 
-    def load_cv(self,parameters):
+    def load(self,parameters):
         layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
         crs=layer.crs()
         campi=[]

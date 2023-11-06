@@ -50,7 +50,7 @@ from qgis.utils import iface
 from qgis import *
 from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
-from sz_module.utils import SZ_utils
+from sz_module.scripts.utils import SZ_utils
 
 class CoreAlgorithm_cv():
 

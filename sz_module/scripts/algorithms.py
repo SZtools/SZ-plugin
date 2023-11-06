@@ -337,6 +337,8 @@ class Algorithms():
         gam.gridsearch(X[train], y[train], lam=lams)
         prob_predic=gam.predict_proba(X[test])[::,1]
         return prob_predic,None
+    
+    
 
     
 

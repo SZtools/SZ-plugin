@@ -52,7 +52,7 @@ from processing.algs.gdal.GdalUtils import GdalUtils
 import plotly.graph_objs as go
 import pandas as pd
 import tempfile
-from sz_module.utils import SZ_utils
+from sz_module.scripts.utils import SZ_utils
 from sz_module.scripts.algorithms import Algorithms
 
 class CoreAlgorithm():

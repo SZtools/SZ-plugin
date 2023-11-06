@@ -53,9 +53,11 @@ from .scripts.classvectorw import classvAlgorithmW
 from .scripts.tptn import FPAlgorithm
 from .scripts.classcovtxt import classcovtxtAlgorithm
 from .scripts.classcovdeciles import classcovdecAlgorithm
+from sz_module.scripts.corrplot import CorrAlgorithm
 from sz_module.scripts.sz_train_simple import CoreAlgorithm
 from sz_module.scripts.sz_train_cv import CoreAlgorithm_cv
 from sz_module.scripts.sz_train_simple_GAM import CoreAlgorithmGAM
+from sz_module.scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
 from sz_module.scripts.algorithms import Algorithms
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -226,6 +228,17 @@ class classeProvider(QgsProcessingProvider):
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
+        dict_of_scripts={
+            'alg': 'GAM_cv',
+            'function': CoreAlgorithmGAM_cv,
+            'name':'Fit-CV_GAMcv',
+            'displayName':'07 GAM Fitting/CrossValid',
+            'group':'SI k-fold',
+            'groupId':'SI k-fold',
+            'shortHelpString':"This function applyGeneralized Attitive Model to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
         self.addAlgorithm(classcovtxtAlgorithm())
         self.addAlgorithm(classcovdecAlgorithm())
         ##self.addAlgorithm(polytogridAlgorithm())
@@ -240,6 +253,7 @@ class classeProvider(QgsProcessingProvider):
         self.addAlgorithm(statistickernel())
         self.addAlgorithm(samplerAlgorithm())
         self.addAlgorithm(rasterstatkernelAlgorithm())
+        self.addAlgorithm(CorrAlgorithm())
 
         self.addAlgorithm(classvAlgorithm())
         self.addAlgorithm(classvAlgorithmW())
