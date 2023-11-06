@@ -115,18 +115,29 @@ class CoreAlgorithmGAM():
         
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field1'],
+            'field1': parameters['field1']+parameters['field2'],
             'lsd' : parameters['fieldlsd'],
             'testN':parameters['testN']
         }
         outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs']=SZ_utils.load_simple(self.f,alg_params)
 
         alg_params = {
+            'continuous': parameters['field1'],
+            'categorical': parameters['field2'],
+            'nomi': outputs['nomes'],
+            'spline': parameters['num1']
+        }
+        outputs['splines'],outputs['dtypes']=SZ_utils.GAM_formula(parameters)    
+
+
+        alg_params = {
             'train': outputs['train'],
             'testy': outputs['testy'],
             'nomi':outputs['nomes'],
             'testN':parameters['testN'],
-            'fold':parameters['folder']
+            'fold':parameters['folder'],
+            'splines':outputs['splines'],
+            'dtypes':outputs['dtypes']
         }
         outputs['trainsi'],outputs['testsi']=algorithm(alg_params)
 

@@ -394,9 +394,9 @@ class SZ_utils():
                 write.writerows(cofl)
         return prob,test_ind
     
-    def GAM_formula(parameters,spline):
+    def GAM_formula(parameters):
         GAM_sel = parameters['nomi']
-        spl = spline
+        spl = parameters['spline']
         splines = f(0)
         dtypes = []
         for i in range(len(GAM_sel)):
