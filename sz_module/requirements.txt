@@ -4,5 +4,5 @@ pandas==0.22.0
 numpy==1.13.3
 scipy==1.2.3
 pygam
-scikit-learn
 seaborn
+scikit-learn

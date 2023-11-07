@@ -36,7 +36,7 @@ class first_installation():
                         first_installation.install(library,version)
                     else:
                         print(installed_version,version)
-                        if str(installed_version)==str(version):
+                        if str(installed_version)==str(version) or version==None:
                             iface.messageBar().pushMessage("SZ:",f'{library} is installed!',Qgis.Success)
                             #MessageHandler.success(f'QGINLA: {library} is installed!')
                         else:
@@ -49,7 +49,6 @@ class first_installation():
 
     def install(library, version=None):
         # Define the command you want to run
-        print(library,version,'dai')
         if version is None:
             command = ['pip', 'install', library]
         else:
