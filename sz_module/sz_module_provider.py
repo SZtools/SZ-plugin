@@ -63,7 +63,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-from pygam import LogisticGAM
+#from pygam import LogisticGAM
 
 class classeProvider(QgsProcessingProvider):
 
@@ -226,7 +226,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'SI',
             'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        #self.addAlgorithm(Instance(dict_of_scripts))
 
         dict_of_scripts={
             'alg': 'GAM_cv',
@@ -237,7 +237,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'SI k-fold',
             'shortHelpString':"This function applyGeneralized Attitive Model to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        #elf.addAlgorithm(Instance(dict_of_scripts))
 
         self.addAlgorithm(classcovtxtAlgorithm())
         self.addAlgorithm(classcovdecAlgorithm())
@@ -253,7 +253,7 @@ class classeProvider(QgsProcessingProvider):
         self.addAlgorithm(statistickernel())
         self.addAlgorithm(samplerAlgorithm())
         self.addAlgorithm(rasterstatkernelAlgorithm())
-        self.addAlgorithm(CorrAlgorithm())
+        #self.addAlgorithm(CorrAlgorithm())
 
         self.addAlgorithm(classvAlgorithm())
         self.addAlgorithm(classvAlgorithmW())
@@ -336,7 +336,7 @@ class Instance(QgsProcessingAlgorithm):
             'LR_cv':LogisticRegression(),
             'fr_cv':None,
             'DT_cv':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
-            'GAM_cv':LogisticGAM,
+            #'GAM_cv':LogisticGAM,
             'woe_simple':None,
             'SCV_simple':None,
             'RF_simple':None,

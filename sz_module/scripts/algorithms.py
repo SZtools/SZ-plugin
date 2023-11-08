@@ -6,7 +6,7 @@ from sklearn.svm import SVC
 import pandas as pd
 import numpy as np
 import math
-from pygam import LogisticGAM
+#from pygam import LogisticGAM
 import pickle
 import os
 

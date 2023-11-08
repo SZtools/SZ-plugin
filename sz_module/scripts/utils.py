@@ -10,7 +10,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
 from sz_module.scripts.algorithms import Algorithms
 import csv
-from pygam import LogisticGAM, s, f
+#from pygam import LogisticGAM, s, f
 from qgis.core import (QgsVectorLayer,
                        QgsFields,
                        QgsField,
@@ -26,7 +26,7 @@ import pandas as pd
 from qgis.PyQt.QtCore import QVariant
 import os
 from collections import OrderedDict
-from pygam import terms
+#from pygam import terms
 
 
 class SZ_utils():
