@@ -56,10 +56,11 @@ class CoreAlgorithmGAM_cv():
 
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
-        self.addParameter(QgsProcessingParameterField(self.STRING, 'Continuous independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
-        self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
-        self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
+        self.addParameter(QgsProcessingParameterField(self.STRING3, 'Linear independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
+        self.addParameter(QgsProcessingParameterField(self.STRING, 'Continuous independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Splines grade'), type=QgsProcessingParameterNumber.Integer,defaultValue=10))
+        self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
+        self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV (1 to fit or > 1 to cross-validate)'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
@@ -86,6 +87,10 @@ class CoreAlgorithmGAM_cv():
         parameters['field2'] = self.parameterAsFields(parameters, self.STRING1, context)
         if parameters['field2'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING1))
+        
+        parameters['field3'] = self.parameterAsFields(parameters, self.STRING3, context)
+        if parameters['field3'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING3))
 
         parameters['fieldlsd'] = self.parameterAsString(parameters, self.STRING2, context)
         if parameters['fieldlsd'] is None:
@@ -109,13 +114,27 @@ class CoreAlgorithmGAM_cv():
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field1'],
+            'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'lsd' : parameters['fieldlsd'],
         }
 
-        outputs['df'],outputs['nomi'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
+        outputs['df'],outputs['nomes'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
         feedback.setCurrentStep(1)
+        if feedback.isCanceled():
+            return {}
+        
+        alg_params = {
+            'linear': parameters['field3'],
+            'continuous': parameters['field1'],
+            'categorical': parameters['field2'],
+            'nomi': outputs['nomes'],
+            'spline': parameters['num1']
+        }
+
+        outputs['splines'],outputs['dtypes']=SZ_utils.GAM_formula(alg_params)
+
+        feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
 
@@ -123,13 +142,15 @@ class CoreAlgorithmGAM_cv():
             'field1': parameters['field1'],
             'testN':parameters['testN'],
             'fold':parameters['folder'],
-            'nomi':outputs['nomi'],
-            'df':outputs['df']
+            'nomi':outputs['nomes'],
+            'df':outputs['df'],
+            'splines':outputs['splines'],
+            'dtypes':outputs['dtypes']
         }
 
-        outputs['prob'],outputs['test_ind']=SZ_utils.cross_validation_GAM(alg_params,algorithm,classifier)
+        outputs['prob'],outputs['test_ind']=SZ_utils.cross_validation(alg_params,algorithm,classifier)
 
-        feedback.setCurrentStep(2)
+        feedback.setCurrentStep(3)
         if feedback.isCanceled():
             return {}
 
@@ -141,7 +162,7 @@ class CoreAlgorithmGAM_cv():
             }
             SZ_utils.save(alg_params)
 
-        feedback.setCurrentStep(3)
+        feedback.setCurrentStep(4)
         if feedback.isCanceled():
             return {}
 
@@ -152,7 +173,7 @@ class CoreAlgorithmGAM_cv():
         }
         SZ_utils.stamp_cv(alg_params)
 
-        feedback.setCurrentStep(4)
+        feedback.setCurrentStep(5)
         if feedback.isCanceled():
             return {}
 

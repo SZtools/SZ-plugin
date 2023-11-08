@@ -288,7 +288,7 @@ class SZ_utils():
             cofl.append(coeff)
         if not os.path.exists(parameters['fold']):
             os.mkdir(parameters['fold'])
-        if not coeff==None:
+        if len(coeff)>0:
             with open(parameters['fold']+'/r_coeffs.csv', 'w') as f:
                 write = csv.writer(f)
                 ll=['intercept']

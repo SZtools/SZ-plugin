@@ -335,7 +335,11 @@ class Algorithms():
         lams = np.empty(len(nomi))
         lams.fill(0.5)
         gam = classifier(splines, dtypes)
-        gam.gridsearch(X[train], y[train], lam=lams)
+        print( dtypes)
+        print(np.shape(X[train,]))
+        print( np.shape(y[train]))
+        print(lams)
+        gam.gridsearch(X[train,], y[train], lam=lams)
         prob_predic=gam.predict_proba(X[test])#[::,1]
         return prob_predic,None
     
