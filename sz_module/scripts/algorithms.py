@@ -193,13 +193,14 @@ class Algorithms():
 
         lams = np.empty(len(nomi))
         lams.fill(0.5)
+        print(parameters['splines'])
         gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
         gam.gridsearch(X_train, train['y'], lam=lams)
-        prob_fit=gam.predict_proba(X_train)[::,1]
+        prob_fit=gam.predict_proba(X_train)#[::,1]
 
         if parameters['testN']>0:
             X_test = sc.transform(test[nomi])
-            prob_predic=gam.predict_proba(X_test)[::,1]
+            prob_predic=gam.predict_proba(X_test)#[::,1]
             test['SI']=prob_predic
         train['SI']=prob_fit
         if not os.path.exists(parameters['fold']):
@@ -335,7 +336,7 @@ class Algorithms():
         lams.fill(0.5)
         gam = classifier(splines, dtypes)
         gam.gridsearch(X[train], y[train], lam=lams)
-        prob_predic=gam.predict_proba(X[test])[::,1]
+        prob_predic=gam.predict_proba(X[test])#[::,1]
         return prob_predic,None
     
     

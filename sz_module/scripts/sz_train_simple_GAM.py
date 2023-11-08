@@ -59,6 +59,7 @@ class CoreAlgorithmGAM():
    
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
+        self.addParameter(QgsProcessingParameterField(self.STRING3, 'Linear independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Continuous independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
@@ -80,6 +81,10 @@ class CoreAlgorithmGAM():
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
+        
+        parameters['field3'] = self.parameterAsFields(parameters, self.STRING3, context)
+        if parameters['field3'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING3))
 
         parameters['field1'] = self.parameterAsFields(parameters, self.STRING, context)
         if parameters['field1'] is None:
@@ -115,13 +120,14 @@ class CoreAlgorithmGAM():
         
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field1']+parameters['field2'],
+            'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'lsd' : parameters['fieldlsd'],
             'testN':parameters['testN']
         }
         outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs']=SZ_utils.load_simple(self.f,alg_params)
 
         alg_params = {
+            'linear': parameters['field3'],
             'continuous': parameters['field1'],
             'categorical': parameters['field2'],
             'nomi': outputs['nomes'],

@@ -300,6 +300,7 @@ class Instance(QgsProcessingAlgorithm):
     STRING = 'field1'
     STRING1 = 'field2'
     STRING2 = 'fieldlsd'
+    STRING3 = 'field3'
     NUMBER = 'testN'
     NUMBER1 = 'num1'
     OUTPUT = 'OUTPUT'

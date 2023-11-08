@@ -11,11 +11,23 @@ from sklearn.model_selection import train_test_split
 from sz_module.scripts.algorithms import Algorithms
 import csv
 from pygam import LogisticGAM, s, f
-from qgis.core import QgsVectorLayer
+from qgis.core import (QgsVectorLayer,
+                       QgsFields,
+                       QgsField,
+                       QgsProject,
+                       QgsVectorFileWriter,
+                       QgsWkbTypes,
+                       QgsFeature,
+                       QgsGeometry,
+                       QgsProcessingContext
+)
 import numpy as np
 import pandas as pd
 from qgis.PyQt.QtCore import QVariant
 import os
+from collections import OrderedDict
+from pygam import terms
+
 
 class SZ_utils():
 
@@ -288,12 +300,31 @@ class SZ_utils():
     def GAM_formula(parameters):
         GAM_sel = parameters['nomi']
         spl = parameters['spline']
-        splines = f(0)
+        splines = []
         dtypes = []
+        vars_dict = OrderedDict({})
+
         for i in range(len(GAM_sel)):
-            splines = splines + s(i, n_splines=spl)
-            if GAM_sel in parameters['continuous']:
-                dtypes = dtypes + 'numerical'
-            elif GAM_sel in parameters['categorical']:
-                dtypes = dtypes + 'categorical'
+            if GAM_sel[i] in parameters['continuous']:
+                dtypes = dtypes + ['numerical']
+                vars_dict[GAM_sel[i]]={'term':'s', 'n_splines':spl}
+                print(splines)
+            elif GAM_sel[i] in parameters['categorical']:
+                dtypes = dtypes + ['categorical']
+                vars_dict[GAM_sel[i]]={'term':'f'}
+            elif GAM_sel[i] in parameters['linear']:
+                dtypes = dtypes + ['numerical']
+                vars_dict[GAM_sel[i]]={'term':'l'}
+        
+        splines = terms.TermList()
+        for i,v in enumerate(vars_dict .keys()):
+            if vars_dict[v]['term'] == 's':
+                term = terms.SplineTerm(i, n_splines=vars_dict[v].get('n_splines', 10))
+            elif vars_dict[v]['term'] == 'l':
+                term = terms.LinearTerm(i)
+            elif vars_dict[v]['term'] == 'f':
+                term = terms.FactorTerm(i)
+            splines += term
+
+        print(splines)
         return splines,dtypes
