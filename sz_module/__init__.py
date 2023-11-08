@@ -26,6 +26,10 @@ __author__ = 'Giacomo Titti'
 __date__ = '2021-07-01'
 __copyright__ = '(C) 2021 by Giacomo Titti'
 
+import os
+from qgis.gui import QgsMessageBar
+from qgis.core import Qgis
+import sys
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
@@ -34,6 +38,6 @@ def classFactory(iface):  # pylint: disable=invalid-name
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """
-    #
     from .sz_module import classePlugin
     return classePlugin()
+
