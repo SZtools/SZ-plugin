@@ -54,6 +54,7 @@ import pandas as pd
 import tempfile
 from sz_module.scripts.utils import SZ_utils
 from sz_module.scripts.algorithms import Algorithms
+import os
 
 class CoreAlgorithm():
    
@@ -103,13 +104,16 @@ class CoreAlgorithm():
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
         
+        if not os.path.exists(parameters['folder']):
+            os.mkdir(parameters['folder'])
+        
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
             'testN':parameters['testN']
         }
-        outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs']=SZ_utils.load_simple(self.f,alg_params)
+        outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs'],outputs['df']=SZ_utils.load_simple(self.f,alg_params)
 
         alg_params = {
             'train': outputs['train'],

@@ -51,6 +51,8 @@ from qgis import *
 from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
 from sz_module.scripts.utils import SZ_utils
+from sz_module.scripts.algorithms import CV_utils,GAM_utils
+import os
 
 class CoreAlgorithmGAM_cv():
 
@@ -111,6 +113,9 @@ class CoreAlgorithmGAM_cv():
         parameters['folder'] = self.parameterAsString(parameters, self.OUTPUT3, context)
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
+        
+        if not os.path.exists(parameters['folder']):
+            os.mkdir(parameters['folder'])
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
@@ -132,14 +137,14 @@ class CoreAlgorithmGAM_cv():
             'spline': parameters['num1']
         }
 
-        outputs['splines'],outputs['dtypes']=SZ_utils.GAM_formula(alg_params)
+        outputs['splines'],outputs['dtypes']=GAM_utils.GAM_formula(alg_params)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
 
         alg_params = {
-            'field1': parameters['field1'],
+            'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'testN':parameters['testN'],
             'fold':parameters['folder'],
             'nomi':outputs['nomes'],
@@ -148,7 +153,7 @@ class CoreAlgorithmGAM_cv():
             'dtypes':outputs['dtypes']
         }
 
-        outputs['prob'],outputs['test_ind']=SZ_utils.cross_validation(alg_params,algorithm,classifier)
+        outputs['prob'],outputs['test_ind']=CV_utils.cross_validation(alg_params,algorithm,classifier)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
