@@ -200,6 +200,9 @@ class Algorithms():
         lams = np.empty(len(nomi))
         lams.fill(0.5)
         gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
+        print(parameters['splines'])
+        print(parameters['dtypes'])
+        print(lams)
         gam.gridsearch(X_train, train['y'], lam=lams)
         GAM_utils.GAM_plot(gam,parameters['df'],nomi,parameters['fold'],'')
         GAM_utils.GAM_save(gam,parameters['fold'])
@@ -209,7 +212,17 @@ class Algorithms():
             prob_predic=gam.predict_proba(X_test)#[::,1]
             test['SI']=prob_predic
         train['SI']=prob_fit
-        return(train,test)
+        return(train,test,gam)
+    
+    def GAM_transfer(parameters):
+        sc = StandardScaler()
+        nomi=parameters['nomi']
+        trans=parameters['trans']
+        X_trans = sc.fit_transform(trans[nomi])
+        prob_fit=parameters['gam'].predict_proba(X_trans)#[::,1]
+        trans['SI']=prob_fit
+        return(trans)
+
     
     ####################################
     

@@ -58,6 +58,7 @@ from sz_module.scripts.sz_train_simple import CoreAlgorithm
 from sz_module.scripts.sz_train_cv import CoreAlgorithm_cv
 from sz_module.scripts.sz_train_simple_GAM import CoreAlgorithmGAM
 from sz_module.scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
+from sz_module.scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
 from sz_module.scripts.algorithms import Algorithms
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -235,7 +236,18 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'07 GAM Fitting/CrossValid',
             'group':'SI k-fold',
             'groupId':'SI k-fold',
-            'shortHelpString':"This function applyGeneralized Attitive Model to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+            'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'GAM_trans',
+            'function': CoreAlgorithmGAM_trans,
+            'name':'Transfer_GAM',
+            'displayName':'01 GAM Transfer',
+            'group':'SI Transfer',
+            'groupId':'SI Transfer',
+            'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
@@ -297,6 +309,7 @@ class classeProvider(QgsProcessingProvider):
 
 class Instance(QgsProcessingAlgorithm):
     INPUT = 'covariates'
+    INPUT1 = 'input1'
     STRING = 'field1'
     STRING1 = 'field2'
     STRING2 = 'fieldlsd'
@@ -327,6 +340,7 @@ class Instance(QgsProcessingAlgorithm):
             'DT_cv':Algorithms.DT_cv,
             'GAM_simple':Algorithms.GAM_simple,
             'GAM_cv':Algorithms.GAM_cv,
+            'GAM_trans':Algorithms.GAM_simple,
         }
 
         self.classifier={
@@ -344,6 +358,7 @@ class Instance(QgsProcessingAlgorithm):
             'fr_simple':None,
             'DT_simple':None,
             'GAM_simple':None,
+            'GAM_trans':None,
         }
 
     def tr(self, string):
