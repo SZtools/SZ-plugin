@@ -152,7 +152,7 @@ class CoreAlgorithmGAM():
             'df':outputs['df'],
             
         }
-        outputs['trainsi'],outputs['testsi']=algorithm(alg_params)
+        outputs['trainsi'],outputs['testsi'],outputs['gam']=algorithm(alg_params)
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():

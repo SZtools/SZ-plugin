@@ -479,7 +479,7 @@ class GAM_utils():
         plt.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
         #plt.show()
         
-    def GAM_save(gam,fold,filename=None):
+    def GAM_save(gam,fold,filename=''):
         filename_pkl = fold+'/gam_coeff'+filename+'.pkl'
         #filename_txt = parameters['fold']+'/gam_coeff.txt'
 
