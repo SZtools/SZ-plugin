@@ -170,7 +170,7 @@ class CoreAlgorithmGAM_trans():
         alg_params = {
             'gam':outputs['gam'],
             'nomi': outputs['nomes'],
-            'trans':outputs['train_trans']
+            'trans':outputs['train_trans'],
         }
         outputs['trans']=Algorithms.GAM_transfer(alg_params)
 
@@ -190,7 +190,6 @@ class CoreAlgorithmGAM_trans():
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
             return {}
-        results['out'] = parameters['out']
         results['out1'] = parameters['out1']
 
  

@@ -200,11 +200,8 @@ class Algorithms():
         lams = np.empty(len(nomi))
         lams.fill(0.5)
         gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
-        print(parameters['splines'])
-        print(parameters['dtypes'])
-        print(lams)
         gam.gridsearch(X_train, train['y'], lam=lams)
-        GAM_utils.GAM_plot(gam,parameters['df'],nomi,parameters['fold'],'')
+        GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
         GAM_utils.GAM_save(gam,parameters['fold'])
         prob_fit=gam.predict_proba(X_train)#[::,1]
         if parameters['testN']>0:
@@ -349,7 +346,7 @@ class Algorithms():
         lams.fill(0.5)
         gam = classifier(splines, dtype=dtypes)
         gam.gridsearch(X[train,], y[train], lam=lams)
-        GAM_utils.GAM_plot(gam,df,nomi,fold,filename)
+        GAM_utils.GAM_plot(gam,df.iloc[train,],nomi,fold,filename,X[train,])
         GAM_utils.GAM_save(gam,fold,filename)
         prob_predic=gam.predict_proba(X[test])#[::,1]
         return prob_predic,None
@@ -432,8 +429,9 @@ class GAM_utils():
         print(splines)
         return splines,dtypes
     
-    def GAM_plot(gam,df,nomi,fold,filename):
+    def GAM_plot(gam,df,nomi,fold,filename,scaled_df):
         GAM_sel=nomi
+        #sc=StandardScaler()
         fig = plt.figure(figsize=(20, 25))
 
         maX=[]
@@ -444,17 +442,32 @@ class GAM_utils():
             pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
             if isinstance(gam.terms[i], terms.FactorTerm):
                 continue
-            maX=maX+[max(pdep0)]
-            miN=miN+[np.min(pdep0)]
-        MAX=max(maX)+1
+            maX=maX+[max(confi0[:,1])]
+            miN=miN+[np.min(confi0[:,0])]
+        MAX=max(maX)+2
         MIN=min(miN)-2
 
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
+            print(i,'contatore')
+            ##
+            #XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+            #pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+            ##
+            XX=df[GAM_sel[i]].to_numpy()
+            sorted_indices = np.argsort(scaled_df[:, i])
+            X = scaled_df[sorted_indices]
+            print(X)
+            print(df[GAM_sel[i]])
+            for ii in range(len(GAM_sel)):
+                print(ii)
+                if ii != i: 
+                    X[:, ii] = 0
+            pdep, confi = gam.partial_dependence(term=i, X=X, width=0.95)
+            ##
 
-            XX = gam.generate_X_grid(term=i)
-            pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+            YY=pdep
             plt.subplot(4, 3, i+1)
 
             if isinstance(gam.terms[i], terms.FactorTerm):
@@ -469,9 +482,13 @@ class GAM_utils():
                 plt.ylabel('Regression coefficient')
                 continue
 
-            plt.plot(XX[:, term.feature], pdep, c='blue')
-            # plt.plot(XX[:, term.feature], confi, c='r', ls='--')
-            plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+            ##
+            #plt.plot(XX[:, term.feature], pdep, c='blue')
+            #plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+            ##
+            ## plt.plot(XX[:, term.feature], confi, c='r', ls='--')
+            plt.plot(np.sort(XX), pdep, c='blue')
+            plt.fill_between(np.sort(XX), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
 
             plt.xlabel(GAM_sel[i])
             plt.ylabel('Regression coefficient')
