@@ -150,7 +150,9 @@ class CoreAlgorithmGAM():
             'splines':outputs['splines'],
             'dtypes':outputs['dtypes'],
             'df':outputs['df'],
-            
+            'categorical':parameters['field2'],
+            'linear':parameters['field3'],
+            'continuous':parameters['field1']
         }
         outputs['trainsi'],outputs['testsi'],outputs['gam']=algorithm(alg_params)
 

@@ -150,7 +150,10 @@ class CoreAlgorithmGAM_cv():
             'nomi':outputs['nomes'],
             'df':outputs['df'],
             'splines':outputs['splines'],
-            'dtypes':outputs['dtypes']
+            'dtypes':outputs['dtypes'],
+            'categorical':parameters['field2'],
+            'linear':parameters['field3'],
+            'continuous':parameters['field1']
         }
 
         outputs['prob'],outputs['test_ind']=CV_utils.cross_validation(alg_params,algorithm,classifier)

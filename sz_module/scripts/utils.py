@@ -124,10 +124,10 @@ class SZ_utils():
         plt.title('ROC')
         plt.legend(loc="lower right")
         try:
-            fig.savefig(parameters['OUT']+'/fig01.png')
+            fig.savefig(parameters['OUT']+'/fig_fit.png')
         except:
             os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/fig01.png')
+            fig.savefig(parameters['OUT']+'/fig_fit.png')
 
     def stamp_cv(parameters):
         df=parameters['df']
@@ -149,12 +149,12 @@ class SZ_utils():
         plt.ylabel('True Positive Rate')
         plt.legend(loc="lower right")
         #plt.show()
-        print('ROC curve figure = ',parameters['OUT']+'/fig02.pdf')
+        print('ROC curve figure = ',parameters['OUT']+'/fig_cv.pdf')
         try:
-            fig.savefig(parameters['OUT']+'/fig02.pdf')
+            fig.savefig(parameters['OUT']+'/fig_cv.pdf')
         except:
             os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/fig02.pdf')
+            fig.savefig(parameters['OUT']+'/fig_cv.pdf')
 
     
     def stamp_simple(parameters):
@@ -187,10 +187,10 @@ class SZ_utils():
         plt.legend(loc="lower right")
         #plt.show()
         try:
-            fig.savefig(parameters['OUT']+'/fig02.pdf')
+            fig.savefig(parameters['OUT']+'/fig.pdf')
         except:
             os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/fig02.pdf')
+            fig.savefig(parameters['OUT']+'/fig.pdf')
 
     def save(parameters):
 
