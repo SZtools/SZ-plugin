@@ -514,8 +514,13 @@ class GAM_utils():
             #pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
             ##
             XX=df[GAM_sel[i]].to_numpy()
-            sorted_indices = np.argsort(scaled_df.iloc[:, i])
-            X = scaled_df.iloc[sorted_indices].to_numpy()
+            try:
+                sorted_indices = np.argsort(scaled_df.iloc[:, i])
+                X = scaled_df.iloc[sorted_indices].to_numpy()
+            except:
+                sorted_indices = np.argsort(scaled_df[:, i])
+                X = scaled_df[sorted_indices]
+
             for ii in range(len(GAM_sel)):
                 if ii != i: 
                     X[:, ii] = 0

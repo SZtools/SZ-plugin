@@ -150,6 +150,9 @@ class CoreAlgorithmGAM_trans():
             'splines':outputs['splines'],
             'dtypes':outputs['dtypes'],
             'df':outputs['df'],
+            'categorical':parameters['field2'],
+            'linear':parameters['field3'],
+            'continuous':parameters['field1']
             
         }
         outputs['trainsi'],outputs['testsi'],outputs['gam']=algorithm(alg_params)
@@ -182,7 +185,7 @@ class CoreAlgorithmGAM_trans():
         SZ_utils.save(alg_params)
 
         alg_params = {
-            'df': outputs['trainsi'],
+            'df': outputs['trans'],
             'OUT':parameters['folder']
         }
         SZ_utils.stampfit(alg_params)

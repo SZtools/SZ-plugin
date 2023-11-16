@@ -90,13 +90,6 @@ from scipy import interpolate
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import cohen_kappa_score
 
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import StratifiedKFold
-
-# pd.set_option('display.max_columns', 20)
-# #pd.set_option('display.max_rows', 20)
-# from IPython.display import display
 import tempfile
 
 
@@ -124,7 +117,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         return 'TpTnFpFn'
 
     def displayName(self):
-        return self.tr('03 True/False')
+        return self.tr('03 Confusion Matrix')
 
     def group(self):
         return self.tr('Classify SI')
@@ -165,7 +158,6 @@ class FPAlgorithm(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
-        print(self.f)
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
         outputs = {}
@@ -191,79 +183,23 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
 
-
-
-
-
         parameters['field1'] = self.parameterAsString(parameters, self.STRING, context)
         if parameters['field1'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING))
 
-        #parameters['field2'] = self.parameterAsString(parameters, self.STRING1, context)
-        #if parameters['field2'] is None:
-        #    raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING1))
-
+ 
         parameters['fieldlsd'] = self.parameterAsString(parameters, self.STRING2, context)
         if parameters['fieldlsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING2))
 
-        # parameters['poly'] = self.parameterAsExtent(parameters, self.EXTENT, context)
-        # if parameters['poly'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.EXTENT))
-        #
         parameters['testN'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['testN'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
-        #
-        # parameters['minSlopeAcceptable'] = self.parameterAsInt(parameters, self.NUMBER1, context)
-        # if parameters['minSlopeAcceptable'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER1))
-
-
-        # (parameters['out'], dest_id) = self.parameterAsSink(
-        #     parameters,
-        #     self.OUTPUT,
-        #     context,
-        #     source.fields(),
-        #     source.wkbType(),
-        #     source.sourceCrs()
-        # )
-        #
-        # # Send some information to the user
-        # feedback.pushInfo('CRS is {}'.format(source.sourceCrs().authid()))
-        #
-        # # If sink was not created, throw an exception to indicate that the algorithm
-        # # encountered a fatal error. The exception text can be any string, but in this
-        # # case we use the pre-built invalidSinkError method to return a standard
-        # # helper text for when a sink cannot be evaluated
-        # if parameters['out'] is None:
-        #     raise QgsProcessingException(self.invalidSinkError(parameters, self.OUTPUT))
-
-        #(parameters['out'],id,a)=self.parameterAsSink(parameters,self.OUTPUT,context,source.fields(),source.wkbType(),source.sourceCrs())
-
-        # outFile = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
-        # parameters['out'], outputFormat = GdalUtils.ogrConnectionStringAndFormat(outFile, context)
-        # if parameters['out'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
-
+   
         parameters['out'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
         if parameters['out'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
 
-        # parameters['out1'] = self.parameterAsFileOutput(parameters, self.OUTPUT1, context)
-        # if parameters['out1'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT1))
-        #
-        # parameters['out2'] = self.parameterAsFileOutput(parameters, self.OUTPUT2, context)
-        # if parameters['out2'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT2))
-
-        # parameters['folder'] = self.parameterAsString(parameters, self.OUTPUT3, context)
-        # if parameters['folder'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
-
-        #print(a)
-        # Intersectionpoly
         alg_params = {
             #'INPUT_RASTER_LAYER': parameters['Slope'],
             #'INPUT_EXTENT': parameters['Extension'],
@@ -279,15 +215,6 @@ class FPAlgorithm(QgsProcessingAlgorithm):
 
         outputs['df'],outputs['nomi'],outputs['crs']=self.load(alg_params)
 
-        # alg_params = {
-        #     'train': outputs['train'],
-        #     'testy': outputs['testy'],
-        #     'nomi':outputs['nomes'],
-        #     'txt':parameters['out2'],
-        #     'testN':parameters['testN']
-        #
-        # }
-        #outputs['trainsi'],outputs['testsi']=self.LR(alg_params)
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
@@ -305,63 +232,10 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        # alg_params = {
-        #     'df': outputs['trainsi'],
-        #     'crs': outputs['crs'],
-        #     'OUT': parameters['out1']
-        # }
-        #self.save(alg_params)
-
-        # if parameters['testN']==0:
-        #     alg_params = {
-        #         'df': outputs['trainsi'],
-        #         'OUT':parameters['folder']
-        #         #'txt':parameters['out1']
-        #
-        #     }
-        #     self.stampfit(alg_params)
-        # else:
-
-
-
-        #
-        # alg_params = {
-        #     'trainout': parameters['out1'],
-        #     'context': context
-        # }
-        # self.addmap(alg_params)
-
-
-        #self.importingandcounting(alg_params)
-        #self.indexing(alg_params)
-        #self.vector()
-        #del self.oout
-        #outputs['cleaninventory']=self.saveV(alg_params)
         results['out'] = parameters['out']
-        #results['out1'] = parameters['out1']
-        #del self.raster
-
-        #if parameters['testN']>0:
-            # fileName = parameters['out1']
-            # layer = QgsVectorLayer(fileName,"train","ogr")
-            # subLayers =layer.dataProvider().subLayers()
-            #
-            # for subLayer in subLayers:
-            #     name = subLayer.split('!!::!!')[1]
-            #     print(name,'name')
-            #     uri = "%s|layername=%s" % (fileName, name,)
-            #     print(uri,'uri')
-            #     # Create layer
-            #     sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-            #     if not sub_vlayer.isValid():
-            #         print('layer failed to load')
-            #     # Add layer to map
-            #     context.temporaryLayerStore().addMapLayer(sub_vlayer)
-            #     context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('train', context.project(),'LAYER'))
-
-
+ 
         fileName = parameters['out']
-        layer1 = QgsVectorLayer(fileName,"test","ogr")
+        layer1 = QgsVectorLayer(fileName,"confusion_matrix","ogr")
         subLayers =layer1.dataProvider().subLayers()
 
         for subLayer in subLayers:
@@ -375,37 +249,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
                 print('layer failed to load')
             # Add layer to map
             context.temporaryLayerStore().addMapLayer(sub_vlayer)
-            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('test', context.project(),'LAYER1'))
-
-        # else:
-        #     fileName = parameters['out1']
-        #     layer = QgsVectorLayer(fileName,"fitting","ogr")
-        #     subLayers =layer.dataProvider().subLayers()
-        #
-        #     for subLayer in subLayers:
-        #         name = subLayer.split('!!::!!')[1]
-        #         print(name,'name')
-        #         uri = "%s|layername=%s" % (fileName, name,)
-        #         print(uri,'uri')
-        #         # Create layer
-        #         sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-        #         if not sub_vlayer.isValid():
-        #             print('layer failed to load')
-        #         # Add layer to map
-        #         context.temporaryLayerStore().addMapLayer(sub_vlayer)
-        #         context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('fitting', context.project(),'LAYER'))
-
-
-
-
-
-        # layer=QgsVectorLayer(parameters['out1'],"train","ogr")
-        # context.temporaryLayerStore().addMapLayer(layer)
-        # context.addLayerToLoadOnCompletion(layer.id(), QgsProcessingContext.LayerDetails('SQL layer', context.project(),'LAYER'))
-        # print(l1)
-        # QgsProject.instance().addMapLayer(l1)
-        # l2=QgsVectorLayer(parameters['out'],"test","ogr")
-        # QgsProject.instance().addMapLayer(l2)
+            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails("confusion_matrix", context.project(),'LAYER1'))
 
         feedback.setCurrentStep(4)
         if feedback.isCanceled():
@@ -431,17 +275,17 @@ class FPAlgorithm(QgsProcessingAlgorithm):
             #print(type(geom.asWkt()))
             feat=attr+[geom.asWkt()]
             #print(feat)
-            gdp.iloc[len(gdp)] = feat
+            gdp.loc[len(gdp)] = feat
             #gdp = gdp.append(feat, ignore_index=True)
             count=+ 1
-        print(list(gdp))
         gdp.to_csv(self.f+'/file.csv')
         del gdp
         gdp=pd.read_csv(self.f+'/file.csv')
         #print(feat)
         #print(gdp['S'].dtypes)
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-        df=gdp[parameters['field1']]
+        #df=gdp[parameters['field1']]
+        df=pd.DataFrame(data=gdp[parameters['field1']].to_numpy(), columns=[parameters['field1']])
         nomi=list(df.head())
         #print(list(df['Sf']),'1')
         lsd=gdp[parameters['lsd']]
@@ -450,304 +294,43 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         df['ID']=gdp['ID']
         df['geom']=gdp['geom']
         df=df.dropna(how='any',axis=0)
-
-        df_sort = df.sort_values(parameters['field1'], ascending=False)
-        x=df_sort[parameters['field1']]
-        y=df_sort['y']
-        print(x)
-        print(y)
-        cutoff=np.percentile(x, parameters['testN'])
+        titles=list(df.head())
+        ind=titles.index(parameters['field1'])
+        dd=df.to_numpy()
+        dd_sort_index=np.argsort(dd[:, ind])[::-1]
+        dd_sort = dd[dd_sort_index]
+        df_sort = pd.DataFrame(data=dd_sort, columns=titles)
+        xx=df_sort[parameters['field1']].to_numpy()
+        x=df[parameters['field1']].to_numpy()
+        y=df['y'].to_numpy()
+        cutoff=np.percentile(xx, parameters['testN'])
+        print('cutoff: ',cutoff)
         df['class_cut']='negative'
         df['presabs']='negative'
-        df.iloc[np.where(x<=cutoff)[0],'class_cut']='positive'
-        df.iloc[np.where(y==1)[0],'presabs']='positive'
+        df['class_cut'].iloc[np.where(x<=cutoff)[0]]='positive'
+        df['presabs'].iloc[np.where(y==1)]='positive'
+
         tp = np.where((df['class_cut']=='positive')&(df['presabs']=='positive'))
         tn = np.where((df['class_cut']=='negative')&(df['presabs']=='negative'))
         fp = np.where((df['class_cut']=='positive')&(df['presabs']=='negative'))
         fn = np.where((df['class_cut']=='negative')&(df['presabs']=='positive'))
         df['tptnfpfn']=0
-        df.iloc[tp[0],'tptnfpfn']=0
-        df.iloc[tn[0],'tptnfpfn']=1
-        df.iloc[fp[0],'tptnfpfn']=2
-        df.iloc[fn[0],'tptnfpfn']=3
-
-        # if parameters['testN']==0:
-        #     train=df
-        #     test=pd.DataFrame(columns=nomi,dtype=float)
-        # else:
-        #     # split the data into train and test set
-        #     per=int(np.ceil(df.shape[0]*parameters['testN']/100))
-        #     #print(per)
-        #     train, test = train_test_split(df, test_size=per, random_state=42, shuffle=True)
-        #     #X_train, X_test, y_train, y_test = train_test_split(X, df['y'] , test_size=per, random_state=42)
-
-
-        # sc = StandardScaler()#####scaler
-        # X = sc.fit_transform(x)
-        # classifier=LogisticRegression()
-        # train_ind={}
-        # test_ind={}
-        # prob={}
-        # cofl=[]
-        # df["SI"] = np.nan
-        # if parameters['testN']>1:
-        #     cv = StratifiedKFold(n_splits=parameters['testN'])
-        #     for i, (train, test) in enumerate(cv.split(X, y)):
-        #         train_ind[i]=train
-        #         test_ind[i]=test
-        #         prob[i],coeff=self.LR(classifier,X,y,train,test)
-        #         df.loc[test,'SI']=prob[i]
-        #         cofl.append(coeff)
-        # elif parameters['testN']==1:
-        #     train=np.arange(len(y))
-        #     test=np.arange(len(y))
-        #     prob[0],coeff=self.LR(classifier,X,y,train,test)
-        #     df.loc[test,'SI']=prob[0]
-        #     test_ind[0]=test
-        #     cofl.append(coeff)
-        # if not os.path.exists(parameters['fold']):
-        #     os.mkdir(parameters['fold'])
-        # with open(parameters['fold']+'/r_coeffs.csv', 'w') as f:
-        #     write = csv.writer(f)
-        #     ll=['intercept']
-        #     lll=ll+nomi
-        #     write.writerow(lll)
-        #     write.writerows(cofl)
+        df['tptnfpfn'].iloc[tp[0]]=0
+        df['tptnfpfn'].iloc[tn[0]]=1
+        df['tptnfpfn'].iloc[fp[0]]=2
+        df['tptnfpfn'].iloc[fn[0]]=3
+     
         return df,nomi,crs
 
-    # def LR(self,classifier,X,y,train,test):
-    #     classifier.fit(X[train], y[train])
-    #     prob_predic=classifier.predict_proba(X[test])[::,1]
-    #     regression_coeff=classifier.coef_
-    #     regression_intercept=classifier.intercept_
-    #     coeff=np.hstack((regression_intercept,regression_coeff[0]))
-    #     print(coeff,'regression coeff')
-    #     #prob_fit=classifier.predict_proba(X[train])[::,1]
-    #     return prob_predic,coeff
-
-
-        # from sklearn.model_selection import cross_val_predict
-        # sc = StandardScaler()
-        # nomi=parameters['nomi']
-        # train=parameters['train']
-        # test=parameters['testy']
-        # X_train = sc.fit_transform(train[nomi])
-        # logistic_regression = LogisticRegression()
-        # logistic_regression.fit(X_train,train['y'])
-        # prob_fit=logistic_regression.predict_proba(X_train)[::,1]
-        # if parameters['testN']>0:
-        #     X_test = sc.transform(test[nomi])
-        #     #predictions = logistic_regression.predict(X_test)
-        #     predictions = cross_val_predict(logistic_regression, X_test, test['y'], cv=3)
-        #     prob_predic = cross_val_predict(logistic_regression, X_test, test['y'], cv=3, method='predict_proba')[::,1]
-        #     #prob_predic=logistic_regression.predict_proba(X_test)[::,1]
-        #     print(predictions)
-        #     print(prob_predic)
-        #     test['SI']=prob_predic
-        # train['SI']=prob_fit
-        # return(train,test)
-
-    # def stampfit(self,parameters):
-    #     df=parameters['df']
-    #     y_true=df['y']
-    #     scores=df['SI']
-    #     #W=df['w']
-    #     ################################figure
-    #     #fpr1, tpr1, tresh1 = roc_curve(y_true,scores,sample_weight=W)
-    #     fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
-    #     norm=(scores-scores.min())/(scores.max()-scores.min())
-    #
-    #     #fpr2, tpr2, tresh2 = roc_curve(self.y_true,self.norm)
-    #     #print(tresh1)
-    #
-    #     #fprv, tprv, treshv = roc_curve(self.y_v,self.scores_v)
-    #     #fprt, tprt, tresht = roc_curve(self.y_t,self.scores_t)
-    #
-    #     #print self.fpr
-    #     #print self.tpr
-    #     #print self.classes
-    #     #aucv=roc_auc_score(self.y_v, self.scores_v, None)
-    #     #auct=roc_auc_score(self.y_t, self.scores_t, None)
-    #     r=roc_auc_score(y_true, scores, None)
-    #
-    #     fig=plt.figure()
-    #     lw = 2
-    #     plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f)' %r)
-    #     #plt.plot(self.fpr, self.tpr, 'ro')
-    #     #plt.plot(self.fpr, self.tpr, color='darkorange',lw=lw, label='Classified dataset (AUC = %0.2f)' % self.fitness)
-    #     plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
-    #     plt.xlim([0.0, 1.0])
-    #     plt.ylim([0.0, 1.05])
-    #     plt.xlabel('False Positive Rate')
-    #     plt.ylabel('True Positive Rate')
-    #     plt.title('ROC')
-    #     plt.legend(loc="lower right")
-    #     #plt.show()
-    #     try:
-    #         fig.savefig(parameters['OUT']+'/fig01.png')
-    #     except:
-    #         os.mkdir(parameters['OUT'])
-    #         fig.savefig(parameters['OUT']+'/fig01.png')
-    #     # fig=plt.figure()
-    #     # frequency, bins = np.histogram(norm)
-    #     # frequency=(frequency/len(norm))*100
-    #     # bincenters = 0.5*(bins[1:]+bins[:-1])
-    #     # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
-    #     # #plt.plot(bincenters,frequency,'-')#segmented curve
-    #     # #print(bincenters,frequency)
-    #     #
-    #     # #xnew = interpolate.splrep(bincenters, frequency, s=0)
-    #     # xnew = np.linspace(bincenters.min(),bincenters.max())
-    #     # #print(bincenters, xnew)
-    #     # power_smooth=interpolate.splev(bincenters, xnew, der=0)
-    #     # #power_smooth = spline(bincenters,frequency,xnew)
-    #     # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'LSI')
-    #     # plt.xlabel('Standardized Susceptibility Index')
-    #     # plt.ylabel('Area %')
-    #     # plt.title('')
-    #     # plt.legend(loc="upper right")
-    #     # #plt.show()
-    #     # fig.savefig(parameters['OUT']+'/fig02.png')
-
-    # def stampcv(self,parameters):
-    #     df=parameters['df']
-    #     test_ind=parameters['test_ind']
-    #
-    #     #test=parameters['test']
-    #     y_v=df['y']
-    #     scores_v=df['SI']
-    #     lw = 2
-    #     #W=df['w']
-    #     ################################figure
-    #     #fpr1, tpr1, tresh1 = roc_curve(y_true,scores,sample_weight=W)
-    #     #fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
-    #     #fpr2, tpr2, tresh2 = roc_curve(self.y_true,self.norm)
-    #     #print(tresh1)
-    #     fig=plt.figure()
-    #     #print(len(test_ind))
-    #     #print(test_ind)
-    #     plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
-    #     for i in range(len(test_ind)):
-    #
-    #         fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
-    #         #fprt, tprt, tresht = roc_curve(y_t,scores_t)
-    #         #print self.tpr
-    #         #print self.classes
-    #         aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
-    #         print('ROC '+ str(i) +' AUC=',aucv)
-    #         #auct=roc_auc_score(y_t, scores_t, None)
-    #         #r=roc_auc_score(y_true, scores, None)
-    #         #normt=(scores_t-scores_t.min())/(scores_t.max()-scores_t.min())
-    #         #normv=(scores_v-scores_v.min())/(scores_v.max()-scores_v.min())
-    #
-    #
-    #
-    #         plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' (AUC = %0.2f)' %aucv)
-    #         #plt.plot(fprt, tprt, color='red',lw=lw, label= 'Success performance (AUC = %0.2f)' %auct)
-    #     plt.xlim([0.0, 1.0])
-    #     plt.ylim([0.0, 1.05])
-    #     plt.xlabel('False Positive Rate')
-    #     plt.ylabel('True Positive Rate')
-    #     #plt.title('ROC')
-    #     plt.legend(loc="lower right")
-    #     #plt.show()
-    #     print('ROC curve figure = ',parameters['OUT']+'/fig02.pdf')
-    #     try:
-    #         fig.savefig(parameters['OUT']+'/fig02.pdf')
-    #
-    #     except:
-    #         os.mkdir(parameters['OUT'])
-    #         fig.savefig(parameters['OUT']+'/fig02.pdf')
-
-        # fig=plt.figure()
-        # frequency, bins = np.histogram(normt)
-
-
-
-        # fig1=plt.figure()
-        # #print(len(test_ind))
-        # #print(test_ind)
-        # plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
-        # for i in range(len(test_ind)):
-        #
-        #     #fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
-        #     #fprt, tprt, tresht = roc_curve(y_t,scores_t)
-        #     from sklearn.metrics import precision_recall_curve
-        #     from sklearn.metrics import PrecisionRecallDisplay
-        #
-        #     prec, recall, _ = precision_recall_curve(y_v[test_ind[i]], scores_v[test_ind[i]])
-        #     pr_display = PrecisionRecallDisplay(precision=prec, recall=recall)
-        #     print(pr_display,'disp')
-        #     print(prec,recall)
-        #     #print self.tpr
-        #     #print self.classes
-        #     #aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]], None)
-        #     #print('ROC '+ str(i) +' AUC=',aucv)
-        #     #auct=roc_auc_score(y_t, scores_t, None)
-        #     #r=roc_auc_score(y_true, scores, None)
-        #     #normt=(scores_t-scores_t.min())/(scores_t.max()-scores_t.min())
-        #     #normv=(scores_v-scores_v.min())/(scores_v.max()-scores_v.min())
-        #
-        #
-        #
-        #     plt.plot(fprv, tprv,lw=lw, alpha=0.5)
-        #     #plt.plot(fprt, tprt, color='red',lw=lw, label= 'Success performance (AUC = %0.2f)' %auct)
-        # plt.xlim([0.0, 1.0])
-        # plt.ylim([0.0, 1.05])
-        # plt.xlabel('Recall')
-        # plt.ylabel('Precision')
-        # #plt.title('ROC')
-        # plt.legend(loc="lower right")
-        # #plt.show()
-        # print('PRC curve figure = ',parameters['OUT']+'/fig03.pdf')
-        # try:
-        #     fig1.savefig(parameters['OUT']+'/fig03.pdf')
-        #
-        # except:
-        #     os.mkdir(parameters['OUT'])
-        #     fig.savefig(parameters['OUT']+'/fig03.pdf')
-
-        # fig=plt.figure()
-        # frequency, bins = np.histogram(normt)
-        # bincenters = 0.5*(bins[1:]+bins[:-1])
-        # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
-        # #plt.plot(bincenters,frequency,'-')#segmented curve
-        # xnew = np.linspace(bincenters.min(),bincenters.max())
-        # power_smooth=interpolate.splev(bincenters, xnew, der=0)
-        # #power_smooth = spline(bincenters,frequency,xnew)
-        # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'Train SI')
-        # plt.xlabel('Standardized Susceptibility Index')
-        # plt.ylabel('Area %')
-        # plt.title('')
-        # plt.legend(loc="upper right")
-        # fig.savefig(parameters['OUT']+'/fig02.png') # Use fig. here
-        # #plt.show()
-        #
-        # fig=plt.figure()
-        # frequency, bins = np.histogram(normv)
-        # frequency=(frequency/len(normv))*100
-        # bincenters = 0.5*(bins[1:]+bins[:-1])
-        # plt.hist(bins[:-1], bins, weights=frequency,color='blue',alpha = 0.8)
-        # #plt.plot(bincenters,frequency,'-')#segmented curve
-        # xnew = np.linspace(bincenters.min(),bincenters.max())
-        # power_smooth=interpolate.splev(bincenters, xnew, der=0)
-        # #power_smooth = spline(bincenters,frequency,xnew)
-        # plt.plot(xnew,power_smooth,color='black',lw=lw, label= 'Test SI')
-        # plt.xlabel('Standardized Susceptibility Index')
-        # plt.ylabel('Area %')
-        # plt.title('')
-        # plt.legend(loc="upper right")
-        # fig.savefig(parameters['OUT']+'/fig03.png') # Use fig. here
+    
 
     def save(self,parameters):
 
         #print(parameters['nomi'])
         df=parameters['df']
         nomi=list(df.head())
-        # define fields for feature attributes. A QgsFields object is needed
         fields = QgsFields()
 
-        #fields.append(QgsField('ID', QVariant.Int))
 
         for field in nomi:
             if field=='ID':
@@ -758,6 +341,10 @@ class FPAlgorithm(QgsProcessingAlgorithm):
                 fields.append(QgsField(field, QVariant.Int))
             if field=='tptnfpfn':
                 fields.append(QgsField(field, QVariant.Int))
+            if  field=='class_cut':
+                continue
+            if  field=='presabs':
+                continue
             else:
                 fields.append(QgsField(field, QVariant.Double))
 
@@ -775,16 +362,19 @@ class FPAlgorithm(QgsProcessingAlgorithm):
           transform_context,
           save_options
         )
-
+        
         if writer.hasError() != QgsVectorFileWriter.NoError:
             print("Error when creating shapefile: ",  writer.errorMessage())
+        
+        strings=['geom', 'class_cut', 'presabs']
+        columns_float = [item for item in df.columns if item not in strings]
         for i, row in df.iterrows():
+             
             fet = QgsFeature()
             fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
-            fet.setAttributes(list(map(float,list(df.loc[ i, df.columns != 'geom']))))
+            fet.setAttributes(list(map(float,list(df.loc[ i, columns_float]))))
             writer.addFeature(fet)
 
-        # delete the writer to flush features to disk
         del writer
 
     def addmap(self,parameters):
@@ -805,21 +395,3 @@ class FPAlgorithm(QgsProcessingAlgorithm):
             # Add layer to map
             context.temporaryLayerStore().addMapLayer(sub_vlayer)
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
-
-            #QgsProject.instance().addMapLayer(sub_vlayer)
-            #iface.mapCanvas().refresh()
-
-
-        # fileName = parameters['out']
-        # layer = QgsVectorLayer(fileName,"test","ogr")
-        # subLayers =layer.dataProvider().subLayers()
-        #
-        # for subLayer in subLayers:
-        #     name = subLayer.split('!!::!!')[1]
-        #     uri = "%s|layername=%s" % (fileName, name,)
-        #     # Create layer
-        #     sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-        #     if not sub_vlayer.isValid():
-        #         print('layer failed to load')
-        #     # Add layer to map
-        #     QgsProject.instance().addMapLayer(sub_vlayer)
