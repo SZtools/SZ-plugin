@@ -52,7 +52,7 @@ It can be installed on QGIS3.x adding the Plugin Repository to QGIS ```manage an
 
 <img src="./images/addrepo.png" width="500">
 
-- edit repository and add [https://www.plugins.geoai.it/SZ/sz.xml](https://www.plugins.geoai.it/SZ/sz.xml)
+- edit repository and add [https://sztools.github.io/SZ/sz.xml](https://sztools.github.io/SZ/sz.xml) (THIS REPOSITORY IS TEMPORARY)
 
 <img src="./images/repodetail.png" width="500">
 <p>

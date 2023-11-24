@@ -53,15 +53,17 @@ import plotly.graph_objs as go
 import pandas as pd
 import tempfile
 from sz_module.scripts.utils import SZ_utils
-from sz_module.scripts.algorithms import Algorithms
+from sz_module.scripts.algorithms import Algorithms,GAM_utils
+import os
+
 
 class CoreAlgorithmGAM():
    
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING3, 'Linear independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
-        self.addParameter(QgsProcessingParameterField(self.STRING, 'Continuous independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
-        self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Splines grade'), type=QgsProcessingParameterNumber.Integer,defaultValue=10))
+        self.addParameter(QgsProcessingParameterField(self.STRING, 'Ordinal independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
+        self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Spline smoothing parameter'), type=QgsProcessingParameterNumber.Integer,defaultValue=10))
         self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Percentage of test sample (0 to fit, > 0 to cross-validate)'), type=QgsProcessingParameterNumber.Integer,defaultValue=30))
@@ -118,13 +120,16 @@ class CoreAlgorithmGAM():
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
         
+        if not os.path.exists(parameters['folder']):
+            os.mkdir(parameters['folder'])
+        
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'lsd' : parameters['fieldlsd'],
             'testN':parameters['testN']
         }
-        outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs']=SZ_utils.load_simple(self.f,alg_params)
+        outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs'],outputs['df']=SZ_utils.load_simple(self.f,alg_params)
 
         alg_params = {
             'linear': parameters['field3'],
@@ -133,7 +138,7 @@ class CoreAlgorithmGAM():
             'nomi': outputs['nomes'],
             'spline': parameters['num1']
         }
-        outputs['splines'],outputs['dtypes']=SZ_utils.GAM_formula(alg_params)    
+        outputs['splines'],outputs['dtypes']=GAM_utils.GAM_formula(alg_params)    
 
 
         alg_params = {
@@ -143,9 +148,13 @@ class CoreAlgorithmGAM():
             'testN':parameters['testN'],
             'fold':parameters['folder'],
             'splines':outputs['splines'],
-            'dtypes':outputs['dtypes']
+            'dtypes':outputs['dtypes'],
+            'df':outputs['df'],
+            'categorical':parameters['field2'],
+            'linear':parameters['field3'],
+            'continuous':parameters['field1']
         }
-        outputs['trainsi'],outputs['testsi']=algorithm(alg_params)
+        outputs['trainsi'],outputs['testsi'],outputs['gam']=algorithm(alg_params)
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
