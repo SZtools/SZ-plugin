@@ -218,6 +218,7 @@ class classeProvider(QgsProcessingProvider):
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
+
         #dict_of_scripts={
         #    'alg': 'GAM_simple',
         #    'function': CoreAlgorithmGAM,
@@ -251,6 +252,7 @@ class classeProvider(QgsProcessingProvider):
         #}
         #self.addAlgorithm(Instance(dict_of_scripts))
 
+
         self.addAlgorithm(classcovtxtAlgorithm())
         self.addAlgorithm(classcovdecAlgorithm())
         ##self.addAlgorithm(polytogridAlgorithm())
@@ -265,7 +267,7 @@ class classeProvider(QgsProcessingProvider):
         self.addAlgorithm(statistickernel())
         self.addAlgorithm(samplerAlgorithm())
         self.addAlgorithm(rasterstatkernelAlgorithm())
-        self.addAlgorithm(CorrAlgorithm())
+        #self.addAlgorithm(CorrAlgorithm())
 
         self.addAlgorithm(classvAlgorithm())
         self.addAlgorithm(classvAlgorithmW())

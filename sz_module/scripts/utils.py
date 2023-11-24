@@ -7,7 +7,9 @@ from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
 import csv
+
 #from pygam import LogisticGAM, s, f, terms
+
 from qgis.core import (QgsVectorLayer,
                        QgsFields,
                        QgsField,
@@ -22,6 +24,8 @@ import numpy as np
 import pandas as pd
 from qgis.PyQt.QtCore import QVariant
 import os
+from collections import OrderedDict
+
 
 
 class SZ_utils():
