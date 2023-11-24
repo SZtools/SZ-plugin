@@ -50,7 +50,11 @@ from qgis.utils import iface
 from qgis import *
 from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
-from sz_module.utils import SZ_utils
+from sz_module.scripts.utils import SZ_utils
+from sz_module.scripts.algorithms import CV_utils
+import os
+
+
 
 class CoreAlgorithm_cv():
 
@@ -97,6 +101,9 @@ class CoreAlgorithm_cv():
         parameters['folder'] = self.parameterAsString(parameters, self.OUTPUT3, context)
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
+        
+        if not os.path.exists(parameters['folder']):
+            os.mkdir(parameters['folder'])
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
@@ -113,10 +120,12 @@ class CoreAlgorithm_cv():
         alg_params = {
             'field1': parameters['field1'],
             'testN':parameters['testN'],
-            'fold':parameters['folder']
+            'fold':parameters['folder'],
+            'nomi':outputs['nomi'],
+            'df':outputs['df']
         }
 
-        outputs['prob'],outputs['test_ind']=SZ_utils.cross_validation(alg_params,outputs['df'],outputs['nomi'],algorithm,classifier)
+        outputs['prob'],outputs['test_ind']=CV_utils.cross_validation(alg_params,algorithm,classifier)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
