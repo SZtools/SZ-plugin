@@ -34,11 +34,8 @@ __copyright__ = '(C) 2021 by Giacomo Titti'
 
 from PyQt5.QtCore import QCoreApplication
 from qgis.core import (QgsProcessing,
-                       QgsFeatureSink,
                        QgsProcessingException,
                        QgsProcessingAlgorithm,
-                       QgsProcessingParameterFeatureSource,
-                       QgsProcessingParameterFeatureSink,
                        QgsProcessingMultiStepFeedback,
                        QgsProcessingParameterVectorLayer,
                        QgsProcessingParameterRasterLayer,
@@ -50,13 +47,10 @@ import processing
 import numpy as np
 from osgeo import gdal,osr,ogr
 import sys
-import math
-import csv
 from qgis.core import QgsMessageLog
 import os
 from scipy.ndimage import generic_filter
 from qgis.core import Qgis
-#from processing.algs.gdal.GdalAlgorithm import GdalAlgorithm
 from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
 
@@ -76,8 +70,6 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Points'), types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
 
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT1, self.tr('Raster'), defaultValue=None))
-
-        #self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT, 'Output layer', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, defaultValue=None))
 
         self.addParameter(QgsProcessingParameterVectorDestination(self.OUTPUT, self.tr('Output layer'), type=QgsProcessing.TypeVectorPoint, createByDefault=True, defaultValue=None))
 
@@ -115,14 +107,10 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         if parameters['minSlopeAcceptable'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER1))
 
-        #(parameters['out'],id,a)=self.parameterAsSink(parameters,self.OUTPUT,context,source.fields(),source.wkbType(),source.sourceCrs())
-
         outFile = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
-        #self.setOutputValue(self.OUTPUT, outFile)
 
         parameters['out'], outputFormat = GdalUtils.ogrConnectionStringAndFormat(outFile, context)
 
-        #parameters['out']= self.parameterAsVectorLayer(parameters,self.OUTPUT,context)
         if parameters['out'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
 
@@ -141,7 +129,6 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         self.vector()
         del self.oout
         outputs['cleaninventory']=self.saveV(alg_params)
-        #results['out'] = outputs['cleaninventory']['OUTPUT']
         del self.raster
 
         feedback.setCurrentStep(1)
@@ -158,8 +145,6 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         self.ymax=limits[3]
 
     def importingandcounting(self,parameters):
-        #QgsMessageLog.logMessage(str(type(parameters['OUTPUT'])), 'MyPlugin', level=Qgis.Info)
-        #ciao
         self.raster={}
         ds=gdal.Open(parameters['INPUT_RASTER_LAYER'])
         xc = ds.RasterXSize
@@ -167,7 +152,6 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         geot=ds.GetGeoTransform()
         newXNumPxl=np.round(abs(self.xmax-self.xmin)/(abs(geot[1]))).astype(int)
         newYNumPxl=np.round(abs(self.ymax-self.ymin)/(abs(geot[5]))).astype(int)
-        print(newYNumPxl)
         try:
             os.system('gdal_translate -of GTiff -ot Float32 -strict -outsize ' + str(newXNumPxl) +' '+ str(newYNumPxl) +' -projwin ' +str(self.xmin)+' '+str(self.ymax)+' '+ str(self.xmax) + ' ' + str(self.ymin) +' -co COMPRESS=DEFLATE -co PREDICTOR=1 -co ZLEVEL=6 ' + parameters['INPUT_RASTER_LAYER'] +' '+ self.f+'/sizedslopexxx.tif')
         except:
@@ -185,111 +169,46 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         gtdem= self.ds1.GetGeoTransform()
         size=np.array([abs(gtdem[1]),abs(gtdem[5])])
         OS=np.array([gtdem[0],gtdem[3]])
-        #print OS
-        #print(self.XY)
-        #print(OS)
-        #print(size)
-        #NumPxl=(np.ceil((abs(self.XY-OS)/size)-1))#from 0 first cell
         xmin=OS[0]
         xmax=OS[0]+(size[0]*x)
         ymax=OS[1]
         ymin=OS[1]-(size[1]*y)
-        #print(xmin,xmax,ymin,ymax,'ciaooooo')
-
-
-
         layer=QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
-        # rs=layer.crs()
-        # campi=[]
-        # for field in layer.fields():
-        #     campi.append(field.name())
-        # campi.append('geom')
-        #
-        # driverd = ogr.GetDriverByName('ESRI Shapefile')
-        # ds9 = driverd.Open(parameters['INPUT_VECTOR_LAYER'])
-        # layer = ds9.GetLayer()
-        #rint(layer.QgsPointXY())
         features=layer.getFeatures()
         count=0
         for feature in features:
             count +=1
             geom = feature.geometry().asPoint()
-            #print(geom)
-            #print(geom.asMultiPoint())
             xy=np.array([geom[0],geom[1]])
             try:
                 self.XY=np.vstack((self.XY,xy))
             except:
                 self.XY=xy
-        #print XY
-        #print(self.XY,'xy')
         gtdem= self.ds1.GetGeoTransform()
         size=np.array([abs(gtdem[1]),abs(gtdem[5])])
         OS=np.array([gtdem[0],gtdem[3]])
-        #print OS
-        #print(self.XY)
-        #print(OS)
-        #print(size)
         NumPxl=(np.ceil((abs(self.XY-OS)/size)-1))#from 0 first cell
-        #NumPxl[NumPxl==-1.]=0
-
-        values=np.zeros((y,x), dtype='Int16')
-        #print(x,y,'size')
-        #if out_data is None:
-        #    raise ValueError # Could not create output file, see 'WoE' Log Messages Panel
-        #    # set values below nodata threshold to nodata
-        #values[NumPxl[i,1].astype(int),NumPxl[i,0].astype(int)]=1
-        #print len(NumPxl)
-        #print(NumPxl,'numpxl')
-        #print(self.ymax,self.ymin,self.xmax,self.xmin)
-        #print(self.XY,'xy')
-        #print(count)
-        #print(NumPxl)
-        # try:
+        values=np.zeros((y,x), dtype=int)
         for i in range(count):
             if self.XY[i,1]<=ymax and self.XY[i,1]>=ymin and self.XY[i,0]<=xmax and self.XY[i,0]>=xmin:
-                print(i,'ii')
                 values[NumPxl[i,1].astype(int),NumPxl[i,0].astype(int)]=1
-                #print(i,'ii')
-        # except:#only 1 feature
-        #    if self.XY[1]<=self.ymax and self.XY[1]>=self.ymin and self.XY[0]<=self.xmax and self.XY[0]>=self.xmin:
-        #        values[NumPxl[1].astype(int),NumPxl[0].astype(int)]=1
         self.raster[1] = values.astype('float32')
-        print(np.max(self.raster[1]),'self')
 
     def indexing(self, parameters):
         ggg=np.array([])
         ggg=self.raster[0].astype('float32')
-        #nann=float('nan')
-        #ggg[(ggg==-9999)]=nann
         R=np.array([])
-        R=self.raster[1].astype('Int16')
-        #R[(R==-9999)]=None
-        #R[(R==0)]=-9999
-        #idx=np.where(raster[1]==1)
-        #row,col=np.shape(ggg)
-        #print row,col
-        #print idx[0,:]
-        #print ggg[idx[0,:]]
+        R=self.raster[1].astype(np.int16)
         numbb=parameters['INPUT_INT']*2+1
         g = generic_filter(ggg, np.nanmax, size=(numbb,numbb))
-        #oout=np.zeros((y,x),dtype='Int16')
-        #v=g[idx]
-        #print idx
-        #for i in range(len(idx)):
-        #    if g[idx[i]]>0:
-        #        oout[idx[i]]=1
-        #oout[(g[idx]>0)]=1
         self.oout=np.array([])
         self.oout=R*g
-        print(np.max(self.oout),'max oout')
         self.oout[(self.raster[0]==-9999)]=-9999
         self.oout[(self.raster[1]==0)]=-9999
         self.oout[(self.oout<parameters['INPUT_INT_1'])]=-9999
         self.oout[self.oout>=parameters['INPUT_INT_1']]=1
-        print(np.max(self.oout),'max oout')
         g=None
-        ggg==np.array([])
+        del ggg
 
     def vector(self):
         row,col=np.where(self.oout==1)
@@ -298,50 +217,34 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         ysize=geo[5]
         OOx=geo[0]
         OOy=geo[3]
-        #xycoord=np.zeros((len(col),2))
         self.XYcoord=np.array([0,0])
-        print(self.XY,'lenxy')
-        #print(len(col),'lun')
         for i in range(len(col)):
             xmin=OOx+(xsize*col[i])
             xmax=OOx+(xsize*col[i])+(xsize)
             ymax=OOy+(ysize*row[i])
             ymin=OOy+(ysize*row[i])+(ysize)
-            print(xmin,xmax,ymin,ymax,'ciaooooo')
             for ii in range(len(self.XY)):
                 if (self.XY[ii,0]>=xmin and self.XY[ii,0]<=xmax and self.XY[ii,1]>=ymin and self.XY[ii,1]<=ymax):
-                    print(ii)
                     self.XYcoord=np.vstack((self.XYcoord,self.XY[ii,:]))
-
-            #xycoord[i,:]=np.array([OOx+(xsize*col[i])+(xsize/2),OOy+(ysize*row[i])+(ysize/2)])
-            #rowXY,colXY=np.where((XY[:,0]>=xmin)&(XY[:,0]<=xmax)&(XY[:,1]>=ymin)&(XY[:,1]<=ymax))
-        print(self.XYcoord)
         self.XYcoord=self.XYcoord[:]
 
     def saveV(self, parameters):
-        # set up the shapefile driver
         driver = ogr.GetDriverByName("ESRI Shapefile")
-        # Remove output shapefile if it already exists
         if os.path.exists(parameters['OUTPUT']):
             driver.DeleteDataSource(parameters['OUTPUT'])
-        # create the data source
         ds=driver.CreateDataSource(parameters['OUTPUT'])
 
         srs=osr.SpatialReference(wkt = self.ds1.GetProjection())
-        # create the layer
         layer = ds.CreateLayer("inventory_cleaned", srs, ogr.wkbPoint)
-        # Add the fields we're interested in
         field_name = ogr.FieldDefn("id", ogr.OFTInteger)
         field_name.SetWidth(100)
         layer.CreateField(field_name)
-        # Process the text file and add the attributes and features to the shapefile
         for i in range(len(self.XYcoord)):
             # create the feature
             feature = ogr.Feature(layer.GetLayerDefn())
             # Set the attributes using the values from the delimited text file
             feature.SetField("id", i)
             # create the WKT for the feature using Python string formatting
-            print(self.XYcoord,'ao')
             wkt = "POINT(%f %f)" % (float(self.XYcoord[i,0]) , float(self.XYcoord[i,1]))
             # Create the point from the Well Known Txt
             point = ogr.CreateGeometryFromWkt(wkt)
@@ -371,4 +274,4 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         return 'Data preparation'
 
     def shortHelpString(self):
-        return self.tr("It elects and remove features from point vector by a kernel raster condition")
+        return self.tr("It selects and remove features from point vector by a kernel raster condition")
