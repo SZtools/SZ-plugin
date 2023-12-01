@@ -82,23 +82,16 @@ class SZ_utils():
         feat=[]
         for feature in features:
             attr=feature.attributes()
-            #print(attr)
             geom = feature.geometry()
-            #print(type(geom.asWkt()))
             feat=attr+[geom.asWkt()]
-            #print(feat)
             gdp.loc[len(gdp)] = feat
-            #gdp = gdp.append(feat, ignore_index=True)
             count=+ 1
         gdp.to_csv(directory+'/file.csv')
         del gdp
         gdp=pd.read_csv(directory+'/file.csv')
-        #print(feat)
-        #print(gdp['S'].dtypes)
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
         df=gdp[parameters['field1']]
         nomi=list(df.head())
-        #print(list(df['Sf']),'1')
         lsd=gdp[parameters['lsd']]
         lsd[lsd>0]=1
         df['y']=lsd#.astype(int)
@@ -244,9 +237,7 @@ class SZ_utils():
 
         for subLayer in subLayers:
             name = subLayer.split('!!::!!')[1]
-            print(name,'name')
             uri = "%s|layername=%s" % (fileName, name,)
-            print(uri,'uri')
             # Create layer
             sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
             if not sub_vlayer.isValid():
