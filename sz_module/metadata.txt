@@ -4,7 +4,7 @@
 
 [general]
 name=sz_processing
-qgisMinimumVersion=3.0
+qgisMinimumVersion=3.16
 description=Susceptibility Zoning plugin
 version=1.0.4
 author=Giacomo Titti
@@ -12,8 +12,8 @@ email=giacomotitti@gmail.com
 
 about=SZ-plugin allows the evaluation of the spatial susceptibility from the pre-processing of the data to the cross-validation of the susceptibility map.
 
-tracker=https://github.com/CNR-IRPI-Padova/SZ
-repository=https://github.com/CNR-IRPI-Padova/SZ
+tracker=https://github.com/SZtools/SZ-plugin/issues
+repository=https://github.com/SZtools/SZ-plugin
 # End of mandatory metadata
 
 # Recommended items:
@@ -25,20 +25,15 @@ hasProcessingProvider=yes
 # Tags are comma separated with spaces allowed
 tags=susceptibility, cross-validation, pre-processing, statistical methods
 
-homepage=https://github.com/CNR-IRPI-Padova/SZ
+homepage=https://github.com/SZtools/SZ-plugin
 category=Spatial analysis
-plugin_dependencies= matplotlib==2.1.1,plotly==2.2.3,pandas==0.22.0,numpy==1.13.3,scipy==1.2.3,scikit-learn,pygam,seaborn
+plugin_dependencies= pandas,scikit-learn,scipy
 icon=images/icon.png
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
-
-# Since QGIS 3.8, a comma separated list of plugins to be installed
-# (or upgraded) can be specified.
-# Check the documentation for more information.
-# plugin_dependencies=
 
 Category of the plugin: Raster, Vector, Database or Web
 # category=
