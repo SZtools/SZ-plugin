@@ -8,7 +8,7 @@ from sklearn.svm import SVC
 import pandas as pd
 import numpy as np
 import math
-from pygam import LogisticGAM
+from pygam import LinearGAM,LogisticGAM
 import pickle
 import os
 from collections import OrderedDict
@@ -200,18 +200,27 @@ class Algorithms():
         X_train_sc = sc.fit_transform(train[parameters['linear']+parameters['continuous']])
         X_train = np.hstack((X_train_sc, train[parameters['categorical']]))
         lams = np.empty(len(nomi))
-        lams.fill(0.5)
-        gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
-        gam.gridsearch(X_train, train['y'], lam=lams)
-        GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
-        GAM_utils.GAM_save(gam,parameters['fold'])
-        prob_fit=gam.predict_proba(X_train)#[::,1]
+        lams.fill(0.5)        
+
+        if parameters['family']=='binomial':
+            gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
+            gam.gridsearch(X_train, train['y'], lam=lams)
+            GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
+            GAM_utils.GAM_save(gam,parameters['fold'])
+            prob_fit=gam.predict_proba(X_train)#[::,1]
+        else:
+            gam = LinearGAM(parameters['splines'], dtype=parameters['dtypes'])
+            gam.gridsearch(X_train, train['y'],lam=lams)
+            GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
+            GAM_utils.GAM_save(gam,parameters['fold'])
+            prob_fit=gam.predict(X_train)#[::,1]
+            train['SI']=np.exp(prob_fit)
         if parameters['testN']>0:
             X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
             X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
             prob_predic=gam.predict_proba(X_test)#[::,1]
             test['SI']=prob_predic
-        train['SI']=prob_fit
+            train['SI']=prob_fit
         return(train,test,gam)
     
     def GAM_transfer(parameters):
@@ -219,8 +228,12 @@ class Algorithms():
         nomi=parameters['nomi']
         trans=parameters['trans']
         X_trans = sc.fit_transform(trans[nomi])
-        prob_fit=parameters['gam'].predict_proba(X_trans)#[::,1]
-        trans['SI']=prob_fit
+        if parameters['family']=='binomial':
+            prob_fit=parameters['gam'].predict_proba(X_trans)#[::,1]
+            trans['SI']=prob_fit
+        else:
+            prob_fit=parameters['gam'].predict(X_trans)#[::,1]
+            trans['SI']=np.exp(prob_fit)
         return(trans)
 
     
@@ -497,7 +510,7 @@ class GAM_utils():
             if term.isintercept:
                 continue
             if isinstance(gam.terms[i], terms.FactorTerm):
-                countIns=1
+                countIns+=1
                 continue
             count+=1
         count=count+countIns

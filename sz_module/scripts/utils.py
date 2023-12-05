@@ -23,7 +23,6 @@ import pandas as pd
 from qgis.PyQt.QtCore import QVariant
 import os
 
-
 class SZ_utils():
 
     def load_simple(directory,parameters):
@@ -50,7 +49,12 @@ class SZ_utils():
         df=gdp[parameters['field1']]
         nomi=list(df.head())
         lsd=gdp[parameters['lsd']]
-        lsd[lsd>0]=1
+        print(parameters,'printalo')
+        if parameters['family']=='binomial':
+            lsd[lsd>0]=1
+        else:
+            lsd[lsd>0]=np.log(lsd[lsd>0])
+            print('lsd',lsd,'lsd')
         df['y']=lsd#.astype(int)
         df['ID']=gdp['ID']
         df['geom']=gdp['geom']

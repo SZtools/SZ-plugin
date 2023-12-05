@@ -314,6 +314,7 @@ class Instance(QgsProcessingAlgorithm):
     STRING1 = 'field2'
     STRING2 = 'fieldlsd'
     STRING3 = 'field3'
+    STRING4 = 'string4'
     NUMBER = 'testN'
     NUMBER1 = 'num1'
     OUTPUT = 'OUTPUT'

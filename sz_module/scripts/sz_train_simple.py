@@ -111,7 +111,7 @@ class CoreAlgorithm():
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
-            'testN':parameters['testN']
+            'testN':parameters['testN'],
         }
         outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs'],outputs['df']=SZ_utils.load_simple(self.f,alg_params)
 
