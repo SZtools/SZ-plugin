@@ -208,6 +208,13 @@ class Algorithms():
             GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
             GAM_utils.GAM_save(gam,parameters['fold'])
             prob_fit=gam.predict_proba(X_train)#[::,1]
+            train['SI']=prob_fit
+            if parameters['testN']>0:
+                X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
+                X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
+                prob_predic=gam.predict_proba(X_test)#[::,1]
+                test['SI']=prob_predic
+                train['SI']=prob_fit
         else:
             gam = LinearGAM(parameters['splines'], dtype=parameters['dtypes'])
             gam.gridsearch(X_train, train['y'],lam=lams)
@@ -215,12 +222,13 @@ class Algorithms():
             GAM_utils.GAM_save(gam,parameters['fold'])
             prob_fit=gam.predict(X_train)#[::,1]
             train['SI']=np.exp(prob_fit)
-        if parameters['testN']>0:
-            X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
-            X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
-            prob_predic=gam.predict_proba(X_test)#[::,1]
-            test['SI']=prob_predic
-            train['SI']=prob_fit
+            if parameters['testN']>0:
+                X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
+                X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
+                prob_predic=gam.predict(X_test)#[::,1]
+                test['SI']=np.exp(prob_predic)
+                train['SI']=np.exp(prob_fit)
+
         return(train,test,gam)
     
     def GAM_transfer(parameters):

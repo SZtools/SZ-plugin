@@ -79,7 +79,7 @@ class CoreAlgorithmGAM():
         results = {}
         outputs = {}
 
-        family={'0':'binomial','1':'inv_gauss'}
+        family={'0':'binomial','1':'gaussian'}
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
