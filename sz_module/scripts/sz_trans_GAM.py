@@ -204,13 +204,28 @@ class CoreAlgorithmGAM_trans():
         }
         SZ_utils.save(alg_params)
 
-        alg_params = {
-            'df': outputs['trans'],
-            'OUT':parameters['folder']
-        }
-
         if family[parameters['family']]=='binomial':
+            alg_params = {
+                'df': outputs['trans'],
+                'OUT':parameters['folder']
+            }
             SZ_utils.stampfit(alg_params)
+
+        if family[parameters['family']]=='gaussian':
+            alg_params = {
+                'df': outputs['trans'],
+                'OUT':parameters['folder'],
+                'file':parameters['folder']+'errors_trans.csv'
+
+            }
+            outputs['errors_trans']=SZ_utils.errors(alg_params)
+
+            alg_params = {
+                'df': outputs['train'],
+                'OUT':parameters['folder'],
+                'file':parameters['folder']+'errors_train.csv'
+            }
+            outputs['error_train']=SZ_utils.errors(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():

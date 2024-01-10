@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from scipy.stats import pearsonr
 import csv
 from pygam import LogisticGAM, s, f, terms
 from qgis.core import (QgsVectorLayer,
@@ -256,3 +258,26 @@ class SZ_utils():
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
 
 
+    def errors(parameters):
+        df=parameters['df']
+        nomi=list(df.head())
+        y=df['y']
+        predic=df['SI']
+        min_absolute_error = np.min(np.abs(y - predic))
+        rmse = np.sqrt(mean_squared_error(y, predic))
+        r_squared = r2_score(y, predic)
+        pearson_coefficient, _ = pearsonr(y, predic)
+        errors=[min_absolute_error,rmse,r_squared,pearson_coefficient]
+
+        output_file = parameters['file']
+
+        with open(output_file, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            # Write header
+            writer.writerow(["Metric", "Value"])
+            # Write data
+            writer.writerow(["Minimum Absolute Error", min_absolute_error])
+            writer.writerow(["RMSE", rmse])
+            writer.writerow(["R-squared", r_squared])
+            writer.writerow(["Pearson Coefficient", pearson_coefficient])
+        return(errors)
