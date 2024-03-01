@@ -6,7 +6,7 @@
 name=sz_processing
 qgisMinimumVersion=3.16
 description=Susceptibility Zoning plugin
-version=1.0.4
+version=1.0.5
 author=Giacomo Titti
 email=giacomotitti@gmail.com
 
