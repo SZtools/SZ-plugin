@@ -226,7 +226,7 @@ class Algorithms():
     
     ####################################
     
-    def LR_cv(classifier,X,y,train,test):
+    def LR_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
         classifier.fit(X[train], y[train])
         prob_predic=classifier.predict_proba(X[test])[::,1]
         regression_coeff=classifier.coef_
@@ -236,7 +236,7 @@ class Algorithms():
         #prob_fit=classifier.predict_proba(X[train])[::,1]
         return prob_predic,coeff
     
-    def DT_cv(classifier,X,y,train,test):
+    def DT_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
         classifier.fit(X[train], y[train])
         prob_predic=classifier.predict_proba(X[test])[::,1]
         # regression_coeff=classifier.coef_
@@ -245,7 +245,7 @@ class Algorithms():
         # print(coeff,'regression coeff')
         return prob_predic,None
     
-    def RF_cv(classifier,X,y,train,test):
+    def RF_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
         classifier.fit(X[train], y[train])
         prob_predic=classifier.predict_proba(X[test])[::,1]
         # regression_coeff=classifier.coef_
@@ -254,7 +254,7 @@ class Algorithms():
         # print(coeff,'regression coeff')
         return prob_predic,None
     
-    def SVC_cv(classifier,X,y,train,test):
+    def SVC_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
         classifier.fit(X[train], y[train])
         prob_predic=classifier.predict_proba(X[test])[::,1]
         regression_coeff=classifier.coef_
@@ -263,7 +263,7 @@ class Algorithms():
         print(coeff,'regression coeff')
         return prob_predic,coeff
     
-    def fr_cv(classifier,X,y,train,test,fold,df,nomi):
+    def fr_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
         dff=df.loc[train,:]
         test=df.loc[test,:]
         Npx1=None
@@ -299,7 +299,7 @@ class Algorithms():
         test['SI']=test[nomi].sum(axis=1)
         return(test['SI'],None)
     
-    def woe_cv(classifier,X,y,train,test,fold,df,nomi):
+    def woe_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
         dff=df.loc[train,:]
         test=df.loc[test,:]
         Npx1=None
@@ -402,6 +402,7 @@ class CV_utils():
                     prob[i]=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]
                     coeff=None
                 else:
+                    print(parameters['fold'],'parms')
                     prob[i],coeff=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
                 df.loc[test,'SI']=prob[i]
                 cofl.append(coeff)

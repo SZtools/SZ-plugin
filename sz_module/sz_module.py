@@ -54,6 +54,8 @@ class classePlugin(object):
             for line in file:
                 if line.startswith('version='):
                     version = line.strip().split('version=')[1].strip()
+        print(str(version),'version')
+
         self.plugin_settings = QSettings("SZ", str(version))
 
     def initProcessing(self):
