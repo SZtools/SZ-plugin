@@ -32,6 +32,7 @@ class Algorithms():
         if parameters['testN']>0:
             X_test = sc.transform(test[nomi])
             predictions = logistic_regression.predict(X_test)
+            #CI = logistic_regression.prediction_intervals(X_test, width=.95)
             prob_predic=logistic_regression.predict_proba(X_test)[::,1]
             test['SI']=prob_predic
         train['SI']=prob_fit
@@ -49,6 +50,7 @@ class Algorithms():
         if parameters['testN']>0:
             X_test = sc.transform(test[nomi])
             predictions = classifier.predict(X_test)
+            #CI = classifier.prediction_intervals(X_test, width=.95)
             prob_predic=classifier.predict_proba(X_test)[::,1]
             test['SI']=prob_predic
         train['SI']=prob_fit
@@ -66,6 +68,7 @@ class Algorithms():
         if parameters['testN']>0:
             X_test = sc.transform(test[nomi])
             predictions = classifier.predict(X_test)
+            #CI = classifier.prediction_intervals(X_test, width=.95)
             prob_predic=classifier.predict_proba(X_test)[::,1]
             test['SI']=prob_predic
         train['SI']=prob_fit
@@ -83,6 +86,7 @@ class Algorithms():
         if parameters['testN']>0:
             X_test = sc.transform(test[nomi])
             predictions = classifier.predict(X_test)
+            #CI = classifier.prediction_intervals(X_test, width=.95)
             prob_predic=classifier.predict_proba(X_test)[::,1]
             test['SI']=prob_predic
         train['SI']=prob_fit
@@ -221,11 +225,13 @@ class Algorithms():
             GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
             GAM_utils.GAM_save(gam,parameters['fold'])
             prob_fit=gam.predict(X_train)#[::,1]
+            #CI = gam.prediction_intervals(X_train, width=.95)
             train['SI']=prob_fit#np.exp(prob_fit)
             if parameters['testN']>0:
                 X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
                 X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
                 prob_predic=gam.predict(X_test)#[::,1]
+                #CI = gam.prediction_intervals(X_test, width=.95)
                 test['SI']=prob_predic#np.exp(prob_predic)
                 train['SI']=prob_fit#np.exp(prob_fit)
 
@@ -235,12 +241,15 @@ class Algorithms():
         sc = StandardScaler()
         nomi=parameters['nomi']
         trans=parameters['trans']
-        X_trans = sc.fit_transform(trans[nomi])
+        #X_trans = sc.fit_transform(trans[nomi])
+        X_train_sc = sc.fit_transform(trans[parameters['linear']+parameters['continuous']])
+        X_trans = np.hstack((X_train_sc, trans[parameters['categorical']]))
         if parameters['family']=='binomial':
             prob_fit=parameters['gam'].predict_proba(X_trans)#[::,1]
             trans['SI']=prob_fit
         else:
             prob_fit=parameters['gam'].predict(X_trans)#[::,1]
+            #CI = parameters['gam'].prediction_intervals(X_trans, width=.95)
             trans['SI']=prob_fit#np.exp(prob_fit)
         return(trans)
 
@@ -375,7 +384,10 @@ class Algorithms():
         print(np.max(X[train,]),'train')
         print(np.max(X[test]),'test')
         prob_predic=gam.predict_proba(X[test])#[::,1]
-        return prob_predic,None
+        CI=gam.prediction_intervals(X[test])
+        GAM_utils.plot_predict(X[test],prob_predic,CI,fold,filename)
+
+        return prob_predic,None,CI
     
     def scaler(df,nomes):
         df_scaled=df.copy()
@@ -405,8 +417,10 @@ class CV_utils():
         train_ind={}
         test_ind={}
         prob={}
+        CI={}
         cofl=[]
         df["SI"] = np.nan
+        df["CI"] = np.nan
         if parameters['testN']>1:
             cv = StratifiedKFold(n_splits=parameters['testN'])
             for i, (train, test) in enumerate(cv.split(X, y)):
@@ -435,19 +449,23 @@ class CV_utils():
                     print(np.max(X.iloc[train,:].to_numpy()),'train')
                     print(np.max(X.iloc[test,:].to_numpy()),'test')
                     prob[i]=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]
+                    CI[i]=gam.prediction_intervals(X.iloc[test,:].to_numpy())
+                    GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob[i],CI,parameters['fold'], str(i))
                     coeff=None
                 else:
                     prob[i],coeff=algorithm(classifier,X,y,train,test)
                 df.loc[test,'SI']=prob[i]
+                df.loc[test,'CI']=CI[i]
                 cofl.append(coeff)
         elif parameters['testN']==1:
             train=np.arange(len(y))
             test=np.arange(len(y))
             if algorithm==Algorithms.GAM_cv:
-                prob[0],coeff=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename='')
+                prob[0],coeff,CI[0]=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename='')
             else:
                 prob[0],coeff=algorithm(classifier,X,y,train,test)
             df.loc[test,'SI']=prob[0]
+            df.loc[test,'CI']=CI[0]
             test_ind[0]=test
             cofl.append(coeff)
         if not os.path.exists(parameters['fold']):
@@ -604,6 +622,14 @@ class GAM_utils():
         #with open(filename_txt, 'wb') as file_txt:
         #    json.dump(loaded_data, file_txt, indent=2)
     
+    def plot_predict(x,predict,CI,fold, filename=''):
+        plt.plot(x,predict,'r--')
+        plt.plot(x,CI,color='b',ls='--')
+        plt.xlabel('Prediction8')
+        plt.ylabel('PDF')
+        plt.savefig(fold+'/Predict'+filename+'.pdf')
+
+
     
 
     

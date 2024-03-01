@@ -186,7 +186,10 @@ class CoreAlgorithmGAM_trans():
             'gam':outputs['gam'],
             'nomi': outputs['nomes'],
             'trans':outputs['train_trans'],
-            'family':family[parameters['family']]
+            'family':family[parameters['family']],
+            'categorical':parameters['field2'],
+            'linear':parameters['field3'],
+            'continuous':parameters['field1'],
         }
         outputs['trans']=Algorithms.GAM_transfer(alg_params)
 
