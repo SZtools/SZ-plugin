@@ -182,7 +182,7 @@ class Algorithms():
     #     lams = np.empty(len(nomi))
     #     lams.fill(0.5)
     #     gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
-    #     gam.gridsearch(X, y, lam=lams)
+    #     gam.gridsearch(X, y, lam=lams,progress=False)
         
 
     #     # save
@@ -202,7 +202,7 @@ class Algorithms():
         lams = np.empty(len(nomi))
         lams.fill(0.5)
         gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
-        gam.gridsearch(X_train, train['y'], lam=lams)
+        gam.gridsearch(X_train, train['y'], lam=lams,progress=False)
         GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
         GAM_utils.GAM_save(gam,parameters['fold'])
         prob_fit=gam.predict_proba(X_train)#[::,1]
@@ -346,7 +346,7 @@ class Algorithms():
         lams = np.empty(len(nomi))
         lams.fill(0.5)
         gam = classifier(splines, dtype=dtypes)
-        gam.gridsearch(X[train,], y[train], lam=lams)
+        gam.gridsearch(X[train,], y[train], lam=lams,progress=False)
         GAM_utils.GAM_plot(gam,df.iloc[train,],nomi,fold,filename,X[train,])
         GAM_utils.GAM_save(gam,fold,filename)
         prob_predic=gam.predict_proba(X[test])#[::,1]
@@ -396,7 +396,7 @@ class CV_utils():
                     lams = np.empty(len(nomi))
                     lams.fill(0.5)
                     gam = classifier(parameters['splines'], dtype=parameters['dtypes'])
-                    gam.gridsearch(X.iloc[train,:].to_numpy(), y.iloc[train].to_numpy(), lam=lams)
+                    gam.gridsearch(X.iloc[train,:].to_numpy(), y.iloc[train].to_numpy(), lam=lams,progress=False)
                     GAM_utils.GAM_plot(gam,df.iloc[train,:],nomi,parameters['fold'],str(i),X.iloc[train,:])
                     GAM_utils.GAM_save(gam,parameters['fold'],str(i))
                     prob[i]=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]

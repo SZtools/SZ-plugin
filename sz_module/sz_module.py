@@ -34,9 +34,11 @@ import os
 import sys
 import inspect
 
-from qgis.core import QgsApplication
+from qgis.core import QgsApplication,QgsSettings
 from qgis.PyQt.QtCore import QSettings
 from qgis.utils import iface
+#from .installer.plugin import Plugin
+
 
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
@@ -48,6 +50,9 @@ if cmd_folder not in sys.path:
 class classePlugin(object):
 
     def __init__(self):
+        #self.settings = QgsSettings()
+        #self.settings.beginGroup("SZ")
+
         self.provider = None
         dir=(os.path.dirname(os.path.abspath(__file__)))
         with open(dir+'/metadata.txt','r') as file:
@@ -64,10 +69,10 @@ class classePlugin(object):
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
-        from .utils import first_installation
-
+        from installer.installer import installer
+        print(self.plugin_settings.value("installed"))
         if not self.plugin_settings.value("installed"):
-            first_installation.requirements()
+            installer()
             self.plugin_settings.setValue("installed", True)
         self.initProcessing()
 
