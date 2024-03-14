@@ -107,10 +107,10 @@ class installer():
                         log(f"Will install selected dependencies : {reqs_to_install}")
                         try:
                             #windows
-                            command=pip_install_reqs(reqs_to_install,os.path.join(self.venv_path,"Scripts","pythonw.exe"))
+                            command=pip_install_reqs(self.prefix_path,self.plugin_venv,reqs_to_install,os.path.join(self.venv_path,"Scripts","pythonw.exe"))
                         except Exception:
                             #linux and macos
-                            command=pip_install_reqs(reqs_to_install,os.path.join(self.venv_path,"bin","pip"))
+                            command=pip_install_reqs(self.prefix_path,self.plugin_venv,reqs_to_install,os.path.join(self.venv_path,"bin","pip"))
                         QMessageBox.information(None, "Packages successfully installed",
                                                 "To make all parts of the plugin work it is recommended to restart your QGIS-session.")
                     except Exception as e:
