@@ -36,8 +36,10 @@ import inspect
 
 from qgis.core import QgsApplication,QgsSettings
 from qgis.PyQt.QtCore import QSettings
-from qgis.utils import iface
+from qgis.utils import iface,available_plugins,active_plugins
 #from .installer.plugin import Plugin
+from .installer.installer import installer
+
 
 
 
@@ -58,24 +60,34 @@ class classePlugin(object):
         with open(dir+'/metadata.txt','r') as file:
             for line in file:
                 if line.startswith('version='):
-                    version = line.strip().split('version=')[1].strip()
-        self.plugin_settings = QSettings("SZ", str(version))
+                    self.version = line.strip().split('version=')[1].strip()
+        self.plugin_settings = QSettings("SZ", str(self.version))
+        print('dai')
 
     def initProcessing(self):
         from .sz_module_provider import classeProvider
-
         """Init Processing provider for QGIS >= 3.8."""
         self.provider = classeProvider()
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
-        from installer.installer import installer
-        print(self.plugin_settings.value("installed"))
-        if not self.plugin_settings.value("installed"):
-            installer()
+        self.installer=installer()
+        print('Plugin already installed? ',self.plugin_settings.value("installed"))
+        #print('Plugin already active? ',self.plugin_settings.value("active"))
+        if not self.plugin_settings.value("installed"):# or self.plugin_settings.value("active"):
+            self.installer.preliminay_req()
+            self.installer.requirements()
             self.plugin_settings.setValue("installed", True)
+            #self.plugin_settings.setValue("active", True)
         self.initProcessing()
 
     def unload(self):
-        #self.plugin_settings.remove("installed")
+        print('unloaded',active_plugins,available_plugins)
         QgsApplication.processingRegistry().removeProvider(self.provider)
+        #self.installer.unload()
+
+
+
+
+            
+          

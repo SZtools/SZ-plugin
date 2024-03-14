@@ -18,30 +18,19 @@ from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QMessageBox, QProgressDialog
 from qgis.utils import iface
+from ..utils import log,warn
 
-class Req:
-    def __init__(self, plugin, requirement, error):
-        self.plugin: str = plugin
-        self.requirement: str = requirement
-        self.error: Union[None, ResolutionError] = error
+import os
+import platform
+import subprocess
+import sys
+import shutil
+import platform
+from pathlib import Path
+from packaging import version
 
-class Lib:
-    def __init__(self):
-        self.name: str = None
-        self.required_by: List[Req] = []
-        self.installed_dist: Distribution = None
-        self.qpip: bool = True
 
-def log(message):
-    QgsMessageLog.logMessage(message, "SZ", level=Qgis.MessageLevel.Info)
-
-def warn(message):
-    QgsMessageLog.logMessage(message, "SZ", level=Qgis.MessageLevel.Warning)
-
-def icon(name):
-    return QIcon(os.path.join(os.path.dirname(__file__), "icons", name))
-
-def run_cmd(args, description="running a system command"):
+def run_cmd(args, description="Installing...."):
     log(f'command:{args}')
 
     progress_dlg = QProgressDialog(
@@ -81,14 +70,14 @@ def run_cmd(args, description="running a system command"):
 
     if process.returncode != 0:
         warn(f"Command failed.")
-        message = QMessageBox(
-            QMessageBox.Warning,
-            "Command failed",
-            f"Encountered an error while {description} !",
-            parent=iface.mainWindow(),
-        )
-        message.setDetailedText(full_output)
-        message.exec_()
+        # message = QMessageBox(
+        #     QMessageBox.Warning,
+        #     "Command failed",
+        #     f"Encountered an error while {description} !",
+        #     parent=iface.mainWindow(),
+        # )
+        # message.setDetailedText(full_output)
+        # message.exec_()
     else:
         log("Command succeeded.")
         iface.messageBar().pushMessage(
@@ -96,3 +85,147 @@ def run_cmd(args, description="running a system command"):
             f"{description.capitalize()} succeeded",
             level=Qgis.Success,
         )
+
+def locate_py():
+        # get Python version
+        str_ver_qgis = sys.version.split(" ")[0]
+        try:
+            # non-Linux
+            path_py = os.environ["PYTHONHOME"]
+        except Exception:
+            # Linux
+            path_py = sys.executable
+        # convert to Path for eaiser processing
+        path_py = Path(path_py)     
+        # pre-defined paths for python executable
+        if platform.system() == "Windows":
+            candidates = [
+                path_py
+                / (
+                    "../../bin/pythonw.exe" if version.parse(str_ver_qgis) >= version.parse("3.9.1")
+                    else "pythonw.exe"
+                ),
+                path_py.with_name("pythonw.exe"),
+            ]
+        else:
+            candidates = [
+                path_py / "bin" / "python3",
+                path_py / "bin" / "python",
+                path_py.with_name("python3"),
+                path_py.with_name("python"),
+            ]
+        for candidate_path in candidates:
+            if candidate_path.exists():
+                log(f"Python interpreter is located in {candidate_path}")
+                return candidate_path
+
+def add_venv(prefix_path,venv_path,plugin_venv,interpreter="python"):
+    """
+    Installs given reqs with pip
+    """
+    os.makedirs(prefix_path, exist_ok=True)
+    if os.path.exists(venv_path) and os.path.isdir(venv_path):
+        log(f"{plugin_venv} already exist in {os.path.join(prefix_path, plugin_venv)} with {interpreter}")
+        pass
+    else:
+        log(f"creating {plugin_venv} in {os.path.join(prefix_path, plugin_venv)} with {interpreter}")
+        run_cmd(
+            [
+                interpreter,
+                "-m",
+                "venv",                
+                os.path.join(prefix_path, plugin_venv)
+            ],
+            f"creating a dedicated virtual-environment",
+        )
+
+def install_pip(reqs_to_install,interpreter="python"):
+    """
+    Installs given reqs with pip
+    """
+    log(f"Will install {reqs_to_install} with {interpreter}")
+    cmd=[
+            interpreter,
+            "-m",
+            *reqs_to_install
+        ]
+    run_cmd(cmd)#,f"installing {len(reqs_to_install)} requirements: {reqs_to_install}")
+    return(cmd)
+
+def pip_uninstall_reqs(reqs_to_uninstall, extra_args=[],interpreter="python pip -m"):
+    """
+    Unnstalls given deps with pip
+    """
+    log(f"Will pip uninstall {reqs_to_uninstall}")
+    cmd=[
+            interpreter,
+            #"-um",
+            #"pip",
+            "uninstall",
+            "-y",
+            *reqs_to_uninstall,
+        ],   
+    run_cmd(cmd,f"installing {len(reqs_to_uninstall)} requirements: {reqs_to_uninstall}")
+    return(cmd)
+
+def pip_install_reqs(prefix_path,plugin_venv,reqs_to_install,interpreter="python pip -m"):
+    """
+    Installs given reqs with pip
+    """
+    log(f"Will pip install {reqs_to_install} in {os.path.join(prefix_path, plugin_venv)} with {interpreter}")
+    cmd=[
+            interpreter,
+            "-m",
+            "pip",
+            "install",
+            *reqs_to_install,
+            #"-U",
+            #"--prefer-binary",
+            #"--user"
+            #"--prefix",
+            #prefix_path,
+        ]
+    run_cmd(cmd,f"installing {len(reqs_to_install)} requirements: {reqs_to_install}")
+    return(cmd)
+
+def get_package_version(qgis_python_interpreter,package_name):
+        try:
+            # Use pip to get package information
+            result = subprocess.check_output([qgis_python_interpreter,'-m','pip', 'show', package_name], universal_newlines=True)
+            
+            # Split the output into lines and find the line containing "Version"
+            lines = result.strip().split('\n')
+            for line in lines:
+                if line.startswith("Version: "):
+                    # Extract and return the version number
+                    return line[len("Version: "):].strip()
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pass
+
+        return None
+    
+def unload(site_packages_path,bin_path,venv_path):
+        # Remove path alterations
+        if site_packages_path in sys.path:
+            sys.path.remove(site_packages_path)
+            os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"].replace(
+                bin_path + ";", ""
+            )
+            os.environ["PATH"] = os.environ["PATH"].replace(bin_path + ";", "")
+        try:
+            # Attempt to delete the folder and its contents using shutil
+            shutil.rmtree(venv_path)
+            print(f"Folder '{venv_path}' and its contents deleted successfully.")
+            log(f"Folder '{venv_path}' and its contents deleted successfully.")
+        except PermissionError:
+            # If permission error occurs, try using os module with elevated privileges
+            try:
+                if platform.system() == 'Windows':
+                    os.system(f'rmdir /s /q "{venv_path}"')
+                    log(f"Folder '{venv_path}' and its contents deleted successfully.")
+                else:
+                    os.system(f'sudo rm -rf "{venv_path}"')
+                    log(f"Folder '{venv_path}' and its contents deleted successfully.")
+            except Exception as e:
+                print(f"Error deleting folder '{venv_path}': {e}")
+                log(f"Error deleting folder '{venv_path}': {e}")
