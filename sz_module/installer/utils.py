@@ -1,6 +1,5 @@
 import os
 import subprocess
-from importlib.metadata import Distribution
 from subprocess import (
     PIPE,
     STARTF_USESHOWWINDOW,
@@ -13,10 +12,9 @@ from subprocess import (
 from typing import List, Union
 
 from pkg_resources import ResolutionError
-from qgis.core import Qgis, QgsApplication, QgsMessageLog
+from qgis.core import Qgis, QgsApplication
 from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QMessageBox, QProgressDialog
+from qgis.PyQt.QtWidgets import QProgressDialog
 from qgis.utils import iface
 from ..utils import log,warn
 
@@ -24,7 +22,6 @@ import os
 import platform
 import subprocess
 import sys
-import shutil
 import platform
 from pathlib import Path
 from packaging import version
@@ -204,28 +201,3 @@ def get_package_version(qgis_python_interpreter,package_name):
 
         return None
     
-def unload(site_packages_path,bin_path,venv_path):
-        # Remove path alterations
-        if site_packages_path in sys.path:
-            sys.path.remove(site_packages_path)
-            os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"].replace(
-                bin_path + ";", ""
-            )
-            os.environ["PATH"] = os.environ["PATH"].replace(bin_path + ";", "")
-        try:
-            # Attempt to delete the folder and its contents using shutil
-            shutil.rmtree(venv_path)
-            print(f"Folder '{venv_path}' and its contents deleted successfully.")
-            log(f"Folder '{venv_path}' and its contents deleted successfully.")
-        except PermissionError:
-            # If permission error occurs, try using os module with elevated privileges
-            try:
-                if platform.system() == 'Windows':
-                    os.system(f'rmdir /s /q "{venv_path}"')
-                    log(f"Folder '{venv_path}' and its contents deleted successfully.")
-                else:
-                    os.system(f'sudo rm -rf "{venv_path}"')
-                    log(f"Folder '{venv_path}' and its contents deleted successfully.")
-            except Exception as e:
-                print(f"Error deleting folder '{venv_path}': {e}")
-                log(f"Error deleting folder '{venv_path}': {e}")

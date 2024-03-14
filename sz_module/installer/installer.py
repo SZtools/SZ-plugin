@@ -1,26 +1,17 @@
 import os
-import platform
-import subprocess
 import sys
-import shutil
-import platform
-from pathlib import Path
-from packaging import version
-from .utils import log, run_cmd
-import subprocess
 import os
 from qgis.core import Qgis
 import sys
 sys.setrecursionlimit(10000)
-#import tempfile
-#from datetime import datetime
 from qgis.core import *
 from qgis import *
 from qgis.utils import iface
 from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import Qgis, QgsMessageLog,QgsApplication
 import traceback
-
+import platform
+import shutil
 from ..utils import log,warn
 from .utils import (
     locate_py,
@@ -32,9 +23,9 @@ from .utils import (
 
 
 class installer():
-    def __init__(self):
+    def __init__(self,version):
         self.plugin_module = os.path.basename(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)))
-        self.plugin_venv = "."+self.plugin_module
+        self.plugin_venv = "."+self.plugin_module+version.replace('.', '')
         self._defered_packages = []
         self.plugins_path = os.path.join(
             QgsApplication.qgisSettingsDirPath(), "python", "plugins"
@@ -61,15 +52,24 @@ class installer():
             os.environ["PATH"] = self.bin_path + ";" + os.environ["PATH"]    
 
     def preliminay_req(self):
-        add_venv(self.prefix_path,self.venv_path,self.plugin_venv,self.qgis_python_interpreter)
         try:
-            #windows
-            #self.uninstall_pip(['pip'],os.path.join(self.venv_path,"Scripts","python"))
-            command=install_pip(['ensurepip'],os.path.join(self.venv_path,"Scripts","pythonw.exe"))
-        except Exception:
-            #linux and macos
-            #self.uninstall_pip(['pip'],os.path.join(self.venv_path,"bin","python"))
-            command=install_pip(['ensurepip'],os.path.join(self.venv_path,"bin","python"))    
+            add_venv(self.prefix_path,self.venv_path,self.plugin_venv,self.qgis_python_interpreter)
+        except Exception as e:
+            log(f"An error occurred: {e}")
+            return False
+        try:
+            try:
+                #windows
+                #self.uninstall_pip(['pip'],os.path.join(self.venv_path,"Scripts","python"))
+                command=install_pip(['ensurepip'],os.path.join(self.venv_path,"Scripts","pythonw.exe"))
+            except Exception:
+                #linux and macos
+                #self.uninstall_pip(['pip'],os.path.join(self.venv_path,"bin","python"))
+                command=install_pip(['ensurepip'],os.path.join(self.venv_path,"bin","python")) 
+        except Exception as e:
+            log(f"An error occurred: {e}")
+            return False
+           
 
     def requirements(self):
         dir=os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
@@ -94,7 +94,7 @@ class installer():
                         else:
                             log(f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!')
                             iface.messageBar().pushMessage("SZ:",f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!',Qgis.Warning)
-        self.install(list_libraries)
+        return self.install(list_libraries)
 
     def install(self,list_libraries):
             if len(list_libraries.keys())>0:
@@ -108,7 +108,7 @@ class installer():
                         try:
                             #windows
                             command=pip_install_reqs(self.prefix_path,self.plugin_venv,reqs_to_install,os.path.join(self.venv_path,"Scripts","pythonw.exe"))
-                        except Exception:
+                        except:
                             #linux and macos
                             command=pip_install_reqs(self.prefix_path,self.plugin_venv,reqs_to_install,os.path.join(self.venv_path,"bin","pip"))
                         QMessageBox.information(None, "Packages successfully installed",
@@ -119,8 +119,14 @@ class installer():
                                                 "SZ couldn't install Python packages!\n"
                                                 "See 'General' tab in 'Log Messages' panel for details.\n"
                                                 "Report any errors to https://github.com/SZtools/SZ/issues")
+                        log("An error occurred:", e)
+                        return False
                 else:
                     QMessageBox.information(None,"Information", "Packages not installed. Some SZ tools will not be fully operational.")
+                    sys.path_importer_cache.clear()
+                    log("Packages not installed. Some SZ tools will not be fully operational.")
+                    return False
+                
                 sys.path_importer_cache.clear()
                 # log_file = os.path.join(tempfile.gettempdir(), "SZ-logs.txt")
                 # # Add the current date and time to the log file
@@ -156,10 +162,33 @@ class installer():
                 # # Remove the temporary log file
                 # os.remove(log_file)
 
-    
+    def unload(self):
+            # Remove path alterations
+            if self.site_packages_path in sys.path:
+                sys.path.remove(self.site_packages_path)
+                os.environ["PYTHONPATH"] = os.environ["PYTHONPATH"].replace(
+                    self.bin_path + ";", ""
+                )
+                os.environ["PATH"] = os.environ["PATH"].replace(self.bin_path + ";", "")
+            try:
+                # Attempt to delete the folder and its contents using shutil
+                shutil.rmtree(self.venv_path)
+                print(f"Folder '{self.venv_path}' and its contents deleted successfully.")
+                log(f"Folder '{self.venv_path}' and its contents deleted successfully.")
+            except PermissionError:
+                # If permission error occurs, try using os module with elevated privileges
+                try:
+                    if platform.system() == 'Windows':
+                        os.system(f'rmdir /s /q "{self.venv_path}"')
+                        log(f"Folder '{self.venv_path}' and its contents deleted successfully.")
+                    else:
+                        os.system(f'sudo rm -rf "{self.venv_path}"')
+                        log(f"Folder '{self.venv_path}' and its contents deleted successfully.")
+                except Exception as e:
+                    print(f"Error deleting folder '{self.venv_path}': {e}")
+                    log(f"Error deleting folder '{self.venv_path}': {e}")
 
-
-    
-    
+        
+        
     
 

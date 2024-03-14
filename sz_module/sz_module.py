@@ -33,15 +33,11 @@ __revision__ = '$Format:%H$'
 import os
 import sys
 import inspect
-
-from qgis.core import QgsApplication,QgsSettings
+from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QSettings
 from qgis.utils import iface,available_plugins,active_plugins
-#from .installer.plugin import Plugin
 from .installer.installer import installer
-
-
-
+from .utils import log,warn
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 
@@ -62,7 +58,6 @@ class classePlugin(object):
                 if line.startswith('version='):
                     self.version = line.strip().split('version=')[1].strip()
         self.plugin_settings = QSettings("SZ", str(self.version))
-        print('dai')
 
     def initProcessing(self):
         from .sz_module_provider import classeProvider
@@ -71,18 +66,24 @@ class classePlugin(object):
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
-        self.installer=installer()
+        self.installer=installer(self.version)
         print('Plugin already installed? ',self.plugin_settings.value("installed"))
         #print('Plugin already active? ',self.plugin_settings.value("active"))
         if not self.plugin_settings.value("installed"):# or self.plugin_settings.value("active"):
-            self.installer.preliminay_req()
-            self.installer.requirements()
-            self.plugin_settings.setValue("installed", True)
-            #self.plugin_settings.setValue("active", True)
-        self.initProcessing()
+            if self.installer.preliminay_req() is False:
+                self.installer.unload()
+                log(f"An error occured during the installation")
+                raise RuntimeError("An error occured during the installation")
+            else:
+                if self.installer.requirements() is False:
+                    self.installer.unload()
+                    log(f"An error occured during the installation")
+                    raise RuntimeError("An error occured during the installation")
+                else:
+                    self.plugin_settings.setValue("installed", True)
+                    self.initProcessing()                
 
     def unload(self):
-        print('unloaded',active_plugins,available_plugins)
         QgsApplication.processingRegistry().removeProvider(self.provider)
         #self.installer.unload()
 
