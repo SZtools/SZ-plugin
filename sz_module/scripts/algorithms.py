@@ -182,8 +182,7 @@ class Algorithms():
     #     lams = np.empty(len(nomi))
     #     lams.fill(0.5)
     #     gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
-    #     gam.gridsearch(X, y, lam=lams,progress=False)
-        
+    #     gam.gridsearch(X, y, lam=lams, progress=False)   
 
     #     # save
     #     filename = folder_models+'/cv_fold_'+hazard+'_'+str(n_fold)+'.pkl'

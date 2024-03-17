@@ -27,7 +27,7 @@ tags=susceptibility, cross-validation, pre-processing, statistical methods
 
 homepage=https://github.com/CNR-IRPI-Padova/SZ
 category=Spatial analysis
-#plugin_dependencies= qpip
+#plugin_dependencies=
 icon=images/icon.png
 # experimental flag
 experimental=True
