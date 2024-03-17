@@ -43,6 +43,7 @@ from sz_module.images.cqp_resources_rc import qInitResources
 qInitResources()  # necessary to be able to access your images
 
 from .scripts.roc import rocAlgorithm
+from .scripts.selfroc import rocGenerator
 from .scripts.lsdanalysis import statistic
 from .scripts.cleaning import cleankernelAlgorithm
 from .scripts.graphs_lsdstats_kernel import statistickernel
@@ -262,6 +263,7 @@ class classeProvider(QgsProcessingProvider):
         #self.addAlgorithm(classAlgorithm())
         #self.addAlgorithm(rocAlgorithm())
         #self.addAlgorithm(matrixAlgorithm())
+        self.addAlgorithm(rocGenerator())
 
         self.addAlgorithm(cleankernelAlgorithm())
         self.addAlgorithm(statistickernel())
@@ -316,6 +318,7 @@ class Instance(QgsProcessingAlgorithm):
     STRING1 = 'field2'
     STRING2 = 'fieldlsd'
     STRING3 = 'field3'
+    STRING4 = 'string4'
     NUMBER = 'testN'
     NUMBER1 = 'num1'
     OUTPUT = 'OUTPUT'
