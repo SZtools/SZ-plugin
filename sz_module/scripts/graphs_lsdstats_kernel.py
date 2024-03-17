@@ -198,19 +198,24 @@ class statistickernel(QgsProcessingAlgorithm):
 
 
     def input(self,parameters):
-        shapefile = parameters['INPUT2']
-        driver = ogr.GetDriverByName("ESRI Shapefile")
-        dataSource = driver.Open(shapefile, 0)
-        layer = dataSource.GetLayer()
-        layerDefinition = layer.GetLayerDefn()
+        layer = QgsVectorLayer(parameters['INPUT2'], 'vector', "ogr")
+
+
+
+        #shapefile = parameters['INPUT2']
+        #driver = ogr.GetDriverByName("ESRI Shapefile")
+        #dataSource = driver.Open(shapefile, 0)
+        #→layer = dataSource.GetLayer()
+        #layerDefinition = layer.GetLayerDefn()
         list_field=[]
-        for i in range(layerDefinition.GetFieldCount()):
-            fieldname=[layerDefinition.GetFieldDefn(i).GetName()]
+        fields=layer.fields()
+        for i in range(layer.fields().count()):
+            fieldname=[fields[i].name()]
             list_field=list_field+fieldname
         count=0
         valuesrow={}
-        for feature in layer:
-            valuesrow[count] = [feature.GetField(j) for j in list_field]
+        for feature in layer.getFeatures():
+            valuesrow[count] = [feature.attribute(j) for j in list_field]
             count+=1
         count=0
         valuesfield={}

@@ -304,7 +304,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         OS=np.array([gtdem[0],gtdem[3]])
         NumPxl=(np.ceil((abs(XY-OS)/size)-1))#from 0 first cell
         NumPxl[NumPxl==-1.]=0
-        values=np.zeros((y,x), dtype='Int16')
+        values=np.zeros((y,x), dtype=int)
         for i in range(len(NumPxl)):
             if XY[i,1]<ymax and XY[i,1]>ymin and XY[i,0]<xmax and XY[i,0]>xmin:
                 values[NumPxl[i,1].astype(int),NumPxl[i,0].astype(int)]=1
@@ -315,7 +315,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         return raster,ds1,XY,crs
 
     def indexing(self,parameters):
-        ggg=np.zeros(np.shape(parameters['INPUT3'][0]),dtype='float32')
+        ggg=np.zeros(np.shape(parameters['INPUT3'][0]),dtype=np.float32)
         ggg[:]=parameters['INPUT3'][0][:]
         ggg[(ggg==-9999)]=np.nan
         numbb=parameters['INPUT']*2+1

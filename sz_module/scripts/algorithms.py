@@ -12,7 +12,7 @@ from pygam import LinearGAM,LogisticGAM
 import pickle
 import os
 from collections import OrderedDict
-from pygam import terms
+#from pygam import terms
 import csv
 import matplotlib.pyplot as plt
 import json
@@ -100,7 +100,7 @@ class Algorithms():
         Npx2=None
         Npx3=None
         Npx4=None
-        file = open(parameters['txt'],'w')#################save W+, W- and Wf
+        file = open(parameters['fold']+'/r_coeffs.txt','w')#################save W+, W- and Wf
         file.write('covariate,class,Npx1,Npx2,Npx3,Npx4,Wf\n')
         #print('covariates:',nomi)
         for ii in nomi:
@@ -143,7 +143,7 @@ class Algorithms():
         Npx2=None
         Npx3=None
         Npx4=None
-        file = open(parameters['txt'],'w')#################save W+, W- and Wf
+        file = open(parameters['fold']+'/r_coeffs.txt','w')#################save W+, W- and Wf
         file.write('covariate,class,Npx1,Npx2,Npx3,Npx4,W+,W-,Wf\n')
         for ii in nomi:
             classi=df[ii].unique()
@@ -186,8 +186,7 @@ class Algorithms():
     #     lams = np.empty(len(nomi))
     #     lams.fill(0.5)
     #     gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
-    #     gam.gridsearch(X, y, lam=lams)
-        
+    #     gam.gridsearch(X, y, lam=lams, progress=False)   
 
     #     # save
     #     filename = folder_models+'/cv_fold_'+hazard+'_'+str(n_fold)+'.pkl'
@@ -234,7 +233,6 @@ class Algorithms():
                 #CI = gam.prediction_intervals(X_test, width=.95)
                 test['SI']=prob_predic#np.exp(prob_predic)
                 train['SI']=prob_fit#np.exp(prob_fit)
-
         return(train,test,gam)
     
     def GAM_transfer(parameters):
@@ -293,67 +291,65 @@ class Algorithms():
         print(coeff,'regression coeff')
         return prob_predic,coeff
     
-    def fr_cv(train,test,frame,nomes,txt):
-        df=frame.loc[train,:]
-        test=frame.loc[test,:]
-        nomi=nomes
+    def fr_cv(classifier,X,y,train,test,fold,df,nomi):
+        dff=df.loc[train,:]
+        test=df.loc[test,:]
         Npx1=None
         Npx2=None
         Npx3=None
         Npx4=None
-        file = open(txt,'w')#################save W+, W- and Wf
+        file = open(fold+'/r_coeff.txt','w')#################save W+, W- and Wf
         file.write('covariate,class,Npx1,Npx2,Npx3,Npx4,Wf\n')
         for ii in nomi:
-            classi=df[ii].unique()
+            classi=dff[ii].unique()
             for i in classi:
                 dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 1 and x[ii] == i else False, axis = 1)
+                dd = dff.apply(lambda x : True if x['y'] == 1 and x[ii] == i else False, axis = 1)
                 Npx1 = len(dd[dd == True].index)
                 dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x[ii] == i else False, axis = 1)
+                dd = dff.apply(lambda x : True if x[ii] == i else False, axis = 1)
                 Npx2 = len(dd[dd == True].index)
                 dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 1 else False, axis = 1)
+                dd = dff.apply(lambda x : True if x['y'] == 1 else False, axis = 1)
                 Npx3 = len(dd[dd == True].index)
                 dd=pd.DataFrame()
-                Npx4 = df.shape[0]#len(dd[dd == True].index)
+                Npx4 = dff.shape[0]#len(dd[dd == True].index)
                 if Npx1==0 or Npx3==0:
                     Wf=0.
                 else:
                     Wf=(np.divide((np.divide(Npx1,Npx2)),(np.divide(Npx3,Npx4))))
                 var=[ii,i,Npx1,Npx2,Npx3,Npx4,Wf]
                 file.write(','.join(str(e) for e in var)+'\n')#################save W+, W- and Wf
-                df[ii][df[ii]==i]=float(Wf)
+                dff[ii][dff[ii]==i]=float(Wf)
                 test[ii][test[ii]==i]=float(Wf)
         file.close()
-        df['SI']=df[nomi].sum(axis=1)
+        dff['SI']=dff[nomi].sum(axis=1)
         test['SI']=test[nomi].sum(axis=1)
         return(test['SI'],None)
     
-    def woe_cv(train,test,frame,nomes,txt):
-        df=frame.loc[train,:]
-        test=frame.loc[test,:]
-        nomi=nomes
+    def woe_cv(classifier,X,y,train,test,fold,df,nomi):
+        dff=df.loc[train,:]
+        test=df.loc[test,:]
         Npx1=None
         Npx2=None
         Npx3=None
         Npx4=None
-        file = open(txt,'w')#################save W+, W- and Wf
+        file = open(fold+'/r_coeff.txt','w')#################save W+, W- and Wf
         file.write('covariate,class,Npx1,Npx2,Npx3,Npx4,W+,W-,Wf\n')
         for ii in nomi:
-            classi=df[ii].unique()
+            classi=dff[ii].unique()
             for i in classi:
                 dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 1 and x[ii] == i else False, axis = 1)
+                dd = dff.apply(lambda x : True if x['y'] == 1 and x[ii] == i else False, axis = 1)
                 Npx1 = len(dd[dd == True].index)
                 dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 1 and x[ii] != i else False, axis = 1)
+                dd = dff.apply(lambda x : True if x['y'] == 1 and x[ii] != i else False, axis = 1)
                 Npx2 = len(dd[dd == True].index)
                 dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 0 and x[ii] == i else False, axis = 1)
+                dd = dff.apply(lambda x : True if x['y'] == 0 and x[ii] == i else False, axis = 1)
                 Npx3 = len(dd[dd == True].index)
                 dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 0 and x[ii] != i else False, axis = 1)
+                dd = dff.apply(lambda x : True if x['y'] == 0 and x[ii] != i else False, axis = 1)
                 Npx4 = len(dd[dd == True].index)
                 if Npx1==0 or Npx3==0:
                     Wplus=0.
@@ -366,11 +362,11 @@ class Algorithms():
                 Wf=Wplus-Wminus
                 var=[ii,i,Npx1,Npx2,Npx3,Npx4,Wplus,Wminus,Wf]
                 file.write(','.join(str(e) for e in var)+'\n')#################save W+, W- and Wf
-                df[ii][df[ii]==i]=float(Wf)
+                dff[ii][dff[ii]==i]=float(Wf)
                 test[ii][test[ii]==i]=float(Wf)
             #df.to_csv(self.f+'/file'+ii+'.csv')
         file.close()
-        df['SI']=df[nomi].sum(axis=1)
+        dff['SI']=dff[nomi].sum(axis=1)
         test['SI']=test[nomi].sum(axis=1)
         return(test['SI'],None)
     
@@ -378,11 +374,9 @@ class Algorithms():
         lams = np.empty(len(nomi))
         lams.fill(0.5)
         gam = classifier(splines, dtype=dtypes)
-        gam.gridsearch(X[train,], y[train], lam=lams)
+        gam.gridsearch(X[train,], y[train], lam=lams,progress=False)
         GAM_utils.GAM_plot(gam,df.iloc[train,],nomi,fold,filename,X[train,])
         GAM_utils.GAM_save(gam,fold,filename)
-        print(np.max(X[train,]),'train')
-        print(np.max(X[test]),'test')
         prob_predic=gam.predict_proba(X[test])#[::,1]
         CI=gam.prediction_intervals(X[test])
         GAM_utils.plot_predict(X[test],prob_predic,CI,fold,filename)
@@ -403,7 +397,6 @@ class CV_utils():
         df=parameters['df']
         nomi=parameters['nomi']
         x=df[parameters['field1']]
-        print(len(df['y']),'df')
         y=df['y']
         if algorithm==Algorithms.GAM_cv:
             X=Algorithms.scaler(x,parameters['linear']+parameters['continuous'])
@@ -427,11 +420,6 @@ class CV_utils():
                 train_ind[i]=train
                 test_ind[i]=test
                 if algorithm==Algorithms.GAM_cv:
-                    print(i,'iter')
-                    print(X.iloc[train,:],'x')
-                    print(y.iloc[train],'y')
-                    print(np.shape(X.iloc[train,:].to_numpy()),'x')
-                    print(np.shape(y.iloc[train]),'y')
                     #X_train=X[train,]             
                     #X_train[parameters['linear']+parameters['continuous']]=sc.transform(X_train[parameters['linear']+parameters['continuous']])
                     #X_test=X[test,]             
@@ -440,20 +428,16 @@ class CV_utils():
                     #prob[i],coeff=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename=str(i),scaler=sc)
                     lams = np.empty(len(nomi))
                     lams.fill(0.5)
-                    print(lams)
-                    print(parameters['splines'],parameters['dtypes'])
                     gam = classifier(parameters['splines'], dtype=parameters['dtypes'])
-                    gam.gridsearch(X.iloc[train,:].to_numpy(), y.iloc[train].to_numpy(), lam=lams)
+                    gam.gridsearch(X.iloc[train,:].to_numpy(), y.iloc[train].to_numpy(), lam=lams,progress=False)
                     GAM_utils.GAM_plot(gam,df.iloc[train,:],nomi,parameters['fold'],str(i),X.iloc[train,:])
                     GAM_utils.GAM_save(gam,parameters['fold'],str(i))
-                    print(np.max(X.iloc[train,:].to_numpy()),'train')
-                    print(np.max(X.iloc[test,:].to_numpy()),'test')
                     prob[i]=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]
                     CI[i]=gam.prediction_intervals(X.iloc[test,:].to_numpy())
                     GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob[i],CI,parameters['fold'], str(i))
                     coeff=None
                 else:
-                    prob[i],coeff=algorithm(classifier,X,y,train,test)
+                    prob[i],coeff=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
                 df.loc[test,'SI']=prob[i]
                 df.loc[test,'CI']=CI[i]
                 cofl.append(coeff)
@@ -463,7 +447,7 @@ class CV_utils():
             if algorithm==Algorithms.GAM_cv:
                 prob[0],coeff,CI[0]=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename='')
             else:
-                prob[0],coeff=algorithm(classifier,X,y,train,test)
+                prob[0],coeff=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
             df.loc[test,'SI']=prob[0]
             df.loc[test,'CI']=CI[0]
             test_ind[0]=test
@@ -491,7 +475,6 @@ class GAM_utils():
             if GAM_sel[i] in parameters['continuous']:
                 dtypes = dtypes + ['numerical']
                 vars_dict[GAM_sel[i]]={'term':'s', 'n_splines':spl}
-                print(splines)
             elif GAM_sel[i] in parameters['categorical']:
                 dtypes = dtypes + ['categorical']
                 vars_dict[GAM_sel[i]]={'term':'f'}
@@ -509,7 +492,6 @@ class GAM_utils():
                 term = terms.FactorTerm(i)
             splines += term
 
-        print(splines)
         return splines,dtypes
     
     def GAM_plot(gam,df,nomi,fold,filename,scaled_df):

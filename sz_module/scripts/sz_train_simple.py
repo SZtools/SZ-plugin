@@ -119,7 +119,8 @@ class CoreAlgorithm():
             'train': outputs['train'],
             'testy': outputs['testy'],
             'nomi':outputs['nomes'],
-            'testN':parameters['testN']
+            'testN':parameters['testN'],
+            'fold': parameters['folder']
         }
         outputs['trainsi'],outputs['testsi']=algorithm(alg_params)
 

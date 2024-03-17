@@ -33,11 +33,11 @@ __revision__ = '$Format:%H$'
 import os
 import sys
 import inspect
-
 from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QSettings
-from qgis.utils import iface
-
+from qgis.utils import iface,available_plugins,active_plugins
+from .installer.installer import installer
+from .utils import log,warn
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 
@@ -48,29 +48,47 @@ if cmd_folder not in sys.path:
 class classePlugin(object):
 
     def __init__(self):
+        #self.settings = QgsSettings()
+        #self.settings.beginGroup("SZ")
+
         self.provider = None
         dir=(os.path.dirname(os.path.abspath(__file__)))
         with open(dir+'/metadata.txt','r') as file:
             for line in file:
                 if line.startswith('version='):
-                    version = line.strip().split('version=')[1].strip()
-        self.plugin_settings = QSettings("SZ", str(version))
+                    self.version = line.strip().split('version=')[1].strip()
+        self.plugin_settings = QSettings("SZ", str(self.version))
 
     def initProcessing(self):
         from .sz_module_provider import classeProvider
-
         """Init Processing provider for QGIS >= 3.8."""
         self.provider = classeProvider()
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
-        from .utils import first_installation
-
-        if not self.plugin_settings.value("installed"):
-            first_installation.requirements()
-            self.plugin_settings.setValue("installed", True)
-        self.initProcessing()
+        self.installer=installer(self.version)
+        print('Plugin already installed? ',self.plugin_settings.value("installed"))
+        #print('Plugin already active? ',self.plugin_settings.value("active"))
+        if not self.plugin_settings.value("installed"):# or self.plugin_settings.value("active"):
+            if self.installer.preliminay_req() is False:
+                self.installer.unload()
+                log(f"An error occured during the installation")
+                raise RuntimeError("An error occured during the installation")
+            else:
+                if self.installer.requirements() is False:
+                    self.installer.unload()
+                    log(f"An error occured during the installation")
+                    raise RuntimeError("An error occured during the installation")
+                else:
+                    self.plugin_settings.setValue("installed", True)
+                    self.initProcessing()                
 
     def unload(self):
-        #self.plugin_settings.remove("installed")
         QgsApplication.processingRegistry().removeProvider(self.provider)
+        #self.installer.unload()
+
+
+
+
+            
+          
