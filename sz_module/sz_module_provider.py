@@ -269,7 +269,7 @@ class classeProvider(QgsProcessingProvider):
         self.addAlgorithm(statistickernel())
         self.addAlgorithm(samplerAlgorithm())
         self.addAlgorithm(rasterstatkernelAlgorithm())
-        #self.addAlgorithm(CorrAlgorithm())
+        self.addAlgorithm(CorrAlgorithm())
 
         self.addAlgorithm(classvAlgorithm())
         self.addAlgorithm(classvAlgorithmW())

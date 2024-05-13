@@ -53,7 +53,7 @@ import matplotlib.pyplot as plt
 from processing.algs.gdal.GdalUtils import GdalUtils
 import pandas as pd
 import tempfile
-#import seaborn as sns
+import seaborn as sns
 
 class CorrAlgorithm(QgsProcessingAlgorithm):
     INPUT = 'covariates'
