@@ -27,6 +27,12 @@ The SZ plugin is not an official QGIS plugin.
 
 Minimum tested version of QGIS is 3.28
 
+Tested on:
+
+* Ubuntu 20.04 - QGIS 3.34
+* Windows 10 - QGIS 3.28/QGIS 3.34
+* MacOS Sonoma 14.4 - QGIS 3.28
+
 #### Download and install
 
 It can be installed on QGIS >= 3.28 adding the Plugin Repository to QGIS ```manage and install plugins```:
@@ -135,6 +141,5 @@ Giacomo Titti, Alessandro Sarretta and Luigi Lombardo, Padova, November 2021
 please cite as: Giacomo Titti, Alessandro Sarretta and Luigi Lombardo. (2021). CNR-IRPI-Padova/SZ: SZ plugin (Version v1.0). Zenodo.
   
 ## Contacts
-If you have any problem, please write to giacomotitti@gmail.com
-
+If you have any problem, please write to giacomotitti@gmail.com or create new issue [here](https://github.com/SZtools/SZ-plugin/issues)
 
