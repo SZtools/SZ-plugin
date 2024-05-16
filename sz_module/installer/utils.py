@@ -2,11 +2,7 @@ import os
 import subprocess
 from subprocess import (
     PIPE,
-    STARTF_USESHOWWINDOW,
-    STARTF_USESTDHANDLES,
-    STARTUPINFO,
     STDOUT,
-    SW_HIDE,
     Popen,
 )
 from typing import List, Union
@@ -25,6 +21,14 @@ import sys
 import platform
 from pathlib import Path
 from packaging import version
+
+if platform.system() == "Windows":
+    from subprocess import (
+        STARTF_USESHOWWINDOW,
+        STARTF_USESTDHANDLES,
+        STARTUPINFO,
+        SW_HIDE,
+    )
 
 
 def run_cmd(args, description="Installing...."):
