@@ -2,11 +2,7 @@ import os
 import subprocess
 from subprocess import (
     PIPE,
-    STARTF_USESHOWWINDOW,
-    STARTF_USESTDHANDLES,
-    STARTUPINFO,
     STDOUT,
-    SW_HIDE,
     Popen,
 )
 from typing import List, Union
@@ -26,15 +22,25 @@ import platform
 from pathlib import Path
 from packaging import version
 
+if platform.system() == "Windows":
+    from subprocess import (
+        STARTF_USESHOWWINDOW,
+        STARTF_USESTDHANDLES,
+        STARTUPINFO,
+        SW_HIDE,
+    )
+
 
 def run_cmd(args, description="Installing...."):
     log(f'command:{args}')
 
-    progress_dlg = QProgressDialog(
-        description, "Abort", 0, 0, parent=iface.mainWindow()
-    )
-    progress_dlg.setWindowModality(Qt.WindowModal)
-    progress_dlg.show()
+    # progress_dlg = QProgressDialog(
+    #     description, "Abort", 0, 0, parent=iface.mainWindow()
+    # )
+    # progress_dlg.setWindowModality(Qt.WindowModal)
+
+    
+    #progress_dlg.show()
 
     startupinfo = None
     if os.name == "nt":
@@ -53,17 +59,17 @@ def run_cmd(args, description="Installing...."):
             output = out.decode(errors="replace").strip()
             full_output += output
             if output:
-                progress_dlg.setLabelText(output)
+                #progress_dlg.setLabelText(output)
                 log(output)
         except subprocess.TimeoutExpired:
             pass
 
-        if progress_dlg.wasCanceled():
-            process.kill()
+        #if progress_dlg.wasCanceled():
+        #    process.kill()
         if process.poll() is not None:
             break
 
-    progress_dlg.close()
+    #progress_dlg.close()
 
     if process.returncode != 0:
         warn(f"Command failed.")

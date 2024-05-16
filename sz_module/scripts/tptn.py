@@ -120,10 +120,10 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         return self.tr('03 Confusion Matrix')
 
     def group(self):
-        return self.tr('Classify SI')
+        return self.tr('04 Classify SI')
 
     def groupId(self):
-        return 'Classify SI'
+        return '04 Classify SI'
 
     def shortHelpString(self):
         return self.tr("This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)")

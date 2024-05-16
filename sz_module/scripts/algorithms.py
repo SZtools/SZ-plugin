@@ -8,7 +8,7 @@ from sklearn.svm import SVC
 import pandas as pd
 import numpy as np
 import math
-from pygam import LinearGAM,LogisticGAM
+#from pygam import LinearGAM,LogisticGAM
 import pickle
 import os
 from collections import OrderedDict

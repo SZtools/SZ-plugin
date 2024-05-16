@@ -96,10 +96,10 @@ class statistic(QgsProcessingAlgorithm):
         return self.tr('02 Attribute Table Statistics')
 
     def group(self):
-        return self.tr('Data preparation')
+        return self.tr('01 Data preparation')
 
     def groupId(self):
-        return 'Data preparation'
+        return '01 Data preparation'
 
     def shortHelpString(self):
         return self.tr("analysis of the points density distribution by attribute fields")
