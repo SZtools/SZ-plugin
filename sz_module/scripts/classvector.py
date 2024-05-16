@@ -107,10 +107,10 @@ class classvAlgorithm(QgsProcessingAlgorithm):
         return self.tr('01 Classify vector by ROC')
 
     def group(self):
-        return self.tr('Classify SI')
+        return self.tr('04 Classify SI')
 
     def groupId(self):
-        return 'Classify SI'
+        return '04 Classify SI'
 
     def shortHelpString(self):
         return self.tr("Classifies a index (SI) maximizing the AUC of the relative ROC curve.")

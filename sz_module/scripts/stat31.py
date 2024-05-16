@@ -91,10 +91,10 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         return self.tr('03 Points Kernel Statistics')
 
     def group(self):
-        return self.tr('Data preparation')
+        return self.tr('01 Data preparation')
 
     def groupId(self):
-        return 'Data preparation'
+        return '01 Data preparation'
 
     def shortHelpString(self):
         return self.tr("It calculates kernel statistic from raster around points: real, max, min, std, sum, average, range")

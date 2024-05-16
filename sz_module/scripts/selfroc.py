@@ -104,10 +104,10 @@ class rocGenerator(QgsProcessingAlgorithm):
         return self.tr('04 ROC')
 
     def group(self):
-        return self.tr('Classify SI')
+        return self.tr('04 Classify SI')
 
     def groupId(self):
-        return 'Classify SI'
+        return '04 Classify SI'
 
     def shortHelpString(self):
         return self.tr("ROC curve creator")

@@ -268,10 +268,10 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         return self.tr('01 Clean Points By Raster Kernel Value')
 
     def group(self):
-        return self.tr('Data preparation')
+        return self.tr('01 Data preparation')
 
     def groupId(self):
-        return 'Data preparation'
+        return '01 Data preparation'
 
     def shortHelpString(self):
         return self.tr("It selects and remove features from point vector by a kernel raster condition")
