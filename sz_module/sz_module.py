@@ -68,20 +68,25 @@ class classePlugin(object):
     def initGui(self):
         self.installer=installer(self.version)
         print('Plugin already installed? ',self.plugin_settings.value("installed"))
-        #print('Plugin already active? ',self.plugin_settings.value("active"))
-        if not self.plugin_settings.value("installed"):# or self.plugin_settings.value("active"):
-            if self.installer.preliminay_req() is False:
+        #if not self.plugin_settings.value("installed"):# or self.plugin_settings.value("active"):
+        print('0')
+        if self.installer.preliminay_req() is False:
+            self.installer.unload()
+            log(f"An error occured during the installation")
+            raise RuntimeError("An error occured during the installation")
+        else:
+            print('1')
+            if self.installer.requirements() is False:
                 self.installer.unload()
                 log(f"An error occured during the installation")
                 raise RuntimeError("An error occured during the installation")
             else:
-                if self.installer.requirements() is False:
-                    self.installer.unload()
-                    log(f"An error occured during the installation")
-                    raise RuntimeError("An error occured during the installation")
-                else:
-                    self.plugin_settings.setValue("installed", True)
-                    self.initProcessing()                
+                print('2')
+                self.plugin_settings.setValue("installed", True)
+                self.initProcessing()       
+        # if self.plugin_settings.value("installed"):
+        #     print('3')
+        #     self.initProcessing()  
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)

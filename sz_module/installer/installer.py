@@ -112,7 +112,8 @@ class installer():
                             #linux and macos
                             command=pip_install_reqs(self.prefix_path,self.plugin_venv,reqs_to_install,os.path.join(self.venv_path,"bin","pip"))
                         QMessageBox.information(None, "Packages successfully installed",
-                                                "To make all parts of the plugin work it is recommended to restart your QGIS-session.")
+                                                #"To make all parts of the plugin work it is recommended to restart your QGIS-session.")
+                                                "You can find the SZ-plugin in the Processing-toolbox")
                     except Exception as e:
                         QgsMessageLog.logMessage(traceback.format_exc(), level=Qgis.Warning)
                         QMessageBox.information(None, "An error occurred",
