@@ -12,7 +12,7 @@ import math
 import pickle
 import os
 from collections import OrderedDict
-#from pygam import terms
+from pygam import terms
 import csv
 import matplotlib.pyplot as plt
 import json
@@ -378,7 +378,7 @@ class Algorithms():
         GAM_utils.GAM_plot(gam,df.iloc[train,],nomi,fold,filename,X[train,])
         GAM_utils.GAM_save(gam,fold,filename)
         prob_predic=gam.predict_proba(X[test])#[::,1]
-        CI=gam.prediction_intervals(X[test])
+        CI={}#gam.prediction_intervals(X[test])
         GAM_utils.plot_predict(X[test],prob_predic,CI,fold,filename)
 
         return prob_predic,None,CI
@@ -433,13 +433,13 @@ class CV_utils():
                     GAM_utils.GAM_plot(gam,df.iloc[train,:],nomi,parameters['fold'],str(i),X.iloc[train,:])
                     GAM_utils.GAM_save(gam,parameters['fold'],str(i))
                     prob[i]=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]
-                    CI[i]=gam.prediction_intervals(X.iloc[test,:].to_numpy())
+                    CI[i]=[]#gam.prediction_intervals(X.iloc[test,:].to_numpy())
                     GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob[i],CI,parameters['fold'], str(i))
                     coeff=None
                 else:
                     prob[i],coeff=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
                 df.loc[test,'SI']=prob[i]
-                df.loc[test,'CI']=CI[i]
+                #df.loc[test,'CI']=[]#CI[i]
                 cofl.append(coeff)
         elif parameters['testN']==1:
             train=np.arange(len(y))
@@ -449,7 +449,7 @@ class CV_utils():
             else:
                 prob[0],coeff=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
             df.loc[test,'SI']=prob[0]
-            df.loc[test,'CI']=CI[0]
+            #df.loc[test,'CI']=[]#CI[0]
             test_ind[0]=test
             cofl.append(coeff)
         if not os.path.exists(parameters['fold']):
@@ -606,7 +606,7 @@ class GAM_utils():
     
     def plot_predict(x,predict,CI,fold, filename=''):
         plt.plot(x,predict,'r--')
-        plt.plot(x,CI,color='b',ls='--')
+        #plt.plot(x,CI,color='b',ls='--')
         plt.xlabel('Prediction8')
         plt.ylabel('PDF')
         plt.savefig(fold+'/Predict'+filename+'.pdf')
