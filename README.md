@@ -23,27 +23,13 @@ The plugin allows to cross-validate the results by simple random selection of te
 
 The SZ plugin is not an official QGIS plugin.
 
-#### Requirements
+#### Minimum requirements
 
-You need to install the basic dependencies to run the project on your system using ```pip``` (visit the [website](https://pip.pypa.io) to install pip):  
-  
-Windows, open OSGeo4W Shell (it is provided with QGIS installation) then launch the commands
-```
-cd path/to/downloded/folder/sz
-pip install -r requirements.txt
-```
-or you can install them separately
-
-Linux, open prompt (Ctrl+Alt+t) and run
-```
-cd path/to/downloded/folder/sz
-pip3 install -r requirements_linux_mac.txt
-``` 
-or you can install them separately using ```sudo apt-get install python3-library```
+Minimum tested version of QGIS is 3.28
 
 #### Download and install
 
-It can be installed on QGIS3.x adding the Plugin Repository to QGIS ```manage and install plugins```:
+It can be installed on QGIS >= 3.28 adding the Plugin Repository to QGIS ```manage and install plugins```:
 - flag ```show also experimental plugins```
 
 <img src="./images/experimental.png" width="500">
@@ -59,9 +45,16 @@ It can be installed on QGIS3.x adding the Plugin Repository to QGIS ```manage an
 
 or
 
-cloning the [GitHub repository](https://github.com/CNR-IRPI-Padova/SZ) or downloading it as zip file (and than unzipping it) and copying the ```sz_module``` folder in your local ```python/plugin``` folder (read [here](https://docs.qgis.org/3.10/en/docs/user_manual/plugins/plugins.html#core-and-external-plugins) for more information).
+cloning the [GitHub repository](https://github.com/SZtools/SZ-plugin) or downloading it as zip file (and than unzipping it) and copying the ```sz_module``` folder in your local ```python/plugin``` folder (read [here](https://docs.qgis.org/3.10/en/docs/user_manual/plugins/plugins.html#core-and-external-plugins) for more information).
 
 Lunch QGIS 3.x, and abilitate the plugin from ```manage and install plugin/installed/sz_processing```
+
+<img src="./images/install.png" width="500">
+<p>
+
+or
+
+cloning the [GitHub repository](https://github.com/SZtools/SZ-plugin) or downloading it as zip file (and than unzipping it), and zip the folder ```sz_module``` to ```sz_module.zip```. Finally you can install the plugin by using the menu ```install from zip```.
 
 <img src="./images/install.png" width="500">
 <p>
