@@ -75,10 +75,10 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         return self.tr('05 Points Sampler')
 
     def group(self):
-        return self.tr('Data preparation')
+        return self.tr('01 Data preparation')
 
     def groupId(self):
-        return 'Data preparation'
+        return '01 Data preparation'
 
     def shortHelpString(self):
         return self.tr("Sample randomly training and validating datasets with the contraint to have only training or validating points per pixel")
