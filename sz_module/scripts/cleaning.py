@@ -56,17 +56,17 @@ import tempfile
 
 
 class cleankernelAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'Inventory'
-    INPUT1 = 'Slope'
-    EXTENT = 'Extension'
-    NUMBER = 'BufferRadiousInPxl'
-    NUMBER1 = 'minSlopeAcceptable'
-    OUTPUT = 'OUTPUT'
+    # INPUT = 'Inventory'
+    # INPUT1 = 'Slope'
+    # EXTENT = 'Extension'
+    # NUMBER = 'BufferRadiousInPxl'
+    # NUMBER1 = 'minSlopeAcceptable'
+    # OUTPUT = 'OUTPUT'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Points'), types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
 
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT1, self.tr('Raster'), defaultValue=None))
@@ -79,7 +79,7 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Min value acceptable'), type=QgsProcessingParameterNumber.Integer))
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
 
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
@@ -258,20 +258,20 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         ds = None
         return parameters['OUTPUT']
 
-    def createInstance(self):
-        return cleankernelAlgorithm()
+    # def createInstance(self):
+    #     return cleankernelAlgorithm()
 
-    def name(self):
-        return 'clean points'
+    # def name(self):
+    #     return 'clean points'
 
-    def displayName(self):
-        return self.tr('01 Clean Points By Raster Kernel Value')
+    # def displayName(self):
+    #     return self.tr('01 Clean Points By Raster Kernel Value')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("It selects and remove features from point vector by a kernel raster condition")
+    # def shortHelpString(self):
+    #     return self.tr("It selects and remove features from point vector by a kernel raster condition")

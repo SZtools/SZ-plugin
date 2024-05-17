@@ -56,37 +56,37 @@ import tempfile
 import seaborn as sns
 
 class CorrAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'covariates'
-    STRING = 'field1'
-    OUTPUT3 = 'OUTPUT3'
+    # INPUT = 'covariates'
+    # STRING = 'field1'
+    # OUTPUT3 = 'OUTPUT3'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return CorrAlgorithm()
+    # def createInstance(self):
+    #     return CorrAlgorithm()
 
-    def name(self):
-        return 'Correlation plot'
+    # def name(self):
+    #     return 'Correlation plot'
 
-    def displayName(self):
-        return self.tr('08 Correlation plot')
+    # def displayName(self):
+    #     return self.tr('08 Correlation plot')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("This function calculate the correlation plot between continuous variables")
+    # def shortHelpString(self):
+    #     return self.tr("This function calculate the correlation plot between continuous variables")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Continuous independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}

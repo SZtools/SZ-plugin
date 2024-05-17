@@ -56,40 +56,40 @@ import csv
 from processing.algs.gdal.GdalUtils import GdalUtils
 
 class classcovtxtAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'INPUT'
-    STRING = 'STRING'
-    FILE = 'FILE'
-    STRING3 = 'STRING3'
-    OUTPUT = 'OUTPUT'
+    # INPUT = 'INPUT'
+    # STRING = 'STRING'
+    # FILE = 'FILE'
+    # STRING3 = 'STRING3'
+    # OUTPUT = 'OUTPUT'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return classcovtxtAlgorithm()
+    # def createInstance(self):
+    #     return classcovtxtAlgorithm()
 
-    def name(self):
-        return 'classy filed by file.txt'
+    # def name(self):
+    #     return 'classy filed by file.txt'
 
-    def displayName(self):
-        return self.tr('06 Classify field by file.txt')
+    # def displayName(self):
+    #     return self.tr('06 Classify field by file.txt')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("Apply classification to field from file.txt i.e value_1 value_2 class_1")
+    # def shortHelpString(self):
+    #     return self.tr("Apply classification to field from file.txt i.e value_1 value_2 class_1")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('covariates'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterFile(self.FILE, 'Txt classes', QgsProcessingParameterFile.File, '', defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'field', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterString(self.STRING3, 'new field name', defaultValue=None))
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}
         outputs = {}

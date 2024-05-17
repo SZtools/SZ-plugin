@@ -54,36 +54,36 @@ from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
 
 class samplerAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'lsd'
-    OUTPUT1 = 'vout'
-    OUTPUT2 = 'tout'
-    MASK = 'poly'
-    NUMBER = 'w'
-    NUMBER1 = 'h'
-    NUMBER2 = 'train'
+    # INPUT = 'lsd'
+    # OUTPUT1 = 'vout'
+    # OUTPUT2 = 'tout'
+    # MASK = 'poly'
+    # NUMBER = 'w'
+    # NUMBER1 = 'h'
+    # NUMBER2 = 'train'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return samplerAlgorithm()
+    # def createInstance(self):
+    #     return samplerAlgorithm()
 
-    def name(self):
-        return 'points sampler'
+    # def name(self):
+    #     return 'points sampler'
 
-    def displayName(self):
-        return self.tr('05 Points Sampler')
+    # def displayName(self):
+    #     return self.tr('05 Points Sampler')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("Sample randomly training and validating datasets with the contraint to have only training or validating points per pixel")
+    # def shortHelpString(self):
+    #     return self.tr("Sample randomly training and validating datasets with the contraint to have only training or validating points per pixel")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Points'), types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
         self.addParameter(QgsProcessingParameterVectorLayer(self.MASK, self.tr('Contour polygon'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, 'Pixel width', type=QgsProcessingParameterNumber.Integer, defaultValue = 0,  minValue=0))
@@ -92,7 +92,7 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT1, 'Layer of sample', defaultValue=None, fileFilter='ESRI Shapefile (*.shp *.SHP)'))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT2, 'Layer of 1-sample',  defaultValue=None, fileFilter='ESRI Shapefile (*.shp *.SHP)'))
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         self.f=tempfile.gettempdir()
 
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)

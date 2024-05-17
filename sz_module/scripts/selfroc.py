@@ -86,39 +86,39 @@ import tempfile
 import os
 
 class rocGenerator(QgsProcessingAlgorithm):
-    INPUT = 'INPUT'
-    STRING = 'STRING'
-    STRING2 = 'STRING2'
-    OUTPUT3 = 'OUTPUT3'
+    # INPUT = 'INPUT'
+    # STRING = 'STRING'
+    # STRING2 = 'STRING2'
+    # OUTPUT3 = 'OUTPUT3'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return rocGenerator()
+    # def createInstance(self):
+    #     return rocGenerator()
 
-    def name(self):
-        return 'ROC'
+    # def name(self):
+    #     return 'ROC'
 
-    def displayName(self):
-        return self.tr('04 ROC')
+    # def displayName(self):
+    #     return self.tr('04 ROC')
 
-    def group(self):
-        return self.tr('04 Classify SI')
+    # def group(self):
+    #     return self.tr('04 Classify SI')
 
-    def groupId(self):
-        return '04 Classify SI'
+    # def groupId(self):
+    #     return '04 Classify SI'
 
-    def shortHelpString(self):
-        return self.tr("ROC curve creator")
+    # def shortHelpString(self):
+    #     return self.tr("ROC curve creator")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'SI field', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Folder destination', defaultValue=None, createByDefault = True))
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         self.f=tempfile.gettempdir()
         #parameters['classes']=5
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the

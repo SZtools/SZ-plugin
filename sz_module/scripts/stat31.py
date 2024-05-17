@@ -70,40 +70,41 @@ import scipy.ndimage
 from qgis.utils import iface
 from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
+import os
 
 class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'INPUT'
-    INPUT1 = 'INPUT1'
-    OUTPUT = 'OUTPUT'
-    EXTENT = 'POLY'
-    RADIUS = 'BufferRadiousInPxl'
+    # INPUT = 'INPUT'
+    # INPUT1 = 'INPUT1'
+    # OUTPUT = 'OUTPUT'
+    # EXTENT = 'POLY'
+    # RADIUS = 'BufferRadiousInPxl'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return rasterstatkernelAlgorithm()
+    # def createInstance(self):
+    #     return rasterstatkernelAlgorithm()
 
-    def name(self):
-        return 'kernel stat'
+    # def name(self):
+    #     return 'kernel stat'
 
-    def displayName(self):
-        return self.tr('03 Points Kernel Statistics')
+    # def displayName(self):
+    #     return self.tr('03 Points Kernel Statistics')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("It calculates kernel statistic from raster around points: real, max, min, std, sum, average, range")
+    # def shortHelpString(self):
+    #     return self.tr("It calculates kernel statistic from raster around points: real, max, min, std, sum, average, range")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Points'), types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT1, self.tr('Raster'), defaultValue=None))
         self.addParameter(QgsProcessingParameterVectorLayer(self.EXTENT, self.tr('Contour polygon'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
-        self.addParameter(QgsProcessingParameterNumber(self.RADIUS, 'Buffer radious in pixels', type=QgsProcessingParameterNumber.Integer, defaultValue = 4,  minValue=1))
+        self.addParameter(QgsProcessingParameterNumber(self.NUMBER, 'Buffer radious in pixels', type=QgsProcessingParameterNumber.Integer, defaultValue = 4,  minValue=1))
         #self.addParameter(QgsProcessingParameterNumber('minSlopeAcceptable', 'Min slope acceptable', type=QgsProcessingParameterNumber.Integer, defaultValue = 3,  minValue=1))
         #self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT, 'Output layer', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, defaultValue='/tmp/nasa_1km3857clean_r6s3SE250mcomplete.shp'))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, self.tr('Output layer'), defaultValue=None,fileFilter='ESRI Shapefile (*.shp *.SHP)'))
@@ -111,7 +112,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         #self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT1, 'Output layer', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, defaultValue=None))
 
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         self.f=tempfile.gettempdir()
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}

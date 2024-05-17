@@ -60,41 +60,41 @@ import matplotlib.pyplot as plt
 from processing.algs.gdal.GdalUtils import GdalUtils
 
 class classcovdecAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'INPUT'
-    STRING = 'STRING'
-    FILE = 'FILE'
-    STRING3 = 'STRING3'
-    OUTPUT = 'OUTPUT'
-    NUMBER = 'NUMBER'
+    # INPUT = 'INPUT'
+    # STRING = 'STRING'
+    # FILE = 'FILE'
+    # STRING3 = 'STRING3'
+    # OUTPUT = 'OUTPUT'
+    # NUMBER = 'NUMBER'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return classcovdecAlgorithm()
+    # def createInstance(self):
+    #     return classcovdecAlgorithm()
 
-    def name(self):
-        return 'classy filed in quantiles'
+    # def name(self):
+    #     return 'classy filed in quantiles'
 
-    def displayName(self):
-        return self.tr('07 Classify field in quantiles')
+    # def displayName(self):
+    #     return self.tr('07 Classify field in quantiles')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("Apply classification to field in quantiles")
+    # def shortHelpString(self):
+    #     return self.tr("Apply classification to field in quantiles")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('covariates'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'field', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterString(self.STRING3, 'new field name', defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('number of percentile (4=quartiles, 10=deciles)'), type=QgsProcessingParameterNumber.Integer, defaultValue = 10,  minValue=1))
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
 
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}

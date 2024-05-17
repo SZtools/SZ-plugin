@@ -89,32 +89,32 @@ import csv
 # from plotly.subplots import make_subplots
 
 class statistickernel(QgsProcessingAlgorithm):
-    INPUT = 'INPUT'
-    STRING = 'STRING'
-    FOLDER = 'FOLDER'
+    # INPUT = 'INPUT'
+    # STRING = 'STRING'
+    # FOLDER = 'FOLDER'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return statistickernel()
+    # def createInstance(self):
+    #     return statistickernel()
 
-    def name(self):
-        return 'points kernel graphs'
+    # def name(self):
+    #     return 'points kernel graphs'
 
-    def displayName(self):
-        return self.tr('04 Points kernel graphs')
+    # def displayName(self):
+    #     return self.tr('04 Points kernel graphs')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("It creates graphs of '03 Points Kernel Statistics' output")
+    # def shortHelpString(self):
+    #     return self.tr("It creates graphs of '03 Points Kernel Statistics' output")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Points'), types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
         #self.addParameter(QgsProcessingParameterNumber('BufferRadiousInPxl', 'Buffer radiou in pixels', type=QgsProcessingParameterNumber.Integer, defaultValue = 2,  minValue=1))
         #self.addParameter(QgsProcessingParameterFileDestination('outcsv', 'outcsv', '*.csv', defaultValue='/media/jack/MyBook/irpi/OutputPaperBRI/Travis/lsd06-2020.csv'))
@@ -127,7 +127,7 @@ class statistickernel(QgsProcessingAlgorithm):
         #self.addParameter(QgsProcessingParameterVectorDestination('Out', 'out', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, defaultValue=None))
         #parameters['fieldID']='ev_id'
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}
         outputs = {}

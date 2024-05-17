@@ -94,48 +94,44 @@ import tempfile
 
 
 class FPAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'covariates'
-    STRING = 'field1'
-    #STRING1 = 'field2'
-    STRING2 = 'fieldlsd'
-    #INPUT1 = 'Slope'
-    #EXTENT = 'Extension'
-    NUMBER = 'testN'
-    #NUMBER1 = 'minSlopeAcceptable'
-    OUTPUT = 'OUTPUT'
-    #OUTPUT1 = 'OUTPUT1'
-    #OUTPUT2 = 'OUTPUT2'
-    #OUTPUT3 = 'OUTPUT3'
+    # INPUT = 'covariates'
+    # STRING = 'field1'
+    # #STRING1 = 'field2'
+    # STRING2 = 'fieldlsd'
+    # #INPUT1 = 'Slope'
+    # #EXTENT = 'Extension'
+    # NUMBER = 'testN'
+    # #NUMBER1 = 'minSlopeAcceptable'
+    # OUTPUT = 'OUTPUT'
+    # #OUTPUT1 = 'OUTPUT1'
+    # #OUTPUT2 = 'OUTPUT2'
+    # #OUTPUT3 = 'OUTPUT3'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return FPAlgorithm()
+    # def createInstance(self):
+    #     return FPAlgorithm()
 
-    def name(self):
-        return 'TpTnFpFn'
+    # def name(self):
+    #     return 'TpTnFpFn'
 
-    def displayName(self):
-        return self.tr('03 Confusion Matrix')
+    # def displayName(self):
+    #     return self.tr('03 Confusion Matrix')
 
-    def group(self):
-        return self.tr('04 Classify SI')
+    # def group(self):
+    #     return self.tr('04 Classify SI')
 
-    def groupId(self):
-        return '04 Classify SI'
+    # def groupId(self):
+    #     return '04 Classify SI'
 
-    def shortHelpString(self):
-        return self.tr("This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)")
+    # def shortHelpString(self):
+    #     return self.tr("This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
 
         #self.addParameter( QgsProcessingParameterFeatureSource(self.INPUT,self.tr('Covariates'),[QgsProcessing.TypeVectorPolygon],defaultValue='covariatesclassed'))
-
-
-
-
         #self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         #self.addParameter(QgsProcessingParameterField(self.STRING1, 'Last field of covariates', parentLayerParameterName=self.INPUT, defaultValue=None))
         #self.addParameter(QgsProcessingParameterField('field', 'field', type=QgsProcessingParameterField.Any, parentLayerParameterName='v', allowMultiple=True, defaultValue=None))
@@ -143,8 +139,6 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
 
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Cutoff percentile (if empty use the YOUDEN index)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True))
-
-
 
         #self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT, 'Output layer', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, defaultValue=None))
 
@@ -156,7 +150,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         #self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}

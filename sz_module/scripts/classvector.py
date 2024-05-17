@@ -85,44 +85,44 @@ import pandas as pd
 import tempfile
 
 class classvAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'INPUT'
-    STRING = 'STRING'
-    STRING2 = 'STRING2'
-    #STRING3 = 'STRING3'
-    NUMBER = 'classes'
-    OUTPUT1 = 'OUTPUT1'
-    OUTPUT2 = 'OUTPUT2'
-    OUTPUT3 = 'OUTPUT3'
+    # INPUT = 'INPUT'
+    # STRING = 'STRING'
+    # STRING2 = 'STRING2'
+    # #STRING3 = 'STRING3'
+    # NUMBER = 'classes'
+    # OUTPUT1 = 'OUTPUT1'
+    # OUTPUT2 = 'OUTPUT2'
+    # OUTPUT3 = 'OUTPUT3'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return classvAlgorithm()
+    # def createInstance(self):
+    #     return classvAlgorithm()
 
-    def name(self):
-        return 'classy vector by ROC'
+    # def name(self):
+    #     return 'classy vector by ROC'
 
-    def displayName(self):
-        return self.tr('01 Classify vector by ROC')
+    # def displayName(self):
+    #     return self.tr('01 Classify vector by ROC')
 
-    def group(self):
-        return self.tr('04 Classify SI')
+    # def group(self):
+    #     return self.tr('04 Classify SI')
 
-    def groupId(self):
-        return '04 Classify SI'
+    # def groupId(self):
+    #     return '04 Classify SI'
 
-    def shortHelpString(self):
-        return self.tr("Classifies a index (SI) maximizing the AUC of the relative ROC curve.")
+    # def shortHelpString(self):
+    #     return self.tr("Classifies a index (SI) maximizing the AUC of the relative ROC curve.")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'SI field', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Number of classes'), type=QgsProcessingParameterNumber.Integer, defaultValue = None,  minValue=1))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Folder destination', defaultValue=None, createByDefault = True))
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         self.f=tempfile.gettempdir()
         #parameters['classes']=5
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the

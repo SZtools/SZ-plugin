@@ -224,8 +224,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithmGAM,
             'name':'Fit-CV_GAM',
             'displayName':'07 GAM',
-            'group':'SI',
-            'groupId':'SI',
+            'group':'02 SI',
+            'groupId':'02 SI',
             'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -235,8 +235,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithmGAM_cv,
             'name':'Fit-CV_GAMcv',
             'displayName':'07 GAM',
-            'group':'SI k-fold',
-            'groupId':'SI k-fold',
+            'group':'03 SI k-fold',
+            'groupId':'03 SI k-fold',
             'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -246,31 +246,150 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithmGAM_trans,
             'name':'Transfer_GAM',
             'displayName':'01 GAM',
-            'group':'SI Transfer',
-            'groupId':'SI Transfer',
+            'group':'04 SI Transfer',
+            'groupId':'04 SI Transfer',
             'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
-        self.addAlgorithm(classcovtxtAlgorithm())
-        self.addAlgorithm(classcovdecAlgorithm())
+
+        ##############
+        dict_of_scripts={
+            'alg': 'classcovtxt',
+            'function': classcovtxtAlgorithm,
+            'name':'classy filed by file.txt',
+            'displayName':'06 Classify field by file.txt',
+            'group':'01 Data preparation',
+            'groupId':'01 Data preparation',
+            'shortHelpString':"Apply classification to field from file.txt i.e value_1 value_2 class_1",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'classcovdec',
+            'function': classcovdecAlgorithm,
+            'name':'classy filed in quantiles',
+            'displayName':'07 Classify field in quantiles',
+            'group':'01 Data preparation',
+            'groupId':'01 Data preparation',
+            'shortHelpString':"Apply classification to field in quantiles",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+    
+
         ##self.addAlgorithm(polytogridAlgorithm())
         #self.addAlgorithm(pointtogridAlgorithm())
-        self.addAlgorithm(statistic())
+        dict_of_scripts={
+            'alg': 'statistic',
+            'function': statistic,
+            'name':'attributes analysis',
+            'displayName':'02 Attribute Table Statistics',
+            'group':'01 Data preparation',
+            'groupId':'01 Data preparation',
+            'shortHelpString':"analysis of the points density distribution by attribute fields",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
 
         #self.addAlgorithm(classAlgorithm())
         #self.addAlgorithm(rocAlgorithm())
         #self.addAlgorithm(matrixAlgorithm())
-        self.addAlgorithm(rocGenerator())
+        dict_of_scripts={
+            'alg': 'rocGenerator',
+            'function': rocGenerator,
+            'name':'ROC',
+            'displayName':'04 ROC',
+            'group':'05 Classify SI',
+            'groupId':'05 Classify SI',
+            'shortHelpString':"ROC curve creator",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
 
-        self.addAlgorithm(cleankernelAlgorithm())
-        self.addAlgorithm(statistickernel())
-        self.addAlgorithm(samplerAlgorithm())
-        self.addAlgorithm(rasterstatkernelAlgorithm())
-        self.addAlgorithm(CorrAlgorithm())
+        dict_of_scripts={
+            'alg': 'cleankernel',
+            'function': cleankernelAlgorithm,
+            'name':'clean points',
+            'displayName':'01 Clean Points By Raster Kernel Value',
+            'group':'01 Data preparation',
+            'groupId':'01 Data preparation',
+            'shortHelpString':"It selects and remove features from point vector by a kernel raster condition",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
 
-        self.addAlgorithm(classvAlgorithm())
-        self.addAlgorithm(classvAlgorithmW())
-        self.addAlgorithm(FPAlgorithm())
+        dict_of_scripts={
+            'alg': 'statistickernel',
+            'function': statistickernel,
+            'name':'points kernel graphs',
+            'displayName':'04 Points kernel graphs',
+            'group':'01 Data preparation',
+            'groupId':'01 Data preparation',
+            'shortHelpString':"It creates graphs of '03 Points Kernel Statistics' output",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'sampler',
+            'function': samplerAlgorithm,
+            'name':'points sampler',
+            'displayName':'05 Points Sampler',
+            'group':'01 Data preparation',
+            'groupId':'01 Data preparation',
+            'shortHelpString':"Sample randomly training and validating datasets with the contraint to have only training or validating points per pixel",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'rasterstatkernel',
+            'function': rasterstatkernelAlgorithm,
+            'name':'kernel stat',
+            'displayName':'03 Points Kernel Statistics',
+            'group':'01 Data preparation',
+            'groupId':'01 Data preparation',
+            'shortHelpString':"It calculates kernel statistic from raster around points: real, max, min, std, sum, average, range",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'Corr',
+            'function': CorrAlgorithm,
+            'name':'Correlation plot',
+            'displayName':'08 Correlation plot',
+            'group':'01 Data preparation',
+            'groupId':'01 Data preparation',
+            'shortHelpString':"This function calculate the correlation plot between continuous variables",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'classv',
+            'function': classvAlgorithm,
+            'name':'classy vector by ROC',
+            'displayName':'01 Classify vector by ROC',
+            'group':'04 Classify SI',
+            'groupId':'04 Classify SI',
+            'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative ROC curve",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'classvW',
+            'function': classvAlgorithmW,
+            'name':'classy vector by wROC',
+            'displayName':'02 Classify vector by weighted ROC',
+            'group':'04 Classify SI',
+            'groupId':'04 Classify SI',
+            'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative weighted ROC curve",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'FP',
+            'function': FPAlgorithm,
+            'name':'Conf matrix',
+            'displayName':'03 Confusion Matrix',
+            'group':'04 Classify SI',
+            'groupId':'04 Classify SI',
+            'shortHelpString':"This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
 
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
@@ -309,19 +428,24 @@ class classeProvider(QgsProcessingProvider):
         return self.name()
 
 class Instance(QgsProcessingAlgorithm):
-    INPUT = 'covariates'
-    INPUT1 = 'input1'
-    STRING = 'field1'
-    STRING1 = 'field2'
-    STRING2 = 'fieldlsd'
-    STRING3 = 'field3'
-    STRING4 = 'string4'
-    NUMBER = 'testN'
-    NUMBER1 = 'num1'
+    INPUT = 'INPUT'#'covariates'
+    INPUT1 = 'INPUT1'#'input1'
+    STRING = 'STRING'#'field1'
+    STRING1 = 'STRING1'#'field2'
+    STRING2 = 'STRING2'#'fieldlsd'
+    STRING3 = 'STRING3'#'field3'
+    STRING4 = 'STRING4'#'string4'
+    NUMBER = 'NUMBER'#'testN'
+    NUMBER1 = 'NUMBER1'#'num1'
+    NUMBER2 = 'NUMBER2'
     OUTPUT = 'OUTPUT'
     OUTPUT1 = 'OUTPUT1'
     OUTPUT2 = 'OUTPUT2'
     OUTPUT3 = 'OUTPUT3'
+    FILE = 'FILE'
+    EXTENT = 'EXTENT'
+    FOLDER = 'FOLDER'
+    MASK = 'MASK'
     
     def __init__(self, dict_of_scripts):
         super().__init__()
@@ -389,6 +513,9 @@ class Instance(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         result={}
-        result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
+        if self.algorithms[self.dict_of_scripts['alg']] and self.classifier[self.dict_of_scripts['alg']]:  
+            result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
+        else: 
+            result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
         return result
         
