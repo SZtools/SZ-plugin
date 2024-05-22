@@ -363,8 +363,8 @@ class classeProvider(QgsProcessingProvider):
             'function': classvAlgorithm,
             'name':'classy vector by ROC',
             'displayName':'01 Classify vector by ROC',
-            'group':'04 Classify SI',
-            'groupId':'04 Classify SI',
+            'group':'05 Classify SI',
+            'groupId':'05 Classify SI',
             'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative ROC curve",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -374,8 +374,8 @@ class classeProvider(QgsProcessingProvider):
             'function': classvAlgorithmW,
             'name':'classy vector by wROC',
             'displayName':'02 Classify vector by weighted ROC',
-            'group':'04 Classify SI',
-            'groupId':'04 Classify SI',
+            'group':'05 Classify SI',
+            'groupId':'05 Classify SI',
             'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative weighted ROC curve",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -385,8 +385,8 @@ class classeProvider(QgsProcessingProvider):
             'function': FPAlgorithm,
             'name':'Conf matrix',
             'displayName':'03 Confusion Matrix',
-            'group':'04 Classify SI',
-            'groupId':'04 Classify SI',
+            'group':'05 Classify SI',
+            'groupId':'05 Classify SI',
             'shortHelpString':"This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
