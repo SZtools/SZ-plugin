@@ -22,11 +22,17 @@
  ***************************************************************************/
 """
 
+"""
+Calculation taken from the article:
+Alvioli, M., Marchesini, I., Reichenbach, P., Rossi, M., Ardizzone, F., Fiorucci,
+F., and Guzzetti, F.: Automatic delineation of geomorphological slope units with
+r.slopeunits v1.0 and their optimization for landslide susceptibility modeling, 
+Geosci. Model Dev., 9, 3975–3991, https://doi.org/10.5194/gmd-9-3975-2016, 2016. 
+"""
+
 __author__ = 'Giacomo Titti'
 __date__ = '2021-07-01'
 __copyright__ = '(C) 2021 by Giacomo Titti'
-
-# This will get replaced with a git SHA1 when you do a git archive
 
 __revision__ = '$Format:%H$'
 
@@ -299,7 +305,7 @@ class segmentationAspect(QgsProcessingAlgorithm):
             }
         outputs['F']= self.F_calculator(alg_params)
 
-        outputs['F'].to_csv(parameters['fold']+'F_list.csv')
+        outputs['F'].to_csv(parameters['fold']+'/F_list.csv')
         results['OUTPUT']=outputs['F']
         return results
 
@@ -341,7 +347,7 @@ class segmentationAspect(QgsProcessingAlgorithm):
         print('I: ',I)
         return I
     
-    def F_calculator(self,parameters):
+    def F_calculator(self,parameters):# F calculation from formula 3
         df=parameters['INPUT']
         F=(np.max(df['V'].to_numpy())-df['V'].to_numpy())/(np.max(df['V'].to_numpy())-np.min(df['V'].to_numpy()))+(np.max(df['I'].to_numpy())-df['I'].to_numpy())/(np.max(df['I'].to_numpy())-np.min(df['I'].to_numpy()))
         df['F']=F
