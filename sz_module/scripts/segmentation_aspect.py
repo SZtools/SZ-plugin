@@ -119,14 +119,15 @@ class segmentationAspect(QgsProcessingAlgorithm):
         return '01 Data preparation'
 
     def shortHelpString(self):
-        return self.tr("ROC curve creator")
+        return self.tr("Segmentation aspect metric proposed for SU by Alvioli et al (2016). For more details, please refer to the paper.")
 
     def initAlgorithm(self, config=None):
         self.addParameter(QgsProcessingParameterMultipleLayers(self.INPUT, self.tr('Slope Units'), layerType=QgsProcessing.TypeVectorPolygon, defaultValue=None))
         #self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Slope Units'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None,allowMultiple=True))
-        self.addParameter(QgsProcessingParameterField(self.STRING, 'area', parentLayerParameterName=self.INPUT, defaultValue=None))
+        #self.addParameter(QgsProcessingParameterField(self.STRING, 'area', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT1, self.tr('DEM'), defaultValue=None))
-        self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT, 'Folder destination', defaultValue=None, createByDefault = True))
+        #self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT, 'Folder destination', defaultValue=None, createByDefault = True))
+        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output csv', '*.csv', defaultValue=None))
 
     def processAlgorithm(self, parameters, context, model_feedback):
         self.f=tempfile.gettempdir()
@@ -146,19 +147,19 @@ class segmentationAspect(QgsProcessingAlgorithm):
         #     #if i is None:
         #     #    raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT)[i])
 
-        parameters['field_area'] = self.parameterAsString(parameters, self.STRING, context)
-        if parameters['field_area'] is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING))
+        # parameters['field_area'] = self.parameterAsString(parameters, self.STRING, context)
+        # if parameters['field_area'] is None:
+        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING))
 
         parameters['dem'] = self.parameterAsRasterLayer(parameters, self.INPUT1, context)
         if parameters['dem'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT1))
         parameters['dem']=parameters['dem'].source()
 
-        parameters['fold'] = self.parameterAsString(parameters, self.OUTPUT, context)
-        if parameters['fold'] is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
-
+        parameters['outcsv'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
+        if parameters['outcsv'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
+        #print(parameters['outcsv'])
 
         #QgsMessageLog.logMessage(parameters['lsi'], 'MyPlugin', level=Qgis.Info)
         #QgsMessageLog.logMessage(parameters['lsi'], 'MyPlugin', level=Qgis.Info)
@@ -236,10 +237,18 @@ class segmentationAspect(QgsProcessingAlgorithm):
         table=pd.DataFrame({'name':[],'V':[],'I':[],'F':[]})
         for SU in parameters['SU']:
 
+            # Add geometry attributes
+            alg_params = {
+                'CALC_METHOD': 0,  # Layer CRS
+                'INPUT': SU,
+                'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
+            }
+            outputs['AddGeometryAttributes'] = processing.run('qgis:exportaddgeometrycolumns', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+
             # Sin Zonal statistics
             alg_params = {
                 'COLUMN_PREFIX': 'sin_',
-                'INPUT': SU,
+                'INPUT': outputs['AddGeometryAttributes']['OUTPUT'],
                 'INPUT_RASTER': outputs['SinRasterCalculator']['OUTPUT'],
                 'RASTER_BAND': 1,
                 'STATISTICS': [1],  # Sum
@@ -281,7 +290,7 @@ class segmentationAspect(QgsProcessingAlgorithm):
 
             alg_params = {
                 'INPUT':outputs['gdp'],
-                'FIELD':parameters['field_area'],
+                'FIELD':'area',
             }
             outputs['V']= self.V_calculator(alg_params)
 
@@ -305,7 +314,7 @@ class segmentationAspect(QgsProcessingAlgorithm):
             }
         outputs['F']= self.F_calculator(alg_params)
 
-        outputs['F'].to_csv(parameters['fold']+'/F_list.csv')
+        outputs['F'].to_csv(parameters['outcsv'])
         results['OUTPUT']=outputs['F']
         return results
 
