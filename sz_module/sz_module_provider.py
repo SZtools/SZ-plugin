@@ -61,6 +61,7 @@ from sz_module.scripts.sz_train_simple_GAM import CoreAlgorithmGAM
 from sz_module.scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
 from sz_module.scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
 from sz_module.scripts.algorithms import Algorithms
+from sz_module.scripts.segmentation_aspect import segmentationAspect
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -219,37 +220,37 @@ class classeProvider(QgsProcessingProvider):
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
-        dict_of_scripts={
-            'alg': 'GAM_simple',
-            'function': CoreAlgorithmGAM,
-            'name':'Fit-CV_GAM',
-            'displayName':'07 GAM',
-            'group':'SI',
-            'groupId':'SI',
-            'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
-        }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        # dict_of_scripts={
+        #     'alg': 'GAM_simple',
+        #     'function': CoreAlgorithmGAM,
+        #     'name':'Fit-CV_GAM',
+        #     'displayName':'07 GAM',
+        #     'group':'SI',
+        #     'groupId':'SI',
+        #     'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
+        # }
+        # self.addAlgorithm(Instance(dict_of_scripts))
 
-        dict_of_scripts={
-            'alg': 'GAM_cv',
-            'function': CoreAlgorithmGAM_cv,
-            'name':'Fit-CV_GAMcv',
-            'displayName':'07 GAM',
-            'group':'SI k-fold',
-            'groupId':'SI k-fold',
-            'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
-        }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        # dict_of_scripts={
+        #     'alg': 'GAM_cv',
+        #     'function': CoreAlgorithmGAM_cv,
+        #     'name':'Fit-CV_GAMcv',
+        #     'displayName':'07 GAM',
+        #     'group':'SI k-fold',
+        #     'groupId':'SI k-fold',
+        #     'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        # }
+        # self.addAlgorithm(Instance(dict_of_scripts))
 
-        dict_of_scripts={
-            'alg': 'GAM_trans',
-            'function': CoreAlgorithmGAM_trans,
-            'name':'Transfer_GAM',
-            'displayName':'01 GAM',
-            'group':'SI Transfer',
-            'groupId':'SI Transfer',
-            'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
-        }
+        # dict_of_scripts={
+        #     'alg': 'GAM_trans',
+        #     'function': CoreAlgorithmGAM_trans,
+        #     'name':'Transfer_GAM',
+        #     'displayName':'01 GAM',
+        #     'group':'SI Transfer',
+        #     'groupId':'SI Transfer',
+        #     'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
+        # }
         self.addAlgorithm(Instance(dict_of_scripts))
         self.addAlgorithm(classcovtxtAlgorithm())
         self.addAlgorithm(classcovdecAlgorithm())
@@ -271,6 +272,7 @@ class classeProvider(QgsProcessingProvider):
         self.addAlgorithm(classvAlgorithm())
         self.addAlgorithm(classvAlgorithmW())
         self.addAlgorithm(FPAlgorithm())
+        self.addAlgorithm(segmentationAspect())
 
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
