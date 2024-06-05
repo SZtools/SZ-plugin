@@ -43,7 +43,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterField,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterField,
-                       QgsProcessingContext
+                       QgsProcessingContext,
+                       QgsProcessingParameterEnum
                        )
 from qgis.core import *
 from qgis.utils import iface
@@ -65,6 +66,7 @@ class CoreAlgorithmGAM():
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Ordinal independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Spline smoothing parameter'), type=QgsProcessingParameterNumber.Integer,defaultValue=10))
         self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING4, 'Family', options=['binomial','gaussian'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Percentage of test sample (0 to fit, > 0 to cross-validate)'), type=QgsProcessingParameterNumber.Integer,defaultValue=30))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test [mandatory if Test percentage > 0]',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
@@ -76,6 +78,8 @@ class CoreAlgorithmGAM():
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
         outputs = {}
+
+        family={'0':'binomial','1':'gaussian'}
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -95,6 +99,10 @@ class CoreAlgorithmGAM():
         parameters['field2'] = self.parameterAsFields(parameters, self.STRING1, context)
         if parameters['field2'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING1))
+        
+        parameters['family'] = self.parameterAsString(parameters, self.STRING4, context)
+        if parameters['family'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING4))
 
         parameters['fieldlsd'] = self.parameterAsString(parameters, self.STRING2, context)
         if parameters['fieldlsd'] is None:
@@ -127,7 +135,8 @@ class CoreAlgorithmGAM():
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'lsd' : parameters['fieldlsd'],
-            'testN':parameters['testN']
+            'testN':parameters['testN'],
+            'family':family[parameters['family']]
         }
         outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs'],outputs['df']=SZ_utils.load_simple(self.f,alg_params)
 
@@ -152,7 +161,8 @@ class CoreAlgorithmGAM():
             'df':outputs['df'],
             'categorical':parameters['field2'],
             'linear':parameters['field3'],
-            'continuous':parameters['field1']
+            'continuous':parameters['field1'],
+            'family':family[parameters['family']]
         }
         outputs['trainsi'],outputs['testsi'],outputs['gam']=algorithm(alg_params)
 

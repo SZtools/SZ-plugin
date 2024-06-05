@@ -53,7 +53,7 @@ import matplotlib.pyplot as plt
 from processing.algs.gdal.GdalUtils import GdalUtils
 import pandas as pd
 import tempfile
-#import seaborn as sns
+import seaborn as sns
 
 class CorrAlgorithm(QgsProcessingAlgorithm):
     INPUT = 'covariates'
@@ -73,10 +73,10 @@ class CorrAlgorithm(QgsProcessingAlgorithm):
         return self.tr('08 Correlation plot')
 
     def group(self):
-        return self.tr('Data preparation')
+        return self.tr('01 Data preparation')
 
     def groupId(self):
-        return 'Data preparation'
+        return '01 Data preparation'
 
     def shortHelpString(self):
         return self.tr("This function calculate the correlation plot between continuous variables")

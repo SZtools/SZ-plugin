@@ -1,7 +1,2 @@
-seaborn
 scikit-learn
-pandas
-matplotlib
-plotly
-numpy
-scipy
+libpysal

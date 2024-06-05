@@ -4,9 +4,9 @@
 
 [general]
 name=sz_processing
-qgisMinimumVersion=3.16
+qgisMinimumVersion=3.28
 description=Susceptibility Zoning plugin
-version=1.0.6
+version=1.1.0
 author=Giacomo Titti
 email=giacomotitti@gmail.com
 
@@ -23,11 +23,11 @@ hasProcessingProvider=yes
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=susceptibility, cross-validation, pre-processing, statistical methods
+tags=susceptibility, cross-validation, pre-processing, statistical methods, hazard
 
 homepage=https://github.com/SZtools/SZ-plugin
 category=Spatial analysis
-plugin_dependencies= pandas,scikit-learn,scipy
+# plugin_dependencies= scikit-learn, libpysal
 icon=images/icon.png
 # experimental flag
 experimental=False

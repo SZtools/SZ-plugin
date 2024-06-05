@@ -43,6 +43,7 @@ from sz_module.images.cqp_resources_rc import qInitResources
 qInitResources()  # necessary to be able to access your images
 
 from .scripts.roc import rocAlgorithm
+from .scripts.selfroc import rocGenerator
 from .scripts.lsdanalysis import statistic
 from .scripts.cleaning import cleankernelAlgorithm
 from .scripts.graphs_lsdstats_kernel import statistickernel
@@ -56,15 +57,16 @@ from .scripts.classcovdeciles import classcovdecAlgorithm
 from sz_module.scripts.corrplot import CorrAlgorithm
 from sz_module.scripts.sz_train_simple import CoreAlgorithm
 from sz_module.scripts.sz_train_cv import CoreAlgorithm_cv
-#from sz_module.scripts.sz_train_simple_GAM import CoreAlgorithmGAM
-#from sz_module.scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
-#from sz_module.scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
+from sz_module.scripts.sz_train_simple_GAM import CoreAlgorithmGAM
+from sz_module.scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
+from sz_module.scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
 from sz_module.scripts.algorithms import Algorithms
+from sz_module.scripts.segmentation_aspect import segmentationAspect
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-#from pygam import LogisticGAM
+from pygam import LogisticGAM
 
 class classeProvider(QgsProcessingProvider):
 
@@ -91,8 +93,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm,
             'name':'Fit-CV_WOE',
             'displayName':'01 WoE',
-            'group':'SI',
-            'groupId':'SI',
+            'group':'02 SI',
+            'groupId':'02 SI',
             'shortHelpString':"This function apply Weight of Evidence to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -102,8 +104,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm_cv,
             'name':'Fit-CV_WOEcv',
             'displayName':'01 WoE',
-            'group':'SI k-fold',
-            'groupId':'SI k-fold',
+            'group':'03 SI k-fold',
+            'groupId':'03 SI k-fold',
             'shortHelpString':"This function apply Weight of Evidence to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -113,8 +115,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm,
             'name':'Fit-CV_SVC',
             'displayName':'05 SVM',
-            'group':'SI',
-            'groupId':'SI',
+            'group':'02 SI',
+            'groupId':'02 SI',
             'shortHelpString':"This function apply Support Vector Machine to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -124,8 +126,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm_cv,
             'name':'Fit-CV_SVCcv',
             'displayName':'05 SVM',
-            'group':'SI k-fold',
-            'groupId':'SI k-fold',
+            'group':'03 SI k-fold',
+            'groupId':'03 SI k-fold',
             'shortHelpString':"This function apply Support Vector Machine to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -135,8 +137,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm,
             'name':'Fit-CV_RF',
             'displayName':'04 RF',
-            'group':'SI',
-            'groupId':'SI',
+            'group':'02 SI',
+            'groupId':'02 SI',
             'shortHelpString':"This function apply Random Forest to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -146,8 +148,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm_cv,
             'name':'Fit-CV_RFcv',
             'displayName':'04 RF',
-            'group':'SI k-fold',
-            'groupId':'SI k-fold',
+            'group':'03 SI k-fold',
+            'groupId':'03 SI k-fold',
             'shortHelpString':"This function apply Random Forest to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -157,8 +159,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm,
             'name':'Fit-CV_LR',
             'displayName':'03 LR',
-            'group':'SI',
-            'groupId':'SI',
+            'group':'02 SI',
+            'groupId':'02 SI',
             'shortHelpString':"This function apply Logistic Regression to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -168,8 +170,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm_cv,
             'name':'Fit-CV_LRcv',
             'displayName':'03 LR',
-            'group':'SI k-fold',
-            'groupId':'SI k-fold',
+            'group':'03 SI k-fold',
+            'groupId':'03 SI k-fold',
             'shortHelpString':"This function apply Logistic Regression to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -179,8 +181,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm,
             'name':'Fit-CV_FR',
             'displayName':'02 FR',
-            'group':'SI',
-            'groupId':'SI',
+            'group':'02 SI',
+            'groupId':'02 SI',
             'shortHelpString':"This function apply Frequency Ratio to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -190,8 +192,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm_cv,
             'name':'Fit-CV_FRcv',
             'displayName':'02 FR',
-            'group':'SI k-fold',
-            'groupId':'SI k-fold',
+            'group':'03 SI k-fold',
+            'groupId':'03 SI k-fold',
             'shortHelpString':"This function apply Frequency Ratio to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -201,8 +203,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm,
             'name':'Fit-CV_DT',
             'displayName':'06 DT',
-            'group':'SI',
-            'groupId':'SI',
+            'group':'02 SI',
+            'groupId':'02 SI',
             'shortHelpString':"This function apply Decision Tree to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
@@ -212,47 +214,44 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithm_cv,
             'name':'Fit-CV_DTcv',
             'displayName':'06 DT',
-            'group':'SI k-fold',
-            'groupId':'SI k-fold',
+            'group':'03 SI k-fold',
+            'groupId':'03 SI k-fold',
             'shortHelpString':"This function apply Decision Tree to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
+        # dict_of_scripts={
+        #     'alg': 'GAM_simple',
+        #     'function': CoreAlgorithmGAM,
+        #     'name':'Fit-CV_GAM',
+        #     'displayName':'07 GAM',
+        #     'group':'SI',
+        #     'groupId':'SI',
+        #     'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
+        # }
+        # self.addAlgorithm(Instance(dict_of_scripts))
 
-        #dict_of_scripts={
-        #    'alg': 'GAM_simple',
-        #    'function': CoreAlgorithmGAM,
-        #    'name':'Fit-CV_GAM',
-        #    'displayName':'07 GAM',
-        #    'group':'SI',
-        #    'groupId':'SI',
-        #    'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis selecting the sample percentage test/training. If you want just do fitting put the test percentage equal to zero",
-        #}
-        #self.addAlgorithm(Instance(dict_of_scripts))
+        # dict_of_scripts={
+        #     'alg': 'GAM_cv',
+        #     'function': CoreAlgorithmGAM_cv,
+        #     'name':'Fit-CV_GAMcv',
+        #     'displayName':'07 GAM',
+        #     'group':'SI k-fold',
+        #     'groupId':'SI k-fold',
+        #     'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        # }
+        # self.addAlgorithm(Instance(dict_of_scripts))
 
-        #dict_of_scripts={
-        #    'alg': 'GAM_cv',
-        #    'function': CoreAlgorithmGAM_cv,
-        #    'name':'Fit-CV_GAMcv',
-        #    'displayName':'07 GAM',
-        #    'group':'SI k-fold',
-        #    'groupId':'SI k-fold',
-        #    'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
-        #}
-        #self.addAlgorithm(Instance(dict_of_scripts))
-
-        #dict_of_scripts={
-        #    'alg': 'GAM_trans',
-        #    'function': CoreAlgorithmGAM_trans,
-        #    'name':'Transfer_GAM',
-        #    'displayName':'01 GAM',
-        #    'group':'SI Transfer',
-        #    'groupId':'SI Transfer',
-        #    'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
-        #}
-        #self.addAlgorithm(Instance(dict_of_scripts))
-
-
+        # dict_of_scripts={
+        #     'alg': 'GAM_trans',
+        #     'function': CoreAlgorithmGAM_trans,
+        #     'name':'Transfer_GAM',
+        #     'displayName':'01 GAM',
+        #     'group':'SI Transfer',
+        #     'groupId':'SI Transfer',
+        #     'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
+        # }
+        self.addAlgorithm(Instance(dict_of_scripts))
         self.addAlgorithm(classcovtxtAlgorithm())
         self.addAlgorithm(classcovdecAlgorithm())
         ##self.addAlgorithm(polytogridAlgorithm())
@@ -262,16 +261,18 @@ class classeProvider(QgsProcessingProvider):
         #self.addAlgorithm(classAlgorithm())
         #self.addAlgorithm(rocAlgorithm())
         #self.addAlgorithm(matrixAlgorithm())
+        self.addAlgorithm(rocGenerator())
 
         self.addAlgorithm(cleankernelAlgorithm())
         self.addAlgorithm(statistickernel())
         self.addAlgorithm(samplerAlgorithm())
         self.addAlgorithm(rasterstatkernelAlgorithm())
-        #self.addAlgorithm(CorrAlgorithm())
+        self.addAlgorithm(CorrAlgorithm())
 
         self.addAlgorithm(classvAlgorithm())
         self.addAlgorithm(classvAlgorithmW())
         self.addAlgorithm(FPAlgorithm())
+        self.addAlgorithm(segmentationAspect())
 
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
@@ -316,6 +317,7 @@ class Instance(QgsProcessingAlgorithm):
     STRING1 = 'field2'
     STRING2 = 'fieldlsd'
     STRING3 = 'field3'
+    STRING4 = 'string4'
     NUMBER = 'testN'
     NUMBER1 = 'num1'
     OUTPUT = 'OUTPUT'
@@ -340,9 +342,9 @@ class Instance(QgsProcessingAlgorithm):
             'fr_cv':Algorithms.fr_cv,
             'DT_simple':Algorithms.DT_simple,
             'DT_cv':Algorithms.DT_cv,
-            #'GAM_simple':Algorithms.GAM_simple,
-            #'GAM_cv':Algorithms.GAM_cv,
-            #'GAM_trans':Algorithms.GAM_simple,
+            'GAM_simple':Algorithms.GAM_simple,
+            'GAM_cv':Algorithms.GAM_cv,
+            'GAM_trans':Algorithms.GAM_simple,
         }
 
         self.classifier={
@@ -352,15 +354,15 @@ class Instance(QgsProcessingAlgorithm):
             'LR_cv':LogisticRegression(),
             'fr_cv':None,
             'DT_cv':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
-            #'GAM_cv':LogisticGAM,
+            'GAM_cv':LogisticGAM,
             'woe_simple':None,
             'SCV_simple':None,
             'RF_simple':None,
             'LR_simple':None,
             'fr_simple':None,
             'DT_simple':None,
-            #'GAM_simple':None,
-            #'GAM_trans':None,
+            'GAM_simple':None,
+            'GAM_trans':None,
         }
 
     def tr(self, string):

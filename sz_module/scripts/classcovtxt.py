@@ -75,10 +75,10 @@ class classcovtxtAlgorithm(QgsProcessingAlgorithm):
         return self.tr('06 Classify field by file.txt')
 
     def group(self):
-        return self.tr('Data preparation')
+        return self.tr('01 Data preparation')
 
     def groupId(self):
-        return 'Data preparation'
+        return '01 Data preparation'
 
     def shortHelpString(self):
         return self.tr("Apply classification to field from file.txt i.e value_1 value_2 class_1")

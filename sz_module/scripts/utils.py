@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from scipy.stats import pearsonr
 import csv
 
 #from pygam import LogisticGAM, s, f, terms
@@ -25,7 +27,6 @@ import pandas as pd
 from qgis.PyQt.QtCore import QVariant
 import os
 from collections import OrderedDict
-
 
 
 class SZ_utils():
@@ -54,7 +55,12 @@ class SZ_utils():
         df=gdp[parameters['field1']]
         nomi=list(df.head())
         lsd=gdp[parameters['lsd']]
-        lsd[lsd>0]=1
+        print(parameters,'printalo')
+        if parameters['family']=='binomial':
+            lsd[lsd>0]=1
+        else:
+            lsd[lsd>0]=np.log(lsd[lsd>0])
+            print('lsd',lsd,'lsd')
         df['y']=lsd#.astype(int)
         df['ID']=gdp['ID']
         df['geom']=gdp['geom']
@@ -247,3 +253,26 @@ class SZ_utils():
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
 
 
+    def errors(parameters):
+        df=parameters['df']
+        nomi=list(df.head())
+        y=df['y']
+        predic=df['SI']
+        min_absolute_error = np.min(np.abs(y - predic))
+        rmse = np.sqrt(mean_squared_error(y, predic))
+        r_squared = r2_score(y, predic)
+        pearson_coefficient, _ = pearsonr(y, predic)
+        errors=[min_absolute_error,rmse,r_squared,pearson_coefficient]
+
+        output_file = parameters['file']
+
+        with open(output_file, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            # Write header
+            writer.writerow(["Metric", "Value"])
+            # Write data
+            writer.writerow(["Minimum Absolute Error", min_absolute_error])
+            writer.writerow(["RMSE", rmse])
+            writer.writerow(["R-squared", r_squared])
+            writer.writerow(["Pearson Coefficient", pearson_coefficient])
+        return(errors)

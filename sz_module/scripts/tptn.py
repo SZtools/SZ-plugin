@@ -120,10 +120,10 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         return self.tr('03 Confusion Matrix')
 
     def group(self):
-        return self.tr('Classify SI')
+        return self.tr('04 Classify SI')
 
     def groupId(self):
-        return 'Classify SI'
+        return '04 Classify SI'
 
     def shortHelpString(self):
         return self.tr("This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)")
@@ -142,7 +142,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Index', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
 
-        self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Cutoff percentile'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=50))
+        self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Cutoff percentile (if empty use the YOUDEN index)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True))
 
 
 
@@ -303,22 +303,51 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         xx=df_sort[parameters['field1']].to_numpy()
         x=df[parameters['field1']].to_numpy()
         y=df['y'].to_numpy()
-        cutoff=np.percentile(xx, parameters['testN'])
+        if parameters['testN']==None:
+            fpr1, tpr1, tresh1 = roc_curve(y,x)
+            cutoff = np.argmax(tpr1 - fpr1)  # x YOUDEN INDEX
+        else:
+            cutoff=np.percentile(xx, parameters['testN'])
         print('cutoff: ',cutoff)
-        df['class_cut']='negative'
-        df['presabs']='negative'
-        df['class_cut'].iloc[np.where(x<=cutoff)[0]]='positive'
-        df['presabs'].iloc[np.where(y==1)]='positive'
+        df['class_cut']='positive'
+        df['presabs']='false'
+        df['class_cut'].iloc[np.where(x<=cutoff)[0]]='negative'
+        df['presabs'].iloc[np.where(y==1)]='true'
 
-        tp = np.where((df['class_cut']=='positive')&(df['presabs']=='positive'))
-        tn = np.where((df['class_cut']=='negative')&(df['presabs']=='negative'))
-        fp = np.where((df['class_cut']=='positive')&(df['presabs']=='negative'))
-        fn = np.where((df['class_cut']=='negative')&(df['presabs']=='positive'))
+        tp = np.where((df['class_cut']=='positive')&(df['presabs']=='true'))
+        tn = np.where((df['class_cut']=='negative')&(df['presabs']=='true'))
+        fp = np.where((df['class_cut']=='positive')&(df['presabs']=='false'))
+        fn = np.where((df['class_cut']=='negative')&(df['presabs']=='false'))
         df['tptnfpfn']=0
         df['tptnfpfn'].iloc[tp[0]]=0
         df['tptnfpfn'].iloc[tn[0]]=1
         df['tptnfpfn'].iloc[fp[0]]=2
         df['tptnfpfn'].iloc[fn[0]]=3
+
+        print('tp=', str((df['tptnfpfn'] == 0).sum()))
+        print('tn=', str((df['tptnfpfn'] == 1).sum()))
+        print('fp=', str((df['tptnfpfn'] == 2).sum()))
+        print('fn=', str((df['tptnfpfn'] == 3).sum()))
+
+
+
+        #df=parameters['df']
+        #y_true=df['y']
+        #scores=df['SI']
+        ################################figure
+        #fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
+        #norm=(scores-scores.min())/(scores.max()-scores.min())
+        #r=roc_auc_score(y_true, scores)
+
+        #idx = np.argmax(tpr1 - fpr1)  # x YOUDEN INDEX
+        #suscept01 = copy(scores)
+        #suscept01[scores > tresh1[idx]] = 1
+        #suscept01[scores <= tresh1[idx]] = 0
+        #f1_tot = f1_score(y_true, suscept01)
+        #ck_tot = cohen_kappa_score(y_true, suscept01)
+        #cm = confusion_matrix(y_true, y_pred)
+
+
      
         return df,nomi,crs
 
