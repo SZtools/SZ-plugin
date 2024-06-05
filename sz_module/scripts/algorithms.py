@@ -23,46 +23,46 @@ from sklearn.tree import plot_tree,export_text
 
 class Algorithms():
     
-    def GAM_simple(parameters):
-        sc = StandardScaler()
-        nomi=parameters['nomi']
-        train=parameters['train']
-        test=parameters['testy']
-        #X_train=Algorithms.scaler(train,parameters['linear']+parameters['continuous'])
-        X_train_sc = sc.fit_transform(train[parameters['linear']+parameters['continuous']])
-        X_train = np.hstack((X_train_sc, train[parameters['categorical']]))
-        lams = np.empty(len(nomi))
-        lams.fill(0.5)        
+    # def GAM_simple(parameters):
+    #     sc = StandardScaler()
+    #     nomi=parameters['nomi']
+    #     train=parameters['train']
+    #     test=parameters['testy']
+    #     #X_train=Algorithms.scaler(train,parameters['linear']+parameters['continuous'])
+    #     X_train_sc = sc.fit_transform(train[parameters['linear']+parameters['continuous']])
+    #     X_train = np.hstack((X_train_sc, train[parameters['categorical']]))
+    #     lams = np.empty(len(nomi))
+    #     lams.fill(0.5)        
 
-        if parameters['family']=='binomial':
-            gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
-            gam.gridsearch(X_train, train['y'], lam=lams)
-            GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
-            GAM_utils.GAM_save(gam,parameters['fold'])
-            prob_fit=gam.predict_proba(X_train)#[::,1]
-            train['SI']=prob_fit
-            if parameters['testN']>0:
-                X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
-                X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
-                prob_predic=gam.predict_proba(X_test)#[::,1]
-                test['SI']=prob_predic
-                train['SI']=prob_fit
-        else:
-            gam = LinearGAM(parameters['splines'], dtype=parameters['dtypes'])
-            gam.gridsearch(X_train, train['y'],lam=lams)
-            GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
-            GAM_utils.GAM_save(gam,parameters['fold'])
-            prob_fit=gam.predict(X_train)#[::,1]
-            #CI = gam.prediction_intervals(X_train, width=.95)
-            train['SI']=prob_fit#np.exp(prob_fit)
-            if parameters['testN']>0:
-                X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
-                X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
-                prob_predic=gam.predict(X_test)#[::,1]
-                #CI = gam.prediction_intervals(X_test, width=.95)
-                test['SI']=prob_predic#np.exp(prob_predic)
-                train['SI']=prob_fit#np.exp(prob_fit)
-        return(train,test,gam)
+    #     if parameters['family']=='binomial':
+    #         gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
+    #         gam.gridsearch(X_train, train['y'], lam=lams)
+    #         GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
+    #         GAM_utils.GAM_save(gam,parameters['fold'])
+    #         prob_fit=gam.predict_proba(X_train)#[::,1]
+    #         train['SI']=prob_fit
+    #         if parameters['testN']>0:
+    #             X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
+    #             X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
+    #             prob_predic=gam.predict_proba(X_test)#[::,1]
+    #             test['SI']=prob_predic
+    #             train['SI']=prob_fit
+    #     else:
+    #         gam = LinearGAM(parameters['splines'], dtype=parameters['dtypes'])
+    #         gam.gridsearch(X_train, train['y'],lam=lams)
+    #         GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
+    #         GAM_utils.GAM_save(gam,parameters['fold'])
+    #         prob_fit=gam.predict(X_train)#[::,1]
+    #         #CI = gam.prediction_intervals(X_train, width=.95)
+    #         train['SI']=prob_fit#np.exp(prob_fit)
+    #         if parameters['testN']>0:
+    #             X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
+    #             X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
+    #             prob_predic=gam.predict(X_test)#[::,1]
+    #             #CI = gam.prediction_intervals(X_test, width=.95)
+    #             test['SI']=prob_predic#np.exp(prob_predic)
+    #             train['SI']=prob_fit#np.exp(prob_fit)
+    #     return(train,test,gam)
     
     def GAM_transfer(parameters):
         sc = StandardScaler()
@@ -90,12 +90,18 @@ class Algorithms():
         return prob_predic
     
  
-    def alg_GAMrun(classifier,X,y,train,test,splines=None,dtypes=None,nomi=None,df=None,fold=None,filename=''):
+    def alg_GAMrun(classifier,X,y,train,test,splines=None,dtypes=None,nomi=None,df=None,fold=None,filename='',family=None):
         lams = np.empty(len(nomi))
         lams.fill(0.5)
-        gam = classifier(splines, dtype=dtypes)
+        print(classifier)
+        print(family)
+        classifier_selected=classifier[family]
+        gam = classifier_selected(splines, dtype=dtypes)
         gam.gridsearch(X.iloc[train,:].to_numpy(), y.iloc[train].to_numpy(), lam=lams,progress=False)
-        prob=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]
+        if family=='binomial':
+            prob=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]
+        else:
+            prob=gam.predict(X.iloc[test,:].to_numpy())#[::,1]
         CI=[]#gam.prediction_intervals(X.iloc[test,:].to_numpy())
         GAM_utils.GAM_plot(gam,df.iloc[train,:],nomi,fold,filename,X.iloc[train,:])
         GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
@@ -128,23 +134,24 @@ class CV_utils():
                 train_ind[i]=train
                 test_ind[i]=test
                 if algorithm==Algorithms.alg_GAMrun:
-                    prob[i],CI[i],gam=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename=str(i))
+                    prob[i],CI[i],gam=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename=str(i),family=parameters['family'])
                 else:
                     prob[i]=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi,filename=str(i))
-                    
+                
                 df.loc[test,'SI']=prob[i]
                 #df.loc[test,'CI']=[]#CI[i]
+            gam=None
         elif parameters['testN']==1:
             train=np.arange(len(y))
             test=np.arange(len(y))
             if algorithm==Algorithms.alg_GAMrun:
-                prob[0],coeff,CI[0]=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'])
+                prob[0],CI[0],gam=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],family=parameters['family'])
             else:
-                prob[0],coeff=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
+                prob[0]=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
             df.loc[test,'SI']=prob[0]
             #df.loc[test,'CI']=[]#CI[0]
             test_ind[0]=test
-            cofl.append(coeff)
+        #    cofl.append(coeff)
         # if not os.path.exists(parameters['fold']):
         #     os.mkdir(parameters['fold'])
         # if algorithm==Algorithms.alg_GAMrun:
@@ -152,7 +159,7 @@ class CV_utils():
         # else:
         #     ML_utils.ML_coeffs(classifier,parameters['fold'],nomi)
 
-        return prob,test_ind
+        return prob,test_ind,gam
     
     def cv_method(parameters):
         if parameters['cv_method']=='spatial':

@@ -63,7 +63,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-from pygam import LogisticGAM
+from pygam import LogisticGAM,LinearGAM
 
 class classeProvider(QgsProcessingProvider):
 
@@ -457,7 +457,7 @@ class Instance(QgsProcessingAlgorithm):
             'fr_cv':Algorithms.alg_MLrun,
             'DT_cv':Algorithms.alg_MLrun,
             'GAM_cv':Algorithms.alg_GAMrun,
-            'GAM_trans':Algorithms.GAM_simple,
+            'GAM_trans':Algorithms.alg_GAMrun,
         }
 
         self.classifier={
@@ -465,9 +465,8 @@ class Instance(QgsProcessingAlgorithm):
             'RF_cv':RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0),
             'LR_cv':LogisticRegression(),
             'DT_cv':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
-            'GAM_cv':LogisticGAM,
-            'GAM_simple':None,
-            'GAM_trans':None,
+            'GAM_cv':{'binomial':LogisticGAM,'gaussian':LinearGAM},
+            'GAM_trans':{'binomial':LogisticGAM,'gaussian':LinearGAM},
         }
 
     def tr(self, string):
