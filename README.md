@@ -101,11 +101,9 @@ A dataset and QGIS project are available in [test](./test_data) folder to test t
 
 ## Third-part libraries and plugins used
 
-* [GDAL](https://gdal.org/)
 * [Scikit-learn](https://scikit-learn.org/stable/index.html)
-* [Matplotlib](https://matplotlib.org/)
-* [Plotly](https://plotly.com/)
-* [Pandas](https://pandas.pydata.org/)
+* [bibpysal](https://pysal.org/libpysal/)
+
 
 ## Tutorial
 
