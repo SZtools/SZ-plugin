@@ -276,3 +276,4 @@ class SZ_utils():
             writer.writerow(["R-squared", r_squared])
             writer.writerow(["Pearson Coefficient", pearson_coefficient])
         return(errors)
+    

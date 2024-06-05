@@ -55,9 +55,7 @@ from .scripts.tptn import FPAlgorithm
 from .scripts.classcovtxt import classcovtxtAlgorithm
 from .scripts.classcovdeciles import classcovdecAlgorithm
 from sz_module.scripts.corrplot import CorrAlgorithm
-#from sz_module.scripts.sz_train_simple import CoreAlgorithm
 from sz_module.scripts.sz_train_cv import CoreAlgorithm_cv
-from sz_module.scripts.sz_train_simple_GAM import CoreAlgorithmGAM
 from sz_module.scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
 from sz_module.scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
 from sz_module.scripts.algorithms import Algorithms
@@ -435,6 +433,7 @@ class Instance(QgsProcessingAlgorithm):
     STRING2 = 'STRING2'#'fieldlsd'
     STRING3 = 'STRING3'#'field3'
     STRING4 = 'STRING4'#'string4'
+    STRING5 = 'STRING5'
     NUMBER = 'NUMBER'#'testN'
     NUMBER1 = 'NUMBER1'#'num1'
     NUMBER2 = 'NUMBER2'
@@ -452,37 +451,21 @@ class Instance(QgsProcessingAlgorithm):
         self.dict_of_scripts = dict_of_scripts
         #self.class_function=self.dict_of_scripts['function']()
         self.algorithms={
-            # 'woe_simple':Algorithms.fit,
-            # 'woe_cv':Algorithms.cv,
-            # 'SCV_simple':Algorithms.fit,
             'SVC_cv':Algorithms.alg_MLrun,
-            # 'RF_simple':Algorithms.fit,
             'RF_cv':Algorithms.alg_MLrun,
-            # 'LR_simple':Algorithms.fit,
             'LR_cv':Algorithms.alg_MLrun,
-            # 'fr_simple':Algorithms.fit,
             'fr_cv':Algorithms.alg_MLrun,
-            # 'DT_simple':Algorithms.fit,
             'DT_cv':Algorithms.alg_MLrun,
-            # 'GAM_simple':Algorithms.GAM_simple,
-            'GAM_cv':Algorithms.GAM_cv,
+            'GAM_cv':Algorithms.alg_GAMrun,
             'GAM_trans':Algorithms.GAM_simple,
         }
 
         self.classifier={
-            'woe_cv':None,
             'SVC_cv':SVC(kernel = 'linear', random_state = 0,probability=True),
             'RF_cv':RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0),
             'LR_cv':LogisticRegression(),
-            'fr_cv':None,
             'DT_cv':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
             'GAM_cv':LogisticGAM,
-            # 'woe_simple':None,
-            # 'SCV_simple':None,
-            # 'RF_simple':None,
-            # 'LR_simple':None,
-            # 'fr_simple':None,
-            # 'DT_simple':None,
             'GAM_simple':None,
             'GAM_trans':None,
         }
@@ -516,9 +499,9 @@ class Instance(QgsProcessingAlgorithm):
         print(self.dict_of_scripts['alg'])
         print(self.algorithms)
         print(self.classifier)
-        #if self.algorithms[self.dict_of_scripts['alg']] and self.classifier[self.dict_of_scripts['alg']]:  
-        result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
-        #else: 
-        #    result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
+        if self.algorithms[self.dict_of_scripts['alg']] or self.classifier[self.dict_of_scripts['alg']]:  
+            result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
+        else: 
+            result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
         return result
         

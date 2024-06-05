@@ -83,50 +83,84 @@ class Algorithms():
     
     ####################################
 
-    def alg_MLrun(classifier,X,y,train,test,fold,df,nomi):
+    def alg_MLrun(classifier,X,y,train,test,fold,df,nomi,filename=''):
         classifier.fit(X[train], y[train])
         prob_predic=classifier.predict_proba(X[test])[::,1]
-        try:
-            regression_coeff=classifier.feature_importances_
-            coeff=regression_coeff
-            try:
-                tree_rules = export_text(classifier, feature_names=nomi)
-                tree_rules_list = tree_rules.split('\n')
-                rules_df = pd.DataFrame({'Tree Rules': tree_rules_list})
-                rules_df.to_csv(fold+'/decision_tree_rules.csv', index=False)
-            except:
-                print('no tree')
-            feature_importance_df = pd.DataFrame({
-                'Feature': nomi,
-                'Importance': coeff
-            })
-            feature_importance_df = feature_importance_df.sort_values(by='Importance', ascending=False)
-            feature_importance_df.to_csv(fold+'/feature_importances.csv', index=False)
-        except:
-            regression_coeff=classifier.coef_
-            regression_intercept=classifier.intercept_
-            coeff=np.hstack((regression_intercept,regression_coeff[0]))
-            coeff_df = pd.DataFrame({
-                'Feature': ['intercept'] + nomi,
-                'Coefficient': coeff
-            })
-            coeff_df.to_csv(fold+'/coefficients.csv', index=False)
-
-        return prob_predic,None
+        ML_utils.ML_save(classifier,fold,nomi,filename)
+        return prob_predic
     
  
-    def GAM_cv(classifier,X,y,train,test,splines=None,dtypes=None,nomi=None,df=None,fold=None,filename=None,scaler=None):
+    def alg_GAMrun(classifier,X,y,train,test,splines=None,dtypes=None,nomi=None,df=None,fold=None,filename=''):
         lams = np.empty(len(nomi))
         lams.fill(0.5)
         gam = classifier(splines, dtype=dtypes)
-        gam.gridsearch(X[train,], y[train], lam=lams,progress=False)
-        GAM_utils.GAM_plot(gam,df.iloc[train,],nomi,fold,filename,X[train,])
-        GAM_utils.GAM_save(gam,fold,filename)
-        prob_predic=gam.predict_proba(X[test])#[::,1]
-        CI={}#gam.prediction_intervals(X[test])
-        GAM_utils.plot_predict(X[test],prob_predic,CI,fold,filename)
+        gam.gridsearch(X.iloc[train,:].to_numpy(), y.iloc[train].to_numpy(), lam=lams,progress=False)
+        prob=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]
+        CI=[]#gam.prediction_intervals(X.iloc[test,:].to_numpy())
+        GAM_utils.GAM_plot(gam,df.iloc[train,:],nomi,fold,filename,X.iloc[train,:])
+        GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
+        #GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob,CI,fold, filename)
+        return prob,CI,gam
+    
+class CV_utils():
+    def cross_validation(parameters,algorithm,classifier):
+        df=parameters['df']
+        nomi=parameters['nomi']
+        x=df[parameters['field1']]
+        y=df['y']
+        if algorithm==Algorithms.alg_GAMrun:
+            X=CV_utils.scaler(x,parameters['linear']+parameters['continuous'])
+            X[parameters['categorical']]=df[parameters['categorical']]
+        else:
+            sc = StandardScaler()#####scaler
+            X = sc.fit_transform(x)       
+        train_ind={}
+        test_ind={}
+        prob={}
+        CI={}
+        cofl=[]
+        df["SI"] = np.nan
+        df["CI"] = np.nan
+        coeff=None
+        if parameters['testN']>1:
+            cv = CV_utils.cv_method(parameters)
+            for i, (train, test) in enumerate(cv.split(X, y)):
+                train_ind[i]=train
+                test_ind[i]=test
+                if algorithm==Algorithms.alg_GAMrun:
+                    prob[i],CI[i],gam=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename=str(i))
+                else:
+                    prob[i]=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi,filename=str(i))
+                    
+                df.loc[test,'SI']=prob[i]
+                #df.loc[test,'CI']=[]#CI[i]
+        elif parameters['testN']==1:
+            train=np.arange(len(y))
+            test=np.arange(len(y))
+            if algorithm==Algorithms.alg_GAMrun:
+                prob[0],coeff,CI[0]=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'])
+            else:
+                prob[0],coeff=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
+            df.loc[test,'SI']=prob[0]
+            #df.loc[test,'CI']=[]#CI[0]
+            test_ind[0]=test
+            cofl.append(coeff)
+        # if not os.path.exists(parameters['fold']):
+        #     os.mkdir(parameters['fold'])
+        # if algorithm==Algorithms.alg_GAMrun:
+        #     GAM_utils.GAM_coeffs(cofl,parameters['fold'],nomi)
+        # else:
+        #     ML_utils.ML_coeffs(classifier,parameters['fold'],nomi)
 
-        return prob_predic,None,CI
+        return prob,test_ind
+    
+    def cv_method(parameters):
+        if parameters['cv_method']=='spatial':
+            print('spatial')
+        elif parameters['cv_method']=='random':
+            print('random')
+            method=StratifiedKFold(n_splits=parameters['testN'])
+        return(method)
     
     def scaler(df,nomes):
         df_scaled=df.copy()
@@ -135,80 +169,7 @@ class Algorithms():
             u=df[nome].mean()
             df_scaled[nome]=(df[nome]-u)/s
         return df_scaled
-            
-    
-class CV_utils():
-    def cross_validation(parameters,algorithm,classifier):
-        df=parameters['df']
-        nomi=parameters['nomi']
-        x=df[parameters['field1']]
-        y=df['y']
-        if algorithm==Algorithms.GAM_cv:
-            X=Algorithms.scaler(x,parameters['linear']+parameters['continuous'])
-            X[parameters['categorical']]=df[parameters['categorical']]
-        else:
-            sc = StandardScaler()#####scaler
-            X = sc.fit_transform(x)
-        #X=x
-        #sc_fit = sc.fit(df[parameters['linear']+parameters['continuous']])
-        
-        train_ind={}
-        test_ind={}
-        prob={}
-        CI={}
-        cofl=[]
-        df["SI"] = np.nan
-        df["CI"] = np.nan
-        if parameters['testN']>1:
-            cv = StratifiedKFold(n_splits=parameters['testN'])
-            for i, (train, test) in enumerate(cv.split(X, y)):
-                train_ind[i]=train
-                test_ind[i]=test
-                if algorithm==Algorithms.GAM_cv:
-                    #X_train=X[train,]             
-                    #X_train[parameters['linear']+parameters['continuous']]=sc.transform(X_train[parameters['linear']+parameters['continuous']])
-                    #X_test=X[test,]             
-                    #X_test[parameters['linear']+parameters['continuous']]=sc.transform(X_test[parameters['linear']+parameters['continuous']])
-                    #print(X_train,X_test)
-                    #prob[i],coeff=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename=str(i),scaler=sc)
-                    lams = np.empty(len(nomi))
-                    lams.fill(0.5)
-                    gam = classifier(parameters['splines'], dtype=parameters['dtypes'])
-                    gam.gridsearch(X.iloc[train,:].to_numpy(), y.iloc[train].to_numpy(), lam=lams,progress=False)
-                    GAM_utils.GAM_plot(gam,df.iloc[train,:],nomi,parameters['fold'],str(i),X.iloc[train,:])
-                    GAM_utils.GAM_save(gam,parameters['fold'],str(i))
-                    prob[i]=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]
-                    CI[i]=[]#gam.prediction_intervals(X.iloc[test,:].to_numpy())
-                    GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob[i],CI,parameters['fold'], str(i))
-                    coeff=None
-                else:
-                    print(parameters['fold'],'fold')
-                    prob[i],coeff=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
-                df.loc[test,'SI']=prob[i]
-                #df.loc[test,'CI']=[]#CI[i]
-                cofl.append(coeff)
-        elif parameters['testN']==1:
-            train=np.arange(len(y))
-            test=np.arange(len(y))
-            if algorithm==Algorithms.GAM_cv:
-                prob[0],coeff,CI[0]=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename='')
-            else:
-                prob[0],coeff=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
-            df.loc[test,'SI']=prob[0]
-            #df.loc[test,'CI']=[]#CI[0]
-            test_ind[0]=test
-            cofl.append(coeff)
-        if not os.path.exists(parameters['fold']):
-            os.mkdir(parameters['fold'])
-        if coeff is not None:
-            with open(parameters['fold']+'/r_coeffs.csv', 'w') as f:
-                write = csv.writer(f)
-                ll=['intercept']
-                lll=ll+nomi
-                write.writerow(lll)
-                write.writerows(cofl)
-        return prob,test_ind
-    
+
 class GAM_utils():
     def GAM_formula(parameters):
         GAM_sel = parameters['nomi']
@@ -337,7 +298,7 @@ class GAM_utils():
         #plt.show()
     
         
-    def GAM_save(gam,fold,filename=''):
+    def GAM_save(gam,coeffs,fold,nomi,filename=''):
         filename_pkl = fold+'/gam_coeff'+filename+'.pkl'
         #filename_txt = parameters['fold']+'/gam_coeff.txt'
 
@@ -349,13 +310,48 @@ class GAM_utils():
 
         #with open(filename_txt, 'wb') as file_txt:
         #    json.dump(loaded_data, file_txt, indent=2)
+
+        # with open(fold+'/r_coeffs.csv', 'w') as f:
+        #     write = csv.writer(f)
+        #     ll=['intercept']
+        #     lll=ll+nomi
+        #     write.writerow(lll)
+        #     write.writerows(coeffs)
     
-    def plot_predict(x,predict,CI,fold, filename=''):
-        plt.plot(x,predict,'r--')
-        #plt.plot(x,CI,color='b',ls='--')
-        plt.xlabel('Prediction8')
-        plt.ylabel('PDF')
-        plt.savefig(fold+'/Predict'+filename+'.pdf')
+    # def plot_predict(x,predict,CI,fold, filename=''):
+    #     plt.plot(x,predict,'r--')
+    #     #plt.plot(x,CI,color='b',ls='--')
+    #     plt.xlabel('Prediction8')
+    #     plt.ylabel('PDF')
+    #     plt.savefig(fold+'/Predict'+filename+'.pdf')
+
+class ML_utils():
+    def ML_save(classifier,fold,nomi, filename):
+        try:
+            regression_coeff=classifier.feature_importances_
+            coeff=regression_coeff
+            try:
+                tree_rules = export_text(classifier, feature_names=nomi)
+                tree_rules_list = tree_rules.split('\n')
+                rules_df = pd.DataFrame({'Tree Rules': tree_rules_list})
+                rules_df.to_csv(fold+'/decision_tree_rules'+filename+'.csv', index=False)
+            except:
+                print('no tree')
+            feature_importance_df = pd.DataFrame({
+                'Feature': nomi,
+                'Importance': coeff
+            })
+            feature_importance_df = feature_importance_df.sort_values(by='Importance', ascending=False)
+            feature_importance_df.to_csv(fold+'/feature_importances'+filename+'.csv', index=False)
+        except:
+            regression_coeff=classifier.coef_
+            regression_intercept=classifier.intercept_
+            coeff=np.hstack((regression_intercept,regression_coeff[0]))
+            coeff_df = pd.DataFrame({
+                'Feature': ['intercept'] + nomi,
+                'Coefficient': coeff
+            })
+            coeff_df.to_csv(fold+'/coefficients'+filename+'.csv', index=False)
 
 
     

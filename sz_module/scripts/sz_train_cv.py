@@ -43,7 +43,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterField,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterField,
-                       QgsProcessingContext
+                       QgsProcessingContext,
+                       QgsProcessingParameterEnum
                        )
 from qgis.core import *
 from qgis.utils import iface
@@ -62,6 +63,7 @@ class CoreAlgorithm_cv():
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING3, 'CV method', options=['random CV','spatial CV'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV (1 to fit or > 1 to cross-validate)'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
@@ -72,6 +74,9 @@ class CoreAlgorithm_cv():
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
         outputs = {}
+
+        cv_method={'0':'random','1':'spatial'}
+
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -89,6 +94,10 @@ class CoreAlgorithm_cv():
         parameters['fieldlsd'] = self.parameterAsString(parameters, self.STRING2, context)
         if parameters['fieldlsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING2))
+        
+        parameters['cv_method'] = self.parameterAsString(parameters, self.STRING3, context)
+        if parameters['cv_method'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING3))
 
         parameters['testN'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['testN'] is None:
@@ -122,7 +131,9 @@ class CoreAlgorithm_cv():
             'testN':parameters['testN'],
             'fold':parameters['folder'],
             'nomi':outputs['nomi'],
-            'df':outputs['df']
+            'df':outputs['df'],
+            'cv_method':cv_method[parameters['cv_method']],
+
         }
 
         outputs['prob'],outputs['test_ind']=CV_utils.cross_validation(alg_params,algorithm,classifier)
