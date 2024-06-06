@@ -135,10 +135,9 @@ class CoreAlgorithmGAM_trans():
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'lsd' : parameters['fieldlsd'],
-            'testN':parameters['testN'],
             'family':family[parameters['family']]
         }
-        outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs'],outputs['df']=SZ_utils.load_simple(self.f,alg_params)
+        outputs['df'],outputs['nomes'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
         alg_params = {
             'linear': parameters['field3'],
@@ -189,24 +188,22 @@ class CoreAlgorithmGAM_trans():
         if feedback.isCanceled():
             return {}
         
-
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['input1'],
             'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'lsd' : parameters['fieldlsd'],
-            'testN':parameters['testN'],
             'family':family[parameters['family']]
         }
-        outputs['train_trans'],outputs['test_trans'],outputs['nomes_trans'],outputs['crs_trans'],outputs['df_trans']=SZ_utils.load_simple(self.f,alg_params)
+        outputs['df_trans'],outputs['nomes_trans'],outputs['crs_trans']=SZ_utils.load_cv(self.f,alg_params)
 
         alg_params = {
             'gam':outputs['gam'],
             'nomi': outputs['nomes'],
-            'trans':outputs['train_trans'],
             'family':family[parameters['family']],
             'categorical':parameters['field2'],
             'linear':parameters['field3'],
             'continuous':parameters['field1'],
+            'df':outputs['df_trans']
         }
         outputs['trans']=Algorithms.GAM_transfer(alg_params)
 

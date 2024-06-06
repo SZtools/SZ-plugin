@@ -18,108 +18,65 @@ import matplotlib.pyplot as plt
 import json
 
 
-from sklearn.tree import plot_tree,export_text
+from sklearn.tree import export_text
 
 
 class Algorithms():
     
-    # def GAM_simple(parameters):
-    #     sc = StandardScaler()
-    #     nomi=parameters['nomi']
-    #     train=parameters['train']
-    #     test=parameters['testy']
-    #     #X_train=Algorithms.scaler(train,parameters['linear']+parameters['continuous'])
-    #     X_train_sc = sc.fit_transform(train[parameters['linear']+parameters['continuous']])
-    #     X_train = np.hstack((X_train_sc, train[parameters['categorical']]))
-    #     lams = np.empty(len(nomi))
-    #     lams.fill(0.5)        
-
-    #     if parameters['family']=='binomial':
-    #         gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
-    #         gam.gridsearch(X_train, train['y'], lam=lams)
-    #         GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
-    #         GAM_utils.GAM_save(gam,parameters['fold'])
-    #         prob_fit=gam.predict_proba(X_train)#[::,1]
-    #         train['SI']=prob_fit
-    #         if parameters['testN']>0:
-    #             X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
-    #             X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
-    #             prob_predic=gam.predict_proba(X_test)#[::,1]
-    #             test['SI']=prob_predic
-    #             train['SI']=prob_fit
-    #     else:
-    #         gam = LinearGAM(parameters['splines'], dtype=parameters['dtypes'])
-    #         gam.gridsearch(X_train, train['y'],lam=lams)
-    #         GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
-    #         GAM_utils.GAM_save(gam,parameters['fold'])
-    #         prob_fit=gam.predict(X_train)#[::,1]
-    #         #CI = gam.prediction_intervals(X_train, width=.95)
-    #         train['SI']=prob_fit#np.exp(prob_fit)
-    #         if parameters['testN']>0:
-    #             X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
-    #             X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
-    #             prob_predic=gam.predict(X_test)#[::,1]
-    #             #CI = gam.prediction_intervals(X_test, width=.95)
-    #             test['SI']=prob_predic#np.exp(prob_predic)
-    #             train['SI']=prob_fit#np.exp(prob_fit)
-    #     return(train,test,gam)
-    
     def GAM_transfer(parameters):
-        sc = StandardScaler()
         nomi=parameters['nomi']
-        trans=parameters['trans']
-        #X_trans = sc.fit_transform(trans[nomi])
-        X_train_sc = sc.fit_transform(trans[parameters['linear']+parameters['continuous']])
-        X_trans = np.hstack((X_train_sc, trans[parameters['categorical']]))
+        df=parameters['df']
+        #x=df[parameters['field1']]
+        df_scaled=CV_utils.scaler(df,parameters['linear']+parameters['continuous'],'custom')
+
         if parameters['family']=='binomial':
-            prob_fit=parameters['gam'].predict_proba(X_trans)#[::,1]
-            trans['SI']=prob_fit
+            prob_fit=parameters['gam'].predict_proba(df_scaled)#[::,1]
+            df['SI']=prob_fit
         else:
-            prob_fit=parameters['gam'].predict(X_trans)#[::,1]
+            prob_fit=parameters['gam'].predict(df_scaled)#[::,1]
             #CI = parameters['gam'].prediction_intervals(X_trans, width=.95)
-            trans['SI']=prob_fit#np.exp(prob_fit)
-        return(trans)
+            df['SI']=prob_fit#np.exp(prob_fit)
+        return(df)
 
-    
-    ####################################
-
-    def alg_MLrun(classifier,X,y,train,test,fold,df,nomi,filename=''):
+    def alg_MLrun(classifier,X,y,train,test,df,fold,nomi,filename=''):
         classifier.fit(X[train], y[train])
         prob_predic=classifier.predict_proba(X[test])[::,1]
         ML_utils.ML_save(classifier,fold,nomi,filename)
         return prob_predic
     
- 
-    def alg_GAMrun(classifier,X,y,train,test,splines=None,dtypes=None,nomi=None,df=None,fold=None,filename='',family=None):
+    def alg_GAMrun(classifier,X,y,train,test,df,splines=None,dtypes=None,nomi=None,fold=None,filename='',family=None):
         lams = np.empty(len(nomi))
         lams.fill(0.5)
-        print(classifier)
-        print(family)
         classifier_selected=classifier[family]
         gam = classifier_selected(splines, dtype=dtypes)
         gam.gridsearch(X.iloc[train,:].to_numpy(), y.iloc[train].to_numpy(), lam=lams,progress=False)
         if family=='binomial':
             prob=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]
+            #CI=gam.confidence_intervals(X.iloc[test,:].to_numpy(),width=0.95)
         else:
             prob=gam.predict(X.iloc[test,:].to_numpy())#[::,1]
-        CI=[]#gam.prediction_intervals(X.iloc[test,:].to_numpy())
+            #CI=gam.prediction_intervals(X.iloc[test,:].to_numpy())
         GAM_utils.GAM_plot(gam,df.iloc[train,:],nomi,fold,filename,X.iloc[train,:])
         GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
         #GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob,CI,fold, filename)
+        #print(CI)
+        CI=[]
         return prob,CI,gam
     
 class CV_utils():
+
     def cross_validation(parameters,algorithm,classifier):
         df=parameters['df']
         nomi=parameters['nomi']
         x=df[parameters['field1']]
+        #print(x,'x')
+        #print(df,'df')
         y=df['y']
         if algorithm==Algorithms.alg_GAMrun:
-            X=CV_utils.scaler(x,parameters['linear']+parameters['continuous'])
-            X[parameters['categorical']]=df[parameters['categorical']]
+            df_scaled=CV_utils.scaler(x,parameters['linear']+parameters['continuous'],'custom')
+            #X[parameters['categorical']]=df[parameters['categorical']]
         else:
-            sc = StandardScaler()#####scaler
-            X = sc.fit_transform(x)       
+            df_scaled=CV_utils.scaler(df,nomi,'standard')     
         train_ind={}
         test_ind={}
         prob={}
@@ -130,34 +87,27 @@ class CV_utils():
         coeff=None
         if parameters['testN']>1:
             cv = CV_utils.cv_method(parameters)
-            for i, (train, test) in enumerate(cv.split(X, y)):
+            for i, (train, test) in enumerate(cv.split(df_scaled, y)):
                 train_ind[i]=train
                 test_ind[i]=test
                 if algorithm==Algorithms.alg_GAMrun:
-                    prob[i],CI[i],gam=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename=str(i),family=parameters['family'])
+                    prob[i],CI[i],gam=algorithm(classifier,df_scaled,y,train,test,df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
+                    #df.loc[test,'CI']=CI[i]
                 else:
-                    prob[i]=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi,filename=str(i))
-                
+                    prob[i]=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi,filename=str(i))
                 df.loc[test,'SI']=prob[i]
-                #df.loc[test,'CI']=[]#CI[i]
             gam=None
         elif parameters['testN']==1:
             train=np.arange(len(y))
             test=np.arange(len(y))
             if algorithm==Algorithms.alg_GAMrun:
-                prob[0],CI[0],gam=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],family=parameters['family'])
+                prob[0],CI[0],gam=algorithm(classifier,df_scaled,y,train,test,df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],family=parameters['family'])
+                #df.loc[test,'CI']=CI[0]
             else:
-                prob[0]=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
+                prob[0]=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi)
             df.loc[test,'SI']=prob[0]
-            #df.loc[test,'CI']=[]#CI[0]
+            
             test_ind[0]=test
-        #    cofl.append(coeff)
-        # if not os.path.exists(parameters['fold']):
-        #     os.mkdir(parameters['fold'])
-        # if algorithm==Algorithms.alg_GAMrun:
-        #     GAM_utils.GAM_coeffs(cofl,parameters['fold'],nomi)
-        # else:
-        #     ML_utils.ML_coeffs(classifier,parameters['fold'],nomi)
 
         return prob,test_ind,gam
     
@@ -169,12 +119,16 @@ class CV_utils():
             method=StratifiedKFold(n_splits=parameters['testN'])
         return(method)
     
-    def scaler(df,nomes):
+    def scaler(df,nomes,scale_method='standard'):
         df_scaled=df.copy()
-        for nome in nomes:
-            s=df[nome].std()
-            u=df[nome].mean()
-            df_scaled[nome]=(df[nome]-u)/s
+        if scale_method=='custom':
+            for nome in nomes:
+                s=df[nome].std()
+                u=df[nome].mean()
+                df_scaled[nome]=(df[nome]-u)/s
+        elif scale_method=='standard':
+            sc = StandardScaler()#####scaler
+            df_scaled = sc.fit_transform(df[nomes])  
         return df_scaled
 
 class GAM_utils():
@@ -209,6 +163,7 @@ class GAM_utils():
         return splines,dtypes
     
     def GAM_plot(gam,df,nomi,fold,filename,scaled_df):
+
         GAM_sel=nomi
         #sc=StandardScaler()
         fig = plt.figure(figsize=(20, 25))
@@ -216,11 +171,14 @@ class GAM_utils():
         maX=[]
         miN=[]
         for i, term in enumerate(gam.terms):
+            print(gam.terms[i])
             if term.isintercept:
                 continue
-            pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
             if isinstance(gam.terms[i], terms.FactorTerm):
+                print('ciao')
                 continue
+            else:
+                pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
             maX=maX+[np.max(confi0[:,1])]
             miN=miN+[np.min(confi0[:,0])]
         MAX=max(maX)+1
@@ -245,10 +203,10 @@ class GAM_utils():
             if term.isintercept:
                 continue
             ##
-            #XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+            XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
             #pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
             ##
-            XX=df[GAM_sel[i]].to_numpy()
+            #XX=df[GAM_sel[i]].to_numpy()
             try:
                 sorted_indices = np.argsort(scaled_df.iloc[:, i])
                 X = scaled_df.iloc[sorted_indices].to_numpy()
@@ -260,6 +218,7 @@ class GAM_utils():
                 if ii != i: 
                     X[:, ii] = 0
             pdep, confi = gam.partial_dependence(term=i, X=X, width=0.95)
+            print(pdep,'pdep')
             ##
 
             YY=pdep
@@ -270,29 +229,34 @@ class GAM_utils():
             
             plt.subplot(rows, 3, i+1)
 
+            # if isinstance(gam.terms[i], terms.FactorTerm):
+            #     plt.plot(np.sort(df[GAM_sel[i]].unique()),pdep[range(1, len(pdep), 3)], 'o', c='blue')
+            #     for j in pdep[range(1, len(pdep), 3)]:
+            #         if j>1.5:
+            #             plt.axvline(np.sort(df[GAM_sel[0]].unique())[np.where(pdep[range(1, len(pdep), 3)] == j)[0][0]],
+            #                         color='k', linewidth=0.5, linestyle="--")
+            #     plt.xticks(np.sort(df[GAM_sel[i]].unique()), rotation=90)
+            #     plt.xlabel(GAM_sel[i])
+            #     plt.ylabel('Partial Effect')
+            #     continue
             if isinstance(gam.terms[i], terms.FactorTerm):
-                plt.plot(np.sort(df[GAM_sel[i]]),pdep, 'o', c='blue')
+                plt.plot(np.sort(df[GAM_sel[i]].unique()),
+                        pdep[range(1, len(pdep), 3)], 'o', c='gray')
+                for j in pdep[range(1, len(pdep), 3)]:
+                    if j>1.5:
+                        plt.axvline(np.sort(df[GAM_sel[0]].unique())[np.where(pdep[range(1, len(pdep), 3)] == j)[0][0]],
+                                    color='k', linewidth=0.5, linestyle="--")
                 plt.xticks(np.sort(df[GAM_sel[i]].unique()), rotation=90)
                 plt.xlabel(GAM_sel[i])
-                plt.ylabel('Partial Effect')
+                plt.ylabel('Regression coefficient')
                 continue
-            #elif isinstance(gam.terms[i], terms.LinearTerm):
-            #    print(pdep)
-            #    x_linear=np.append(x_linear,i)
-            #    y_linear=np.append(y_linear,np.unique(pdep))
-            #    x_tic=x_tic+[GAM_sel[i]]
-            #    continue
-            ##
-            #plt.plot(XX[:, term.feature], pdep, c='blue')
-            #plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
-            ##
-            ## plt.plot(XX[:, term.feature], confi, c='r', ls='--')
-            plt.plot(np.sort(XX), pdep, c='blue')
-            plt.fill_between(np.sort(XX), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+
+            plt.plot(XX[:, term.feature], pdep, c='blue')
+            plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
 
             plt.xlabel(GAM_sel[i])
             plt.ylabel('Partial Effect')
-            plt.ylim(MIN,MAX)
+            #plt.ylim(MIN,MAX)
 
         #if len(x_linear)>0:
         #    print(x_linear,y_linear)
@@ -302,8 +266,7 @@ class GAM_utils():
         #    plt.ylabel('Regression coefficient')
 
         plt.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
-        #plt.show()
-    
+        #plt.show()  
         
     def GAM_save(gam,coeffs,fold,nomi,filename=''):
         filename_pkl = fold+'/gam_coeff'+filename+'.pkl'
