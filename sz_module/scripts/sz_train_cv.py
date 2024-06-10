@@ -136,7 +136,7 @@ class CoreAlgorithm_cv():
 
         }
 
-        outputs['prob'],outputs['test_ind']=CV_utils.cross_validation(alg_params,algorithm,classifier)
+        outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():

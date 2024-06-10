@@ -3,7 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold,LeaveOneOut
 from sklearn.svm import SVC
 import pandas as pd
 import numpy as np
@@ -16,7 +16,9 @@ from pygam import terms
 import csv
 import matplotlib.pyplot as plt
 import json
-
+from sklearn.cluster import KMeans
+from shapely.geometry import MultiPolygon, Polygon
+from shapely.wkt import loads
 
 from sklearn.tree import export_text
 
@@ -39,8 +41,11 @@ class Algorithms():
         return(df)
 
     def alg_MLrun(classifier,X,y,train,test,df,fold,nomi,filename=''):
-        classifier.fit(X[train], y[train])
-        prob_predic=classifier.predict_proba(X[test])[::,1]
+        print(X.head())
+        classifier.fit(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy())
+        prob_predic=classifier.predict_proba(X.loc[test,nomi].to_numpy())[::,1]
+        print(nomi)
+
         ML_utils.ML_save(classifier,fold,nomi,filename)
         return prob_predic
     
@@ -49,14 +54,14 @@ class Algorithms():
         lams.fill(0.5)
         classifier_selected=classifier[family]
         gam = classifier_selected(splines, dtype=dtypes)
-        gam.gridsearch(X.iloc[train,:].to_numpy(), y.iloc[train].to_numpy(), lam=lams,progress=False)
+        gam.gridsearch(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy(), lam=lams,progress=False)
         if family=='binomial':
-            prob=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]
+            prob=gam.predict_proba(X.loc[test,nomi].to_numpy())#[::,1]
             #CI=gam.confidence_intervals(X.iloc[test,:].to_numpy(),width=0.95)
         else:
-            prob=gam.predict(X.iloc[test,:].to_numpy())#[::,1]
+            prob=gam.predict(X.loc[test,nomi].to_numpy())#[::,1]
             #CI=gam.prediction_intervals(X.iloc[test,:].to_numpy())
-        GAM_utils.GAM_plot(gam,df.iloc[train,:],nomi,fold,filename,X.iloc[train,:])
+        GAM_utils.GAM_plot(gam,df.loc[train,nomi],nomi,fold,filename,X.loc[train,nomi])
         GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
         #GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob,CI,fold, filename)
         #print(CI)
@@ -76,7 +81,7 @@ class CV_utils():
             df_scaled=CV_utils.scaler(x,parameters['linear']+parameters['continuous'],'custom')
             #X[parameters['categorical']]=df[parameters['categorical']]
         else:
-            df_scaled=CV_utils.scaler(df,nomi,'standard')     
+            df_scaled=CV_utils.scaler(df,nomi,'standard')
         train_ind={}
         test_ind={}
         prob={}
@@ -86,17 +91,15 @@ class CV_utils():
         df["CI"] = np.nan
         coeff=None
         if parameters['testN']>1:
-            cv = CV_utils.cv_method(parameters)
-            for i, (train, test) in enumerate(cv.split(df_scaled, y)):
-                train_ind[i]=train
-                test_ind[i]=test
+            train_ind,test_ind = CV_utils.cv_method(parameters,df_scaled,df,parameters['field1'])
+            for i in range(parameters['testN']):
                 if algorithm==Algorithms.alg_GAMrun:
-                    prob[i],CI[i],gam=algorithm(classifier,df_scaled,y,train,test,df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
+                    prob[i],CI[i],gam=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
                     #df.loc[test,'CI']=CI[i]
                 else:
-                    prob[i]=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi,filename=str(i))
-                df.loc[test,'SI']=prob[i]
-            gam=None
+                    prob[i]=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i))
+                    gam=None
+                df.loc[test_ind[i],'SI']=prob[i]
         elif parameters['testN']==1:
             train=np.arange(len(y))
             test=np.arange(len(y))
@@ -105,19 +108,51 @@ class CV_utils():
                 #df.loc[test,'CI']=CI[0]
             else:
                 prob[0]=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi)
+                gam=None
             df.loc[test,'SI']=prob[0]
             
             test_ind[0]=test
 
         return prob,test_ind,gam
     
-    def cv_method(parameters):
+    def cv_method(parameters,df_scaled,df,nomi):
+        X_train={}
+        X_test={}
+        y = df['y'].to_numpy()
         if parameters['cv_method']=='spatial':
+            for index, row in df.iterrows():
+                multipolygon = loads(df.loc[index,'geom'])
+                # Compute the centroid of the MultiPolygon
+                centroid = multipolygon.centroid
+                # Get the x and    y coordinates of the centroid
+                x, y = centroid.x, centroid.y
+                # Extract x and y coordinates
+                df_scaled.loc[index,'X_coord'] = x
+                df_scaled.loc[index,'Y_coord'] = y
+            # Create a DataFrame with the coordinates
+            coords = df_scaled[['X_coord', 'Y_coord']]
+            # Standardize the coordinates
+            scaler = StandardScaler()
+            coords_scaled = scaler.fit_transform(coords)
+            kmeans = KMeans(n_clusters=parameters['testN'], random_state=10, n_init=2, max_iter=10).fit(coords_scaled)
+            loo = LeaveOneOut()
+            #method=loo.split(kmeans.labels_)
+            for i, (train, test) in enumerate(loo.split(np.arange(parameters['testN']))):
+                X_train[i] = np.where(kmeans.labels_ != test)[0]
+                X_test[i] = np.where(kmeans.labels_ == test)[0]
+                #y_train[i] = np.where(kmeans.labels_ != test)#############da finireeeee
             print('spatial')
         elif parameters['cv_method']=='random':
             print('random')
             method=StratifiedKFold(n_splits=parameters['testN'])
-        return(method)
+            for i, (train, test) in enumerate(method.split(df_scaled, y)):
+                X_train[i]=train
+                X_test[i]=test
+        #elif:
+        #    loo = LeaveOneOut()
+        #    for train, test in loo.split(X):
+        #return(method)
+        return X_train,X_test
     
     def scaler(df,nomes,scale_method='standard'):
         df_scaled=df.copy()
@@ -128,7 +163,10 @@ class CV_utils():
                 df_scaled[nome]=(df[nome]-u)/s
         elif scale_method=='standard':
             sc = StandardScaler()#####scaler
-            df_scaled = sc.fit_transform(df[nomes])  
+            array_scaled = sc.fit_transform(df[nomes])  
+            df_scaled = pd.DataFrame(array_scaled, columns=nomes)
+        none_values = df.isnull().sum()
+        print('errorriiiiiii',none_values)
         return df_scaled
 
 class GAM_utils():
@@ -171,7 +209,7 @@ class GAM_utils():
         maX=[]
         miN=[]
         for i, term in enumerate(gam.terms):
-            print(gam.terms[i])
+            #print(gam.terms[i])
             if term.isintercept:
                 continue
             if isinstance(gam.terms[i], terms.FactorTerm):
@@ -218,7 +256,7 @@ class GAM_utils():
                 if ii != i: 
                     X[:, ii] = 0
             pdep, confi = gam.partial_dependence(term=i, X=X, width=0.95)
-            print(pdep,'pdep')
+            #print(pdep,'pdep')
             ##
 
             YY=pdep
@@ -297,9 +335,10 @@ class GAM_utils():
 
 class ML_utils():
     def ML_save(classifier,fold,nomi, filename):
-        try:
+        try:#RF,DT
             regression_coeff=classifier.feature_importances_
             coeff=regression_coeff
+            print(coeff,nomi)
             try:
                 tree_rules = export_text(classifier, feature_names=nomi)
                 tree_rules_list = tree_rules.split('\n')
@@ -313,7 +352,7 @@ class ML_utils():
             })
             feature_importance_df = feature_importance_df.sort_values(by='Importance', ascending=False)
             feature_importance_df.to_csv(fold+'/feature_importances'+filename+'.csv', index=False)
-        except:
+        except:#SVM
             regression_coeff=classifier.coef_
             regression_intercept=classifier.intercept_
             coeff=np.hstack((regression_intercept,regression_coeff[0]))
