@@ -96,15 +96,20 @@ class SZ_utils():
         del gdp
         gdp=pd.read_csv(directory+'/file.csv')
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-        df=gdp[parameters['field1']]
-        nomi=list(df.head())
+        if parameters['time']==None:
+            df=gdp[parameters['field1']]
+            print('ciccia')
+        else:
+            df=gdp[parameters['field1']+[parameters['time']]]
+        df = df.applymap(lambda x: pd.to_numeric(x, errors='coerce'))
+        #nomi=list(df.head())
         lsd=gdp[parameters['lsd']]
         lsd[lsd>0]=1
         df['y']=lsd#.astype(int)
         df['ID']=gdp['ID']
         df['geom']=gdp['geom']
         df=df.dropna(how='any',axis=0)
-        return(df,nomi,crs)
+        return(df,crs)
     
 
     def stampfit(parameters):

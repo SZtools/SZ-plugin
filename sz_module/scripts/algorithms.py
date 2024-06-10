@@ -3,7 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import StratifiedKFold,LeaveOneOut
+from sklearn.model_selection import StratifiedKFold,LeaveOneOut,TimeSeriesSplit
 from sklearn.svm import SVC
 import pandas as pd
 import numpy as np
@@ -41,11 +41,8 @@ class Algorithms():
         return(df)
 
     def alg_MLrun(classifier,X,y,train,test,df,fold,nomi,filename=''):
-        print(X.head())
         classifier.fit(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy())
         prob_predic=classifier.predict_proba(X.loc[test,nomi].to_numpy())[::,1]
-        print(nomi)
-
         ML_utils.ML_save(classifier,fold,nomi,filename)
         return prob_predic
     
@@ -73,7 +70,7 @@ class CV_utils():
     def cross_validation(parameters,algorithm,classifier):
         df=parameters['df']
         nomi=parameters['nomi']
-        x=df[parameters['field1']]
+        x=df[parameters['nomi']]
         #print(x,'x')
         #print(df,'df')
         y=df['y']
@@ -91,7 +88,7 @@ class CV_utils():
         df["CI"] = np.nan
         coeff=None
         if parameters['testN']>1:
-            train_ind,test_ind = CV_utils.cv_method(parameters,df_scaled,df,parameters['field1'])
+            train_ind,test_ind = CV_utils.cv_method(parameters,df_scaled,df,parameters['nomi'])
             for i in range(parameters['testN']):
                 if algorithm==Algorithms.alg_GAMrun:
                     prob[i],CI[i],gam=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
@@ -135,11 +132,11 @@ class CV_utils():
             scaler = StandardScaler()
             coords_scaled = scaler.fit_transform(coords)
             kmeans = KMeans(n_clusters=parameters['testN'], random_state=10, n_init=2, max_iter=10).fit(coords_scaled)
-            loo = LeaveOneOut()
+            method = LeaveOneOut()
             #method=loo.split(kmeans.labels_)
-            for i, (train, test) in enumerate(loo.split(np.arange(parameters['testN']))):
-                X_train[i] = np.where(kmeans.labels_ != test)[0]
-                X_test[i] = np.where(kmeans.labels_ == test)[0]
+            for i, (train, test) in enumerate(method.split(np.arange(parameters['testN']))):
+                X_train[i] = np.where(kmeans.labels_ != test[0])[0]
+                X_test[i] = np.where(kmeans.labels_ == test[0])[0]
                 #y_train[i] = np.where(kmeans.labels_ != test)#############da finireeeee
             print('spatial')
         elif parameters['cv_method']=='random':
@@ -148,10 +145,17 @@ class CV_utils():
             for i, (train, test) in enumerate(method.split(df_scaled, y)):
                 X_train[i]=train
                 X_test[i]=test
-        #elif:
-        #    loo = LeaveOneOut()
-        #    for train, test in loo.split(X):
-        #return(method)
+        elif parameters['cv_method']=='temporal_TSS':
+            time_index=sorted(df[parameters['time']].unique())
+            method=TimeSeriesSplit(n_splits=len(time_index)-1)
+            for i, (train, test) in enumerate(method.split(time_index)):
+                X_train[i]=np.where(df[parameters['time']] != int(time_index[test[0]]))[0]
+                X_test[i]=np.where(df[parameters['time']] == int(time_index[test[0]]))[0]
+        elif parameters['cv_method']=='temporal_LOO':
+            method = LeaveOneOut()
+            for i, (train, test) in enumerate(method.split(X)):
+                X_train[i]=train
+                X_test[i]=test
         return X_train,X_test
     
     def scaler(df,nomes,scale_method='standard'):
@@ -166,7 +170,6 @@ class CV_utils():
             array_scaled = sc.fit_transform(df[nomes])  
             df_scaled = pd.DataFrame(array_scaled, columns=nomes)
         none_values = df.isnull().sum()
-        print('errorriiiiiii',none_values)
         return df_scaled
 
 class GAM_utils():
@@ -213,7 +216,6 @@ class GAM_utils():
             if term.isintercept:
                 continue
             if isinstance(gam.terms[i], terms.FactorTerm):
-                print('ciao')
                 continue
             else:
                 pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
@@ -338,7 +340,6 @@ class ML_utils():
         try:#RF,DT
             regression_coeff=classifier.feature_importances_
             coeff=regression_coeff
-            print(coeff,nomi)
             try:
                 tree_rules = export_text(classifier, feature_names=nomi)
                 tree_rules_list = tree_rules.split('\n')

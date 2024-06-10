@@ -137,13 +137,13 @@ class CoreAlgorithmGAM_trans():
             'lsd' : parameters['fieldlsd'],
             'family':family[parameters['family']]
         }
-        outputs['df'],outputs['nomes'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
+        outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
         alg_params = {
             'linear': parameters['field3'],
             'continuous': parameters['field1'],
             'categorical': parameters['field2'],
-            'nomi': outputs['nomes'],
+            'nomi': parameters['field3']+parameters['field1']+parameters['field2'],
             'spline': parameters['num1']
         }
         outputs['splines'],outputs['dtypes']=GAM_utils.GAM_formula(alg_params)    
@@ -169,10 +169,10 @@ class CoreAlgorithmGAM_trans():
 
 
         alg_params = {
-            'field1': parameters['field3']+parameters['field1']+parameters['field2'],
+            #'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'testN':parameters['testN'],
             'fold':parameters['folder'],
-            'nomi':outputs['nomes'],
+            'nomi':parameters['field3']+parameters['field1']+parameters['field2'],
             'df':outputs['df'],
             'splines':outputs['splines'],
             'dtypes':outputs['dtypes'],

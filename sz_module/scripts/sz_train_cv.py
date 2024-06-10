@@ -54,6 +54,7 @@ import tempfile
 from sz_module.scripts.utils import SZ_utils
 from sz_module.scripts.algorithms import CV_utils
 import os
+from sz_module.utils import log
 
 
 
@@ -63,8 +64,9 @@ class CoreAlgorithm_cv():
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
-        self.addParameter(QgsProcessingParameterEnum(self.STRING3, 'CV method', options=['random CV','spatial CV'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
-        self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV (1 to fit or > 1 to cross-validate)'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING3, 'CV method', options=['random CV','spatial CV','temporal CV (Time Series Split)','temporal CV (Leave One Out)'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
+        self.addParameter(QgsProcessingParameterField(self.STRING4, 'Time field (for temporal CV only)', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any, optional=True ))
+        self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV: K=1 to fit, k>1 to cross-validate for spatial CV only'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2,optional=True))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
@@ -75,7 +77,7 @@ class CoreAlgorithm_cv():
         results = {}
         outputs = {}
 
-        cv_method={'0':'random','1':'spatial'}
+        cv_method={'0':'random','1':'spatial','2':'temporal_TSS','3':'temporal_LOO'}
 
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
@@ -98,6 +100,11 @@ class CoreAlgorithm_cv():
         parameters['cv_method'] = self.parameterAsString(parameters, self.STRING3, context)
         if parameters['cv_method'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING3))
+        
+        parameters['time'] = self.parameterAsString(parameters, self.STRING4, context)
+        if parameters['time'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING4))
+
 
         parameters['testN'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['testN'] is None:
@@ -114,26 +121,34 @@ class CoreAlgorithm_cv():
         if not os.path.exists(parameters['folder']):
             os.mkdir(parameters['folder'])
 
+        if cv_method[parameters['cv_method']]=='random' or cv_method[parameters['cv_method']]=='spatial':
+            parameters['time']=None
+        else:
+            if parameters['time']=='':
+                log(f"Time field is missing for temporal CV")
+                raise RuntimeError("Time field is missing for temporal CV")
+
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
+            'time':parameters['time'],
         }
 
-        outputs['df'],outputs['nomi'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
+        outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
 
         alg_params = {
-            'field1': parameters['field1'],
+            #'field1': parameters['field1'],
             'testN':parameters['testN'],
             'fold':parameters['folder'],
-            'nomi':outputs['nomi'],
+            'nomi':parameters['field1'],
             'df':outputs['df'],
             'cv_method':cv_method[parameters['cv_method']],
-
+            'time':parameters['time']
         }
 
         outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier)
@@ -174,9 +189,7 @@ class CoreAlgorithm_cv():
 
         for subLayer in subLayers:
             name = subLayer.split('!!::!!')[1]
-            print(name,'name')
             uri = "%s|layername=%s" % (fileName, name,)
-            print(uri,'uri')
             # Create layer
             sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
             if not sub_vlayer.isValid():

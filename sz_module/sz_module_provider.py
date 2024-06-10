@@ -434,6 +434,7 @@ class Instance(QgsProcessingAlgorithm):
     STRING3 = 'STRING3'#'field3'
     STRING4 = 'STRING4'#'string4'
     STRING5 = 'STRING5'
+    STRING6 = 'STRING6'
     NUMBER = 'NUMBER'#'testN'
     NUMBER1 = 'NUMBER1'#'num1'
     NUMBER2 = 'NUMBER2'
@@ -495,9 +496,6 @@ class Instance(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         result={}
-        print(self.dict_of_scripts['alg'])
-        print(self.algorithms)
-        print(self.classifier)
         if self.algorithms[self.dict_of_scripts['alg']] or self.classifier[self.dict_of_scripts['alg']]:  
             result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
         else: 
