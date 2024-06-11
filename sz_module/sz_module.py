@@ -37,7 +37,7 @@ from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QSettings
 from qgis.utils import iface,available_plugins,active_plugins
 from .installer.installer import installer
-from .utils import log,warn
+from .utils import log,warn,load_env_file
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 
@@ -50,9 +50,11 @@ class classePlugin(object):
     def __init__(self):
         #self.settings = QgsSettings()
         #self.settings.beginGroup("SZ")
+       
 
         self.provider = None
         dir=(os.path.dirname(os.path.abspath(__file__)))
+        load_env_file(os.path.join(dir, ".env"))
         with open(dir+'/metadata.txt','r') as file:
             for line in file:
                 if line.startswith('version='):
@@ -69,21 +71,24 @@ class classePlugin(object):
         self.installer=installer(self.version)
         print('Plugin already installed? ',self.plugin_settings.value("installed"))
         print('0')
-        # if self.installer.preliminay_req() is False:##rimuovere il commentooooo!!!!!!!!!!
-        #     self.installer.unload()
-        #     log(f"An error occured during the installation")
-        #     raise RuntimeError("An error occured during the installation")
-        # else:
-        #     print('1')
-        #     if self.installer.requirements() is False:
-        #         self.installer.unload()
-        #         log(f"An error occured during the installation")
-        #         raise RuntimeError("An error occured during the installation")
-        #     else:
-        #         print('2')
-        #         self.plugin_settings.setValue("installed", True)
-        #         self.initProcessing()       
-        self.initProcessing()  
+        if os.environ.get('DEBUG')=='False':
+            print('dentro')
+            if self.installer.preliminay_req() is False:##rimuovere il commentooooo!!!!!!!!!!
+                self.installer.unload()
+                log(f"An error occured during the installation")
+                raise RuntimeError("An error occured during the installation")
+            else:
+                print('1')
+                if self.installer.requirements() is False:
+                    self.installer.unload()
+                    log(f"An error occured during the installation")
+                    raise RuntimeError("An error occured during the installation")
+                else:
+                    print('2')
+                    self.plugin_settings.setValue("installed", True)
+                    self.initProcessing()     
+        else:
+            self.initProcessing()  
 
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
