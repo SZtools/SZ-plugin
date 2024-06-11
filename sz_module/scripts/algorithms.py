@@ -88,8 +88,8 @@ class CV_utils():
         df["CI"] = np.nan
         coeff=None
         if parameters['testN']>1:
-            train_ind,test_ind = CV_utils.cv_method(parameters,df_scaled,df,parameters['nomi'])
-            for i in range(parameters['testN']):
+            train_ind,test_ind,iters_count = CV_utils.cv_method(parameters,df_scaled,df,parameters['nomi'])
+            for i in range(iters_count):
                 if algorithm==Algorithms.alg_GAMrun:
                     prob[i],CI[i],gam=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
                     #df.loc[test,'CI']=CI[i]
@@ -117,30 +117,12 @@ class CV_utils():
         X_test={}
         y = df['y'].to_numpy()
         if parameters['cv_method']=='spatial':
-            for index, row in df.iterrows():
-                multipolygon = loads(df.loc[index,'geom'])
-                # Compute the centroid of the MultiPolygon
-                centroid = multipolygon.centroid
-                # Get the x and    y coordinates of the centroid
-                x, y = centroid.x, centroid.y
-                # Extract x and y coordinates
-                df_scaled.loc[index,'X_coord'] = x
-                df_scaled.loc[index,'Y_coord'] = y
-            # Create a DataFrame with the coordinates
-            coords = df_scaled[['X_coord', 'Y_coord']]
-            # Standardize the coordinates
-            scaler = StandardScaler()
-            coords_scaled = scaler.fit_transform(coords)
-            kmeans = KMeans(n_clusters=parameters['testN'], random_state=10, n_init=2, max_iter=10).fit(coords_scaled)
+            kmeans = CV_utils.kmeans_clustering(parameters,df,df_scaled)
             method = LeaveOneOut()
-            #method=loo.split(kmeans.labels_)
             for i, (train, test) in enumerate(method.split(np.arange(parameters['testN']))):
                 X_train[i] = np.where(kmeans.labels_ != test[0])[0]
                 X_test[i] = np.where(kmeans.labels_ == test[0])[0]
-                #y_train[i] = np.where(kmeans.labels_ != test)#############da finireeeee
-            print('spatial')
         elif parameters['cv_method']=='random':
-            print('random')
             method=StratifiedKFold(n_splits=parameters['testN'])
             for i, (train, test) in enumerate(method.split(df_scaled, y)):
                 X_train[i]=train
@@ -149,14 +131,32 @@ class CV_utils():
             time_index=sorted(df[parameters['time']].unique())
             method=TimeSeriesSplit(n_splits=len(time_index)-1)
             for i, (train, test) in enumerate(method.split(time_index)):
-                X_train[i]=np.where(df[parameters['time']] != int(time_index[test[0]]))[0]
-                X_test[i]=np.where(df[parameters['time']] == int(time_index[test[0]]))[0]
+                X_train[i]=np.where(df[parameters['time']] != time_index[test[0]])[0]
+                X_test[i]=np.where(df[parameters['time']] == time_index[test[0]])[0]
+                print('train',X_train)
         elif parameters['cv_method']=='temporal_LOO':
+            time_index=sorted(df[parameters['time']].unique())
             method = LeaveOneOut()
-            for i, (train, test) in enumerate(method.split(X)):
-                X_train[i]=train
-                X_test[i]=test
-        return X_train,X_test
+            for i, (train, test) in enumerate(method.split(time_index)):
+                X_train[i]=np.where(df[parameters['time']] != time_index[test[0]])[0]
+                X_test[i]=np.where(df[parameters['time']] == time_index[test[0]])[0]
+        elif parameters['cv_method']=='spacetime_LOO':
+            kmeans = CV_utils.kmeans_clustering(parameters,df,df_scaled)
+            time_index=sorted(df[parameters['time']].unique())
+            method = LeaveOneOut()
+            count=0
+            for ii, (train_time, test_time) in enumerate(method.split(time_index)):
+                #X_train_time=np.where(df[parameters['time']] != time_index[test_time[0]])[0]
+                X_test_time_index=np.where(df[parameters['time']] == time_index[test_time[0]])[0]
+                for i, (train, test) in enumerate(method.split(np.arange(parameters['testN']))):
+                    #X_train[i] = np.where(kmeans.labels_ != test[0])[0]
+                    X_test_space_index = np.where(kmeans.labels_ == test[0])[0]
+                    X_test[count]=np.intersect1d(X_test_time_index, X_test_space_index)
+                    mask = ~np.isin(np.arange(len(df)), X_test[count])
+                    X_train[count] = np.arange(len(df))[mask]
+                    count+=1
+
+        return X_train,X_test,len(X_test)
     
     def scaler(df,nomes,scale_method='standard'):
         df_scaled=df.copy()
@@ -171,6 +171,24 @@ class CV_utils():
             df_scaled = pd.DataFrame(array_scaled, columns=nomes)
         none_values = df.isnull().sum()
         return df_scaled
+    
+    def kmeans_clustering(parameters,df,df_scaled):
+        for index, row in df.iterrows():
+            multipolygon = loads(df.loc[index,'geom'])
+            # Compute the centroid of the MultiPolygon
+            centroid = multipolygon.centroid
+            # Get the x and    y coordinates of the centroid
+            x, y = centroid.x, centroid.y
+            # Extract x and y coordinates
+            df_scaled.loc[index,'X_coord'] = x
+            df_scaled.loc[index,'Y_coord'] = y
+        # Create a DataFrame with the coordinates
+        coords = df_scaled[['X_coord', 'Y_coord']]
+        # Standardize the coordinates
+        scaler = StandardScaler()
+        coords_scaled = scaler.fit_transform(coords)
+        kmeans = KMeans(n_clusters=parameters['testN'], random_state=10, n_init=2, max_iter=10).fit(coords_scaled)
+        return kmeans
 
 class GAM_utils():
     def GAM_formula(parameters):

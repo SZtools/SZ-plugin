@@ -147,6 +147,7 @@ class SZ_utils():
         fig=plt.figure()
         plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
         for i in range(len(test_ind)):
+            print(scores_v[test_ind[i]].isna().sum().sum(),'null')
             fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
             aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
             print('ROC '+ str(i) +' AUC=',aucv)
