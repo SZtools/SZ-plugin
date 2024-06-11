@@ -174,8 +174,8 @@ class classeProvider(QgsProcessingProvider):
             'function': rocGenerator,
             'name':'ROC',
             'displayName':'04 ROC',
-            'group':'05 Classify SI',
-            'groupId':'05 Classify SI',
+            'group':'04 Classify SI',
+            'groupId':'04 Classify SI',
             'shortHelpString':"ROC curve creator",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
