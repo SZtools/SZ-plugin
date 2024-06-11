@@ -31,49 +31,49 @@ from collections import OrderedDict
 
 class SZ_utils():
 
-    def load_simple(directory,parameters):
-        layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
-        crs=layer.crs()
-        campi=[]
-        for field in layer.fields():
-            campi.append(field.name())
-        campi.append('geom')
-        gdp=pd.DataFrame(columns=campi,dtype=float)
-        features = layer.getFeatures()
-        count=0
-        feat=[]
-        for feature in features:
-            attr=feature.attributes()
-            geom = feature.geometry()
-            feat=attr+[geom.asWkt()]
-            gdp.loc[len(gdp)] = feat
-            count=+ 1
-        gdp.to_csv(directory+'/file.csv')
-        del gdp
-        gdp=pd.read_csv(directory+'/file.csv')
-        gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-        df=gdp[parameters['field1']]
-        nomi=list(df.head())
-        lsd=gdp[parameters['lsd']]
-        print(parameters,'printalo')
-        if parameters['family']=='binomial':
-            lsd[lsd>0]=1
-        else:
-            lsd[lsd>0]=np.log(lsd[lsd>0])
-            print('lsd',lsd,'lsd')
-        df['y']=lsd#.astype(int)
-        df['ID']=gdp['ID']
-        df['geom']=gdp['geom']
-        df=df.dropna(how='any',axis=0)
-        X=[parameters['field1']]
-        if parameters['testN']==0:
-            train=df
-            test=pd.DataFrame(columns=nomi,dtype=float)
-        else:
-            # split the data into train and test set
-            per=int(np.ceil(df.shape[0]*parameters['testN']/100))
-            train, test = train_test_split(df, test_size=per, random_state=42, shuffle=True)
-        return train, test, nomi,crs,df
+    # def load_simple(directory,parameters):
+    #     layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
+    #     crs=layer.crs()
+    #     campi=[]
+    #     for field in layer.fields():
+    #         campi.append(field.name())
+    #     campi.append('geom')
+    #     gdp=pd.DataFrame(columns=campi,dtype=float)
+    #     features = layer.getFeatures()
+    #     count=0
+    #     feat=[]
+    #     for feature in features:
+    #         attr=feature.attributes()
+    #         geom = feature.geometry()
+    #         feat=attr+[geom.asWkt()]
+    #         gdp.loc[len(gdp)] = feat
+    #         count=+ 1
+    #     gdp.to_csv(directory+'/file.csv')
+    #     del gdp
+    #     gdp=pd.read_csv(directory+'/file.csv')
+    #     gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
+    #     df=gdp[parameters['field1']]
+    #     nomi=list(df.head())
+    #     lsd=gdp[parameters['lsd']]
+    #     print(parameters,'printalo')
+    #     if parameters['family']=='binomial':
+    #         lsd[lsd>0]=1
+    #     else:
+    #         lsd[lsd>0]=np.log(lsd[lsd>0])
+    #         print('lsd',lsd,'lsd')
+    #     df['y']=lsd#.astype(int)
+    #     df['ID']=gdp['ID']
+    #     df['geom']=gdp['geom']
+    #     df=df.dropna(how='any',axis=0)
+    #     X=[parameters['field1']]
+    #     if parameters['testN']==0:
+    #         train=df
+    #         test=pd.DataFrame(columns=nomi,dtype=float)
+    #     else:
+    #         # split the data into train and test set
+    #         per=int(np.ceil(df.shape[0]*parameters['testN']/100))
+    #         train, test = train_test_split(df, test_size=per, random_state=42, shuffle=True)
+    #     return train, test, nomi,crs,df
     
     def load_cv(directory,parameters):
         layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
@@ -96,15 +96,20 @@ class SZ_utils():
         del gdp
         gdp=pd.read_csv(directory+'/file.csv')
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-        df=gdp[parameters['field1']]
-        nomi=list(df.head())
+        if parameters['time']==None:
+            df=gdp[parameters['field1']]
+            print('ciccia')
+        else:
+            df=gdp[parameters['field1']+[parameters['time']]]
+        df = df.applymap(lambda x: pd.to_numeric(x, errors='coerce'))
+        #nomi=list(df.head())
         lsd=gdp[parameters['lsd']]
         lsd[lsd>0]=1
         df['y']=lsd#.astype(int)
         df['ID']=gdp['ID']
         df['geom']=gdp['geom']
         df=df.dropna(how='any',axis=0)
-        return(df,nomi,crs)
+        return(df,crs)
     
 
     def stampfit(parameters):
@@ -142,6 +147,7 @@ class SZ_utils():
         fig=plt.figure()
         plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
         for i in range(len(test_ind)):
+            print(scores_v[test_ind[i]].isna().sum().sum(),'null')
             fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
             aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
             print('ROC '+ str(i) +' AUC=',aucv)
@@ -276,3 +282,4 @@ class SZ_utils():
             writer.writerow(["R-squared", r_squared])
             writer.writerow(["Pearson Coefficient", pearson_coefficient])
         return(errors)
+    

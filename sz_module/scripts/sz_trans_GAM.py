@@ -54,7 +54,7 @@ import plotly.graph_objs as go
 import pandas as pd
 import tempfile
 from sz_module.scripts.utils import SZ_utils
-from sz_module.scripts.algorithms import Algorithms,GAM_utils
+from sz_module.scripts.algorithms import Algorithms,GAM_utils,CV_utils
 import os
 
 
@@ -65,10 +65,10 @@ class CoreAlgorithmGAM_trans():
         self.addParameter(QgsProcessingParameterField(self.STRING3, 'Linear independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Ordinal independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Spline smoothing parameter'), type=QgsProcessingParameterNumber.Integer,defaultValue=10))
-        self.addParameter(QgsProcessingParameterEnum(self.STRING4, 'Family', options=['binomial','gaussian'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING4, 'Family', options=['binomial','gaussian'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
-        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT1, self.tr('Input layer for transferability'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None, optional=True))
+        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT1, self.tr('Input layer for transferability'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None, optional=False))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT1, 'Output trans',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
@@ -129,67 +129,81 @@ class CoreAlgorithmGAM_trans():
         if not os.path.exists(parameters['folder']):
             os.mkdir(parameters['folder'])
         
-        parameters['testN']=0
+        parameters['testN']=1
         
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'lsd' : parameters['fieldlsd'],
-            'testN':parameters['testN'],
             'family':family[parameters['family']]
         }
-        outputs['train'],outputs['testy'],outputs['nomes'],outputs['crs'],outputs['df']=SZ_utils.load_simple(self.f,alg_params)
+        outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
         alg_params = {
             'linear': parameters['field3'],
             'continuous': parameters['field1'],
             'categorical': parameters['field2'],
-            'nomi': outputs['nomes'],
+            'nomi': parameters['field3']+parameters['field1']+parameters['field2'],
             'spline': parameters['num1']
         }
         outputs['splines'],outputs['dtypes']=GAM_utils.GAM_formula(alg_params)    
 
 
+        # alg_params = {
+        #     'train': outputs['train'],
+        #     'testy': outputs['testy'],
+        #     'nomi':outputs['nomes'],
+        #     'testN':parameters['testN'],
+        #     'fold':parameters['folder'],
+        #     'splines':outputs['splines'],
+        #     'dtypes':outputs['dtypes'],
+        #     'df':outputs['df'],
+        #     'categorical':parameters['field2'],
+        #     'linear':parameters['field3'],
+        #     'continuous':parameters['field1'],
+        #     'family':family[parameters['family']]
+
+            
+        # }
+        # outputs['trainsi'],outputs['testsi'],outputs['gam']=algorithm(alg_params)
+
+
         alg_params = {
-            'train': outputs['train'],
-            'testy': outputs['testy'],
-            'nomi':outputs['nomes'],
+            #'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'testN':parameters['testN'],
             'fold':parameters['folder'],
+            'nomi':parameters['field3']+parameters['field1']+parameters['field2'],
+            'df':outputs['df'],
             'splines':outputs['splines'],
             'dtypes':outputs['dtypes'],
-            'df':outputs['df'],
             'categorical':parameters['field2'],
             'linear':parameters['field3'],
             'continuous':parameters['field1'],
-            'family':family[parameters['family']]
-
-            
+            'family':family[parameters['family']],
         }
-        outputs['trainsi'],outputs['testsi'],outputs['gam']=algorithm(alg_params)
+
+        outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier)
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
         
-
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['input1'],
             'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'lsd' : parameters['fieldlsd'],
-            'testN':parameters['testN'],
             'family':family[parameters['family']]
         }
-        outputs['train_trans'],outputs['test_trans'],outputs['nomes_trans'],outputs['crs_trans'],outputs['df_trans']=SZ_utils.load_simple(self.f,alg_params)
+        outputs['df_trans'],outputs['nomes_trans'],outputs['crs_trans']=SZ_utils.load_cv(self.f,alg_params)
 
         alg_params = {
             'gam':outputs['gam'],
             'nomi': outputs['nomes'],
-            'trans':outputs['train_trans'],
             'family':family[parameters['family']],
             'categorical':parameters['field2'],
             'linear':parameters['field3'],
             'continuous':parameters['field1'],
+            'df':outputs['df_trans']
         }
         outputs['trans']=Algorithms.GAM_transfer(alg_params)
 
