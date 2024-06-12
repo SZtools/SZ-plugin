@@ -2,7 +2,7 @@
 #coding=utf-8
 """
 /***************************************************************************
-    LRAlgorithm
+    LRcvAlgorithm
         begin                : 2021-11
         copyright            : (C) 2021 by Giacomo Titti,
                                Padova, November 2021
@@ -10,7 +10,7 @@
  ***************************************************************************/
 
 /***************************************************************************
-    LRAlgorithm
+    LRcvAlgorithm
     Copyright (C) 2021 by Giacomo Titti, Padova, November 2021
 
     This program is free software: you can redistribute it and/or modify
@@ -50,66 +50,57 @@ from qgis.core import *
 from qgis.utils import iface
 from qgis import *
 from processing.algs.gdal.GdalUtils import GdalUtils
-import plotly.graph_objs as go
-import pandas as pd
 import tempfile
 from sz_module.scripts.utils import SZ_utils
-from sz_module.scripts.algorithms import Algorithms,GAM_utils,CV_utils
+from sz_module.scripts.algorithms import CV_utils,Algorithms
 import os
+from sz_module.utils import log
 
 
-class CoreAlgorithmGAM_trans():
-   
+
+class CoreAlgorithmML_trans():
+
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
-        self.addParameter(QgsProcessingParameterField(self.STRING3, 'Linear independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
-        self.addParameter(QgsProcessingParameterField(self.STRING, 'Ordinal independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
-        self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Spline smoothing parameter'), type=QgsProcessingParameterNumber.Integer,defaultValue=10))
-        self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
-        self.addParameter(QgsProcessingParameterEnum(self.STRING4, 'Family', options=['binomial','gaussian'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
+        self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVC','DT','RF'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
+        #self.addParameter(QgsProcessingParameterEnum(self.STRING3, 'CV method', options=['random CV','spatial CV','temporal CV (Time Series Split)','temporal CV (Leave One Out)', 'space-time CV (Leave One Out)'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
+        #self.addParameter(QgsProcessingParameterField(self.STRING4, 'Time field (for temporal CV only)', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any, optional=True ))
+        #self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV: K=1 to fit, k>1 to cross-validate for spatial CV only'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2,optional=True))
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT1, self.tr('Input layer for transferability'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None, optional=False))
-        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT1, 'Output trans',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
+        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
     def process(self, parameters, context, feedback, algorithm=None, classifier=None):
+
         self.f=tempfile.gettempdir()
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
         outputs = {}
 
-        family={'0':'binomial','1':'gaussian'}
+        #cv_method={'0':'random','1':'spatial','2':'temporal_TSS','3':'temporal_LOO','4':'spacetime_LOO'}
+        ML={'0':'SVC','1':'DT','2':'RF'}
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
         if parameters['covariates'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
+
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-        
-        parameters['field3'] = self.parameterAsFields(parameters, self.STRING3, context)
-        if parameters['field3'] is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING3))
 
         parameters['field1'] = self.parameterAsFields(parameters, self.STRING, context)
         if parameters['field1'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING))
-        
-        parameters['field2'] = self.parameterAsFields(parameters, self.STRING1, context)
-        if parameters['field2'] is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING1))
-        
-        parameters['family'] = self.parameterAsString(parameters, self.STRING4, context)
-        if parameters['family'] is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING4))
-        
+
         parameters['fieldlsd'] = self.parameterAsString(parameters, self.STRING2, context)
         if parameters['fieldlsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING2))
         
-        parameters['num1'] = self.parameterAsInt(parameters, self.NUMBER1, context)
-        if parameters['num1'] is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER1))
+        parameters['algorithm'] = self.parameterAsString(parameters, self.STRING5, context)
+        if parameters['algorithm'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING5))
         
         source1 = self.parameterAsVectorLayer(parameters, self.INPUT1, context)
         parameters['input1']=source1.source()
@@ -118,9 +109,23 @@ class CoreAlgorithmGAM_trans():
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT1))
 
-        parameters['out1'] = self.parameterAsFileOutput(parameters, self.OUTPUT1, context)
-        if parameters['out1'] is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT1))
+        # parameters['cv_method'] = self.parameterAsString(parameters, self.STRING3, context)
+        # if parameters['cv_method'] is None:
+        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING3))
+        
+        # parameters['time'] = self.parameterAsString(parameters, self.STRING4, context)
+        # if parameters['time'] is None:
+        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING4))
+
+        # parameters['testN'] = self.parameterAsInt(parameters, self.NUMBER, context)
+        # if parameters['testN'] is None:
+        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
+ 
+        
+
+        parameters['out'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
+        if parameters['out'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
 
         parameters['folder'] = self.parameterAsString(parameters, self.OUTPUT3, context)
         if parameters['folder'] is None:
@@ -128,101 +133,80 @@ class CoreAlgorithmGAM_trans():
         
         if not os.path.exists(parameters['folder']):
             os.mkdir(parameters['folder'])
-        
+
+        # if cv_method[parameters['cv_method']]=='random' or cv_method[parameters['cv_method']]=='spatial':
+        #     parameters['time']=None
+        # else:
+        #     if parameters['time']=='':
+        #         log(f"Time field is missing for temporal CV")
+        #         raise RuntimeError("Time field is missing for temporal CV")
+
         parameters['testN']=1
-        
+
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field3']+parameters['field1']+parameters['field2'],
+            'field1': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
-            'family':family[parameters['family']]
+            #'time':parameters['time'],
         }
+
         outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
-
-        alg_params = {
-            'linear': parameters['field3'],
-            'continuous': parameters['field1'],
-            'categorical': parameters['field2'],
-            'nomi': parameters['field3']+parameters['field1']+parameters['field2'],
-            'spline': parameters['num1']
-        }
-        outputs['splines'],outputs['dtypes']=GAM_utils.GAM_formula(alg_params)    
-
-
-        # alg_params = {
-        #     'train': outputs['train'],
-        #     'testy': outputs['testy'],
-        #     'nomi':outputs['nomes'],
-        #     'testN':parameters['testN'],
-        #     'fold':parameters['folder'],
-        #     'splines':outputs['splines'],
-        #     'dtypes':outputs['dtypes'],
-        #     'df':outputs['df'],
-        #     'categorical':parameters['field2'],
-        #     'linear':parameters['field3'],
-        #     'continuous':parameters['field1'],
-        #     'family':family[parameters['family']]
-
-            
-        # }
-        # outputs['trainsi'],outputs['testsi'],outputs['gam']=algorithm(alg_params)
-
-
-        alg_params = {
-            #'field1': parameters['field3']+parameters['field1']+parameters['field2'],
-            'testN':parameters['testN'],
-            'fold':parameters['folder'],
-            'nomi':parameters['field3']+parameters['field1']+parameters['field2'],
-            'df':outputs['df'],
-            'splines':outputs['splines'],
-            'dtypes':outputs['dtypes'],
-            'categorical':parameters['field2'],
-            'linear':parameters['field3'],
-            'continuous':parameters['field1'],
-            'family':family[parameters['family']],
-        }
-
-        outputs['prob'],outputs['test_ind'],outputs['predictors_weights']=CV_utils.cross_validation(alg_params,algorithm,classifier)
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
         
+        #print(cv_method[parameters['cv_method']])
+
         alg_params = {
-            'INPUT_VECTOR_LAYER': parameters['input1'],
-            'field1': parameters['field3']+parameters['field1']+parameters['field2'],
-            'lsd' : parameters['fieldlsd'],
-            'family':family[parameters['family']]
+            #'field1': parameters['field1'],
+            'testN':parameters['testN'],
+            'fold':parameters['folder'],
+            'nomi':parameters['field1'],
+            'df':outputs['df'],
+            #'cv_method':cv_method[parameters['cv_method']],
+            #'time':parameters['time']
         }
-        outputs['df_trans'],outputs['crs_trans']=SZ_utils.load_cv(self.f,alg_params)
+
+        outputs['prob'],outputs['test_ind'],outputs['predictors_weights']=CV_utils.cross_validation(alg_params,algorithm,classifier[ML[parameters['algorithm']]])
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
-
+        
         alg_params = {
-            'predictors_weights':outputs['predictors_weights'],
-            'nomi': parameters['field3']+parameters['field1']+parameters['field2'],
-            'family':family[parameters['family']],
-            'categorical':parameters['field2'],
-            'linear':parameters['field3'],
-            'continuous':parameters['field1'],
-            'df':outputs['df_trans']
+            'INPUT_VECTOR_LAYER': parameters['input1'],
+            'field1': parameters['field1'],
+            'lsd' : parameters['fieldlsd'],
+            #'family':family[parameters['family']]
         }
-        outputs['trans']=Algorithms.GAM_transfer(alg_params)
+        outputs['df_trans'],outputs['crs_trans']=SZ_utils.load_cv(self.f,alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
             return {}
+        
+        alg_params = {
+            'predictors_weights':outputs['predictors_weights'],
+            'nomi': parameters['field1'],
+            #'family':family[parameters['family']],
+            'field1':parameters['field1'],
+            'df':outputs['df_trans']
+        }
+        outputs['trans']=Algorithms.ML_transfer(alg_params)
 
+        feedback.setCurrentStep(4)
+        if feedback.isCanceled():
+            return {}
+        
         alg_params = {
             'df': outputs['trans'],
             'crs': outputs['crs_trans'],
-            'OUT': parameters['out1']
+            'OUT': parameters['folder']+'/trans.gpkg'
         }
         SZ_utils.save(alg_params)
 
-        feedback.setCurrentStep(4)
+        feedback.setCurrentStep(5)
         if feedback.isCanceled():
             return {}
 
@@ -233,56 +217,34 @@ class CoreAlgorithmGAM_trans():
         }
         SZ_utils.save(alg_params)
 
-        feedback.setCurrentStep(5)
-        if feedback.isCanceled():
-            return {}
-
-        if family[parameters['family']]=='binomial':
-            alg_params = {
-                'df': outputs['trans'],
-                'OUT':parameters['folder']
-            }
-            SZ_utils.stampfit(alg_params)
-
-        if family[parameters['family']]=='gaussian':
-            alg_params = {
-                'df': outputs['trans'],
-                'OUT':parameters['folder'],
-                'file':parameters['folder']+'errors_trans.csv'
-
-            }
-            outputs['errors_trans']=SZ_utils.errors(alg_params)
-
-            alg_params = {
-                'df': outputs['train'],
-                'OUT':parameters['folder'],
-                'file':parameters['folder']+'errors_train.csv'
-            }
-            outputs['error_train']=SZ_utils.errors(alg_params)
-
         feedback.setCurrentStep(6)
         if feedback.isCanceled():
             return {}
-        results['out1'] = parameters['out1']
 
-        fileName = parameters['out1']
-        layer = QgsVectorLayer(fileName,"transfer","ogr")
-        subLayers =layer.dataProvider().subLayers()
+        alg_params = {
+            'df': outputs['trans'],
+            'OUT':parameters['folder']
+        }
+        SZ_utils.stampfit(alg_params)
+
+        results['out'] = parameters['out']
+
+        fileName = parameters['out']
+        layer1 = QgsVectorLayer(fileName,"test","ogr")
+        subLayers =layer1.dataProvider().subLayers()
 
         for subLayer in subLayers:
             name = subLayer.split('!!::!!')[1]
-            print(name,'name')
             uri = "%s|layername=%s" % (fileName, name,)
-            print(uri,'uri')
             # Create layer
             sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
             if not sub_vlayer.isValid():
                 print('layer failed to load')
             # Add layer to map
             context.temporaryLayerStore().addMapLayer(sub_vlayer)
-            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('transfer', context.project(),'LAYER'))
+            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('test', context.project(),'LAYER1'))
 
-        feedback.setCurrentStep(3)
+        feedback.setCurrentStep(7)
         if feedback.isCanceled():
             return {}
         
@@ -309,4 +271,5 @@ class CoreAlgorithmGAM_trans():
 
         return results
 
-    
+
+

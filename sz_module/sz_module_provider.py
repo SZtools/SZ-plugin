@@ -55,9 +55,10 @@ from .scripts.tptn import FPAlgorithm
 from .scripts.classcovtxt import classcovtxtAlgorithm
 from .scripts.classcovdeciles import classcovdecAlgorithm
 from .scripts.corrplot import CorrAlgorithm
-from .scripts.sz_train_cv import CoreAlgorithm_cv
+from .scripts.sz_train_cv_ML import CoreAlgorithm_cv
 from .scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
 from .scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
+from .scripts.sz_trans_ML import CoreAlgorithmML_trans
 from .scripts.algorithms import Algorithms
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -118,16 +119,16 @@ class classeProvider(QgsProcessingProvider):
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
-        # dict_of_scripts={
-        #     'alg': 'ML_trans',
-        #     'function': CoreAlgorithmML_trans,
-        #     'name':'Transfer_ML',
-        #     'displayName':'01 Predict Machine Learning',
-        #      'group':'03 SI transfer',
-        #     'groupId':'03 SI transfer',
-        #     'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
-        # }
-        # self.addAlgorithm(Instance(dict_of_scripts))
+        dict_of_scripts={
+            'alg': 'ML_trans',
+            'function': CoreAlgorithmML_trans,
+            'name':'Transfer_ML',
+            'displayName':'01 Predict Machine Learning',
+             'group':'03 SI transfer',
+            'groupId':'03 SI transfer',
+            'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
 
         ##############
         dict_of_scripts={
@@ -342,16 +343,23 @@ class Instance(QgsProcessingAlgorithm):
             'ML_cv':True,
             'GAM_cv':True,
             'GAM_trans':True,
+            'ML_trans':True,
         }
 
         self.algorithms={
             'ML_cv':Algorithms.alg_MLrun,
+            'ML_trans':Algorithms.alg_MLrun,
             'GAM_cv':Algorithms.alg_GAMrun,
             'GAM_trans':Algorithms.alg_GAMrun,
         }
 
         self.classifier={
             'ML_cv':{
+                'SVC':SVC(kernel = 'linear', random_state = 0,probability=True),
+                'RF':RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0),
+                'DT':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
+            },
+            'ML_trans':{
                 'SVC':SVC(kernel = 'linear', random_state = 0,probability=True),
                 'RF':RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0),
                 'DT':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),

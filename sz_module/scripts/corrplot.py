@@ -54,7 +54,7 @@ from processing.algs.gdal.GdalUtils import GdalUtils
 import pandas as pd
 import tempfile
 import seaborn as sns
-from .scripts.utils import SZ_utils
+from .utils import SZ_utils
 
 class CorrAlgorithm(QgsProcessingAlgorithm):
     # INPUT = 'covariates'

@@ -24,6 +24,15 @@ from sklearn.tree import export_text
 
 
 class Algorithms():
+
+    def ML_transfer(parameters):
+        nomi=parameters['field1']
+        df=parameters['df']
+        df_scaled=CV_utils.scaler(df,nomi,'standard')
+        prob_predic=parameters['predictors_weights'].predict_proba(df_scaled.loc[:,nomi].to_numpy())[::,1]
+        #ML_utils.ML_save(classifier,fold,nomi,filename)
+        df['SI']=prob_predic
+        return df
     
     def GAM_transfer(parameters):
         nomi=parameters['nomi']
@@ -32,10 +41,10 @@ class Algorithms():
         df_scaled=CV_utils.scaler(df,parameters['linear']+parameters['continuous'],'custom')
 
         if parameters['family']=='binomial':
-            prob_fit=parameters['gam'].predict_proba(df_scaled)#[::,1]
+            prob_fit=parameters['predictors_weights'].predict_proba(df_scaled[nomi])#[::,1]
             df['SI']=prob_fit
         else:
-            prob_fit=parameters['gam'].predict(df_scaled)#[::,1]
+            prob_fit=parameters['predictors_weights'].predict(df_scaled[nomi])#[::,1]
             #CI = parameters['gam'].prediction_intervals(X_trans, width=.95)
             df['SI']=prob_fit#np.exp(prob_fit)
         return(df)
@@ -44,7 +53,7 @@ class Algorithms():
         classifier.fit(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy())
         prob_predic=classifier.predict_proba(X.loc[test,nomi].to_numpy())[::,1]
         ML_utils.ML_save(classifier,fold,nomi,filename)
-        return prob_predic
+        return prob_predic,classifier
     
     def alg_GAMrun(classifier,X,y,train,test,df,splines=None,dtypes=None,nomi=None,fold=None,filename='',family=None):
         lams = np.empty(len(nomi))
@@ -101,16 +110,16 @@ class CV_utils():
             train=np.arange(len(y))
             test=np.arange(len(y))
             if algorithm==Algorithms.alg_GAMrun:
-                prob[0],CI[0],gam=algorithm(classifier,df_scaled,y,train,test,df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],family=parameters['family'])
+                prob[0],CI[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],family=parameters['family'])
                 #df.loc[test,'CI']=CI[0]
             else:
-                prob[0]=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi)
-                gam=None
+                prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi)
+                #predictors_weights=None
             df.loc[test,'SI']=prob[0]
             
             test_ind[0]=test
 
-        return prob,test_ind,gam
+        return prob,test_ind,predictors_weights
     
     def cv_method(parameters,df_scaled,df,nomi):
         X_train={}
