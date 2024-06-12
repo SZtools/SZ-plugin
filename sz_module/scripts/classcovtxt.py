@@ -56,33 +56,6 @@ import csv
 from processing.algs.gdal.GdalUtils import GdalUtils
 
 class classcovtxtAlgorithm(QgsProcessingAlgorithm):
-    # INPUT = 'INPUT'
-    # STRING = 'STRING'
-    # FILE = 'FILE'
-    # STRING3 = 'STRING3'
-    # OUTPUT = 'OUTPUT'
-
-    # def tr(self, string):
-    #     return QCoreApplication.translate('Processing', string)
-
-    # def createInstance(self):
-    #     return classcovtxtAlgorithm()
-
-    # def name(self):
-    #     return 'classy filed by file.txt'
-
-    # def displayName(self):
-    #     return self.tr('06 Classify field by file.txt')
-
-    # def group(self):
-    #     return self.tr('01 Data preparation')
-
-    # def groupId(self):
-    #     return '01 Data preparation'
-
-    # def shortHelpString(self):
-    #     return self.tr("Apply classification to field from file.txt i.e value_1 value_2 class_1")
-
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('covariates'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterFile(self.FILE, 'Txt classes', QgsProcessingParameterFile.File, '', defaultValue=None))
@@ -109,7 +82,6 @@ class classcovtxtAlgorithm(QgsProcessingAlgorithm):
         parameters['txt'] = self.parameterAsFile(parameters, self.FILE, context)#.source()
         if parameters['txt'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.FILE))
-        print(parameters['txt'])
 
         parameters['nome'] = self.parameterAsString(parameters, self.STRING3, context)
         if parameters['nome'] is None:
@@ -122,14 +94,15 @@ class classcovtxtAlgorithm(QgsProcessingAlgorithm):
         'nome' : parameters['nome']
             }
 
-        outputs['crs']=self.classify(alg_params)
+        outputs['crs']=Functions.classify(alg_params)
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
         return results
 
-    def classify(self,parameters):###############classify causes according to txt classes
+class Functions():    
+    def classify(parameters):###############classify causes according to txt classes
         Min={}
         Max={}
         clas={}

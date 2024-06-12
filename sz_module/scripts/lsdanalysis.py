@@ -144,12 +144,13 @@ class statistic(QgsProcessingAlgorithm):
             'INPUT2': parameters['lsd'],
             'PATH' : parameters['folder']
         }
-        self.input(alg_params)
+        Functions.input(alg_params)
 
         ##############################################
         return{}
 
-    def input(self,parameters):
+class Functions():
+    def input(parameters):
         shapefile = parameters['INPUT2']
         driver = ogr.GetDriverByName("ESRI Shapefile")
         dataSource = driver.Open(shapefile, 0)

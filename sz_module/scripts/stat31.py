@@ -153,7 +153,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
             'INPUT2': parameters['Slope'],
             'INPUT3' : parameters['Inventory']
         }
-        raster,ds1,XY,crs=self.importing(alg_params)
+        raster,ds1,XY,crs=Functions.importing(alg_params)
         outputs['raster'] = raster
         outputs['ds1'] = ds1
         outputs['XY'] = XY
@@ -167,7 +167,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
             'INPUT1': outputs['ds1'],
             'CRS': outputs['crs']
         }
-        XYcoord,attributi=self.indexing(alg_params)
+        XYcoord,attributi=Functions.indexing(alg_params)
         outputs['XYcoord'] = XYcoord
         outputs['attributi'] = attributi
 
@@ -179,7 +179,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
             'INPUT3': outputs['attributi'],
             'CRS':outputs['crs']
         }
-        self.saveV(alg_params)
+        Functions.saveV(alg_params)
 
         # vlayer = QgsVectorLayer(parameters['Out'], 'vector', "ogr")
         # QgsProject.instance().addMapLayer(vlayer)
@@ -223,7 +223,8 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
             return {}
         return results
 
-    def importing(self,parameters):
+class Functions():
+    def importing(parameters):
         vlayer = QgsVectorLayer(parameters['INPUT'], "layer", "ogr")
         ext=vlayer.extent()#xmin
         xmin = ext.xMinimum()
@@ -315,7 +316,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         #del ds9
         return raster,ds1,XY,crs
 
-    def indexing(self,parameters):
+    def indexing(parameters):
         ggg=np.zeros(np.shape(parameters['INPUT3'][0]),dtype=np.float32)
         ggg[:]=parameters['INPUT3'][0][:]
         ggg[(ggg==-9999)]=np.nan
@@ -432,7 +433,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         #print(attributi[0][0])
         return XYcoord,attributi
 
-    def saveV(self,parameters):
+    def saveV(parameters):
         if os.path.isfile(parameters['OUTPUT']):
             os.remove(parameters['OUTPUT'])
         # set up the shapefile driver
@@ -493,7 +494,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         #     fet.setAttributes(list(map(float,list(df.loc[ i, df.columns != 'geom']))))
         #     writer.addFeature(fet)
 
-    def addmap(self,parameters):
+    def addmap(parameters):
         context=parameters()
         fileName = parameters['trainout']
         layer = QgsVectorLayer(fileName,"train","ogr")

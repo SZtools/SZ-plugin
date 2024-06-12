@@ -146,7 +146,7 @@ class rocAlgorithm(QgsProcessingAlgorithm):
         outputs['open']=self.raster2array(alg_params)
         #list_of_values=list(np.arange(10))
         self.list_of_values=outputs['open'][outputs['open']>-9999].reshape(-1)
-        QgsMessageLog.logMessage(str(len(self.list_of_values)), 'MyPlugin', level=Qgis.Info)
+        QgsMessageLog.logMessage(str(len(self.list_of_values)), 'SZ', level=Qgis.Info)
 
         alg_params = {
             'OUTPUT': parameters['edgesEqual'],
@@ -172,7 +172,7 @@ class rocAlgorithm(QgsProcessingAlgorithm):
             'OUTPUT': parameters['edgesJenks'],
             'NUMBER': parameters['classes']
         }
-        #outputs['jenk']=self.jenk(alg_params)
+        outputs['jenk']=self.jenk(alg_params)
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():

@@ -50,8 +50,6 @@ class classePlugin(object):
     def __init__(self):
         #self.settings = QgsSettings()
         #self.settings.beginGroup("SZ")
-       
-
         self.provider = None
         dir=(os.path.dirname(os.path.abspath(__file__)))
         load_env_file(os.path.join(dir, ".env"))
@@ -72,7 +70,6 @@ class classePlugin(object):
         print('Plugin already installed? ',self.plugin_settings.value("installed"))
         print('0')
         if os.environ.get('DEBUG')=='False':
-            print('dentro')
             if self.installer.preliminay_req() is False:##rimuovere il commentooooo!!!!!!!!!!
                 self.installer.unload()
                 log(f"An error occured during the installation")

@@ -128,14 +128,15 @@ class classcovdecAlgorithm(QgsProcessingAlgorithm):
         'num' : parameters['num']
             }
 
-        outputs['crs']=self.classify(alg_params)
+        outputs['crs']=Functions.classify(alg_params)
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
         return results
 
-    def classify(self,parameters):###############classify causes according to txt classes
+class Functions():
+    def classify(parameters):###############classify causes according to txt classes
         layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
         crs=layer.crs()
         features = layer.getFeatures()

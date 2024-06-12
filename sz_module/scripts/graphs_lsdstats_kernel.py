@@ -144,48 +144,13 @@ class statistickernel(QgsProcessingAlgorithm):
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.FOLDER))
 
-        # parameters['Out']='/tmp/lsdkernel.shp'
-        # parameters['Out1']='/tmp/lsdkernel1.shp'
-        # # Grid statistics for points
-        # alg_params = {
-        #     'COUNT': True,
-        #     'GRIDS': parameters['slope'],
-        #     'KERNEL_SIZE': parameters['BufferRadiousInPxl'],
-        #     'KERNEL_TYPE': 0,
-        #     'MAX': True,
-        #     'MEAN': True,
-        #     'MIN': True,
-        #     'NAMING': 0,
-        #     'POINTS': parameters['lsd'],
-        #     'QUANTILE': 0,
-        #     'RANGE': True,
-        #     'STDDEV': True,
-        #     'SUM': True,
-        #     'VAR': True,
-        #     'RESULT': parameters['Out']
-        # }
-        # outputs['GridStatisticsForPoints'] = processing.run('saga:gridstatisticsforpoints', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        # results['Out'] = outputs['GridStatisticsForPoints']['RESULT']
-        #
-        # # Add raster values to points
-        # alg_params = {
-        #     'GRIDS': parameters['slope'],
-        #     'RESAMPLING': 0,
-        #     'SHAPES': parameters['Out'],
-        #     'RESULT': parameters['Out1']
-        # }
-        # outputs['AddRasterValuesToPoints'] = processing.run('saga:addrastervaluestopoints', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        #
-        # vlayer = QgsVectorLayer(parameters['Out1'], 'kernel', "ogr")
-        # QgsProject.instance().addMapLayer(rlayer)
-
         alg_params = {
             #'OUTPUT': parameters['outcsv'],
             'ID': parameters['fieldID'],
             'INPUT2': parameters['lsd'],
             'OUT': parameters['folder']
         }
-        self.input(alg_params)
+        Functions.input(alg_params)
 
         #vlayer = QgsVectorLayer(parameters['Out1'], 'vector', "ogr")
         #QgsProject.instance().addMapLayer(vlayer)
@@ -196,17 +161,10 @@ class statistickernel(QgsProcessingAlgorithm):
 
         ##############################################
 
-
-    def input(self,parameters):
+class Functions():
+    def input(parameters):
         layer = QgsVectorLayer(parameters['INPUT2'], 'vector', "ogr")
 
-
-
-        #shapefile = parameters['INPUT2']
-        #driver = ogr.GetDriverByName("ESRI Shapefile")
-        #dataSource = driver.Open(shapefile, 0)
-        #→layer = dataSource.GetLayer()
-        #layerDefinition = layer.GetLayerDefn()
         list_field=[]
         fields=layer.fields()
         for i in range(layer.fields().count()):
@@ -250,34 +208,4 @@ class statistickernel(QgsProcessingAlgorithm):
             print(parameters['OUT']+'/fig'+lista[i]+'.pdf')
             plt.savefig(parameters['OUT']+'/fig'+lista[i]+'.pdf',bbox_inches='tight')
 
-            # plt.plot(np.arange(len(valuesfield['ev_id'])), matrice[2,:])
-            # plt.savefig('/home/irpi/SinoItalian_Lab/Tier1_SouthAsia/OutputPaperBRI/Travis062020/fig_lsd'+'/fig'+lista[2]+'.png',bbox_inches='tight')
-            #
-            # plt.plot(np.arange(len(valuesfield['ev_id'])), matrice[3,:])
-            # plt.savefig('/home/irpi/SinoItalian_Lab/Tier1_SouthAsia/OutputPaperBRI/Travis062020/fig_lsd'+'/fig'+lista[3]+'.png',bbox_inches='tight')
-            #
-            # plt.plot(np.arange(len(valuesfield['ev_id'])), matrice[0,:])
-            # plt.savefig('/home/irpi/SinoItalian_Lab/Tier1_SouthAsia/OutputPaperBRI/Travis062020/fig_lsd'+'/fig'+lista[0]+'.png',bbox_inches='tight')
-            #
-            # plt.plot(np.arange(len(valuesfield['ev_id'])), matrice[4,:])
-            # plt.savefig('/home/irpi/SinoItalian_Lab/Tier1_SouthAsia/OutputPaperBRI/Travis062020/fig_lsd'+'/fig'+lista[4]+'.png',bbox_inches='tight')
-            #
-            # plt.plot(np.arange(len(valuesfield['ev_id'])), matrice[5,:])
-            # plt.savefig('/home/irpi/SinoItalian_Lab/Tier1_SouthAsia/OutputPaperBRI/Travis062020/fig_lsd'+'/fig'+lista[5]+'.png',bbox_inches='tight')
-            #
-            # plt.plot(np.arange(len(valuesfield['ev_id'])), matrice[6,:])
-            # plt.savefig('/home/irpi/SinoItalian_Lab/Tier1_SouthAsia/OutputPaperBRI/Travis062020/fig_lsd'+'/fig'+lista[6]+'.png',bbox_inches='tight')
-
-        #plt.show()
-
-        # fig = make_subplots(specs=[[{"secondary_y": True}]])
-        # fig.add_trace(go.Scatter( x=np.arange(len(valuesfield['ev_id'])), y=matrice[0,:], mode="lines",name='true'), secondary_y=False)
-        # fig.add_trace(go.Scatter( x=np.arange(len(valuesfield['ev_id'])), y=matrice[1,:], mode="lines",name='min'), secondary_y=False)
-        # fig.add_trace(go.Scatter( x=np.arange(len(valuesfield['ev_id'])), y=matrice[2,:], mode="lines",name='max'), secondary_y=False)
-        # fig.add_trace(go.Scatter( x=np.arange(len(valuesfield['ev_id'])), y=matrice[3,:], mode="lines",name='mean'), secondary_y=False)
-        # fig.add_trace(go.Scatter( x=np.arange(len(valuesfield['ev_id'])), y=matrice[4,:], mode="lines",name='range'), secondary_y=False)
-        # fig.add_trace(go.Scatter( x=np.arange(len(valuesfield['ev_id'])), y=matrice[6,:], mode="lines",name='variance'), secondary_y=True)
-        # fig.add_trace(go.Scatter( x=np.arange(len(valuesfield['ev_id'])), y=matrice[7,:], mode="lines",name='std'), secondary_y=True)
-        # fig.update_xaxes(title_text="<b>Landslides<b>")
-        # fig.update_yaxes(title_text="<b>Slope degree</b>", secondary_y=False)
-        # # plotly.offline.plot(fig, filename='/home/irpi/SinoItalian_Lab/Tier1_SouthAsia/OutputPaperBRI/Travis/'+'fig_contour_stat'+'.html')
+        

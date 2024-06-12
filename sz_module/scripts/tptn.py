@@ -201,13 +201,13 @@ class FPAlgorithm(QgsProcessingAlgorithm):
             'field1': parameters['field1'],
             #'field2': parameters['field2'],
             'lsd' : parameters['fieldlsd'],
-            'testN':parameters['testN']
-            #'fold':parameters['folder']
+            'testN':parameters['testN'],
+            'fold':self.f
             #'INPUT_INT': parameters['BufferRadiousInPxl'],
             #'INPUT_INT_1': parameters['minSlopeAcceptable'],
         }
 
-        outputs['df'],outputs['nomi'],outputs['crs']=self.load(alg_params)
+        outputs['df'],outputs['crs']=Functions.load(alg_params)
 
 
         feedback.setCurrentStep(1)
@@ -220,7 +220,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
             'crs': outputs['crs'],
             'OUT': parameters['out']
         }
-        self.save(alg_params)
+        Functions.save(alg_params)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
@@ -251,7 +251,9 @@ class FPAlgorithm(QgsProcessingAlgorithm):
 
         return results
 
-    def load(self,parameters):
+class Functions():
+    def load(parameters):
+        f=parameters['fold']
         layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
         crs=layer.crs()
         campi=[]
@@ -272,9 +274,9 @@ class FPAlgorithm(QgsProcessingAlgorithm):
             gdp.loc[len(gdp)] = feat
             #gdp = gdp.append(feat, ignore_index=True)
             count=+ 1
-        gdp.to_csv(self.f+'/file.csv')
+        gdp.to_csv(f+'/file.csv')
         del gdp
-        gdp=pd.read_csv(self.f+'/file.csv')
+        gdp=pd.read_csv(f+'/file.csv')
         #print(feat)
         #print(gdp['S'].dtypes)
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
@@ -347,7 +349,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
 
     
 
-    def save(self,parameters):
+    def save(parameters):
 
         #print(parameters['nomi'])
         df=parameters['df']
@@ -400,7 +402,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
 
         del writer
 
-    def addmap(self,parameters):
+    def addmap(parameters):
         context=parameters()
         fileName = parameters['trainout']
         layer = QgsVectorLayer(fileName,"train","ogr")

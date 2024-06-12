@@ -84,6 +84,7 @@ import plotly.graph_objs as go
 import pandas as pd
 import tempfile
 import os
+from sz_module.scripts.utils import SZ_utils
 
 class rocGenerator(QgsProcessingAlgorithm):
     # INPUT = 'INPUT'
@@ -127,6 +128,7 @@ class rocGenerator(QgsProcessingAlgorithm):
         results = {}
         outputs = {}
 
+        self.f=tempfile.gettempdir()
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -179,7 +181,9 @@ class rocGenerator(QgsProcessingAlgorithm):
             #'INPUT_INT': parameters['BufferRadiousInPxl'],
             #'INPUT_INT_1': parameters['minSlopeAcceptable'],
         }
-        outputs['gdp'],outputs['crs']=self.load(alg_params)
+        outputs['gdp'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
+
+        print(outputs['gdp'].head())
 
         #list_of_values=list(np.arange(10))
         self.list_of_values=outputs['gdp']['SI']
@@ -195,7 +199,7 @@ class rocGenerator(QgsProcessingAlgorithm):
             'df': outputs['gdp'],
             'OUT': parameters['fold']
         }
-        self.roc(alg_params)
+        Functions.roc(alg_params)
 
         # alg_params = {
         #     'OUTPUT': parameters['edgesJenks'],
@@ -210,50 +214,49 @@ class rocGenerator(QgsProcessingAlgorithm):
 
 
 
-    def load(self,parameters):
-        layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
-        crs=layer.crs()
-        campi=[]
-        for field in layer.fields():
-            campi.append(field.name())
-        campi.append('geom')
-        gdp=pd.DataFrame(columns=campi,dtype=float)
-        df=pd.DataFrame(dtype=float)
-        features = layer.getFeatures()
-        count=0
-        feat=[]
-        for feature in features:
-            attr=feature.attributes()
-            #print(attr)
-            geom = feature.geometry()
-            #print(type(geom.asWkt()))
-            feat=attr+[geom.asWkt()]
-            #print(feat)
-            gdp.loc[len(gdp)] = feat
-            #gdp = gdp.append(feat, ignore_index=True)
-            count=+ 1
-        gdp.to_csv(self.f+'/file.csv')
-        del gdp
-        gdp=pd.read_csv(self.f+'/file.csv')
-        #print(feat)
-        #print(gdp['S'].dtypes)
-        gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-        df['SI']=gdp.loc[:,parameters['field1']]
-        #df['w']=gdp.loc[:,parameters['W']]
-        nomi=list(df.head())
-        #print(list(df['Sf']),'1')
-        lsd=gdp[parameters['lsd']]
-        lsd[lsd>0]=1
-        df['y']=lsd#.astype(int)
-        df['ID']=gdp['ID']
-        df['geom']=gdp['geom']
-        df=df.dropna(how='any',axis=0)
-        #df['ID']=df['ID'].astype('Int32')
-        return df,crs
+    # def load(self,parameters):
+    #     layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
+    #     crs=layer.crs()
+    #     campi=[]
+    #     for field in layer.fields():
+    #         campi.append(field.name())
+    #     campi.append('geom')
+    #     gdp=pd.DataFrame(columns=campi,dtype=float)
+    #     df=pd.DataFrame(dtype=float)
+    #     features = layer.getFeatures()
+    #     count=0
+    #     feat=[]
+    #     for feature in features:
+    #         attr=feature.attributes()
+    #         #print(attr)
+    #         geom = feature.geometry()
+    #         #print(type(geom.asWkt()))
+    #         feat=attr+[geom.asWkt()]
+    #         #print(feat)
+    #         gdp.loc[len(gdp)] = feat
+    #         #gdp = gdp.append(feat, ignore_index=True)
+    #         count=+ 1
+    #     gdp.to_csv(self.f+'/file.csv')
+    #     del gdp
+    #     gdp=pd.read_csv(self.f+'/file.csv')
+    #     #print(feat)
+    #     #print(gdp['S'].dtypes)
+    #     gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
+    #     df['SI']=gdp.loc[:,parameters['field1']]
+    #     #df['w']=gdp.loc[:,parameters['W']]
+    #     nomi=list(df.head())
+    #     #print(list(df['Sf']),'1')
+    #     lsd=gdp[parameters['lsd']]
+    #     lsd[lsd>0]=1
+    #     df['y']=lsd#.astype(int)
+    #     df['ID']=gdp['ID']
+    #     df['geom']=gdp['geom']
+    #     df=df.dropna(how='any',axis=0)
+    #     #df['ID']=df['ID'].astype('Int32')
+    #     return df,crs
 
-
-
-    def roc(self,parameters):
+class Functions():
+    def roc(parameters):
         df=parameters['df']
         y_true=df['y']
         scores=df['SI']
@@ -271,7 +274,7 @@ class rocGenerator(QgsProcessingAlgorithm):
 
         fig=plt.figure()
         lw = 2
-        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f, f1 = %0.2f, ckappa = %0.2f)' %(r, f1_tot,ck_tot))
+        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'AUC = %0.2f, f1 = %0.2f, ckappa = %0.2f' %(r, f1_tot,ck_tot))
         plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
@@ -280,8 +283,8 @@ class rocGenerator(QgsProcessingAlgorithm):
         plt.title('ROC')
         plt.legend(loc="lower right")
         try:
-            fig.savefig(parameters['OUT']+'/roc.png')
+            fig.savefig(parameters['OUT']+'/roc.pdf')
         except:
             os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/roc.png')
+            fig.savefig(parameters['OUT']+'/roc.pdf')
 

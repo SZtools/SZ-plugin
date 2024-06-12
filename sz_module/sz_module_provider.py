@@ -54,11 +54,11 @@ from .scripts.classvectorw import classvAlgorithmW
 from .scripts.tptn import FPAlgorithm
 from .scripts.classcovtxt import classcovtxtAlgorithm
 from .scripts.classcovdeciles import classcovdecAlgorithm
-from sz_module.scripts.corrplot import CorrAlgorithm
-from sz_module.scripts.sz_train_cv import CoreAlgorithm_cv
-from sz_module.scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
-from sz_module.scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
-from sz_module.scripts.algorithms import Algorithms
+from .scripts.corrplot import CorrAlgorithm
+from .scripts.sz_train_cv import CoreAlgorithm_cv
+from .scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
+from .scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
+from .scripts.algorithms import Algorithms
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -142,7 +142,7 @@ class classeProvider(QgsProcessingProvider):
         self.addAlgorithm(Instance(dict_of_scripts))
 
         dict_of_scripts={
-            'alg': 'classcovdec',
+            'alg': 'classcovdeciles',
             'function': classcovdecAlgorithm,
             'name':'classy filed in quantiles',
             'displayName':'07 Classify field in quantiles',
@@ -152,9 +152,6 @@ class classeProvider(QgsProcessingProvider):
         }
         self.addAlgorithm(Instance(dict_of_scripts))
     
-
-        ##self.addAlgorithm(polytogridAlgorithm())
-        #self.addAlgorithm(pointtogridAlgorithm())
         dict_of_scripts={
             'alg': 'statistic',
             'function': statistic,
@@ -166,9 +163,9 @@ class classeProvider(QgsProcessingProvider):
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
-        #self.addAlgorithm(classAlgorithm())
+      
         #self.addAlgorithm(rocAlgorithm())
-        #self.addAlgorithm(matrixAlgorithm())
+     
         dict_of_scripts={
             'alg': 'rocGenerator',
             'function': rocGenerator,
@@ -329,6 +326,24 @@ class Instance(QgsProcessingAlgorithm):
     def __init__(self, dict_of_scripts):
         super().__init__()
         self.dict_of_scripts = dict_of_scripts
+        self.active={
+            'classcovtxt':True,
+            'classcovdeciles':True,
+            'statistic':True,
+            'rocGenerator':True,
+            'cleankernel':True,
+            'statistickernel':True,
+            'sampler':True,
+            'rasterstatkernel':True,
+            'Corr':True,
+            'classv':True,
+            'classvW':True,
+            'FP':True,
+            'ML_cv':True,
+            'GAM_cv':True,
+            'GAM_trans':True,
+        }
+
         self.algorithms={
             'ML_cv':Algorithms.alg_MLrun,
             'GAM_cv':Algorithms.alg_GAMrun,
@@ -371,10 +386,10 @@ class Instance(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         result={}
-        #if self.algorithms[self.dict_of_scripts['alg']] or self.classifier[self.dict_of_scripts['alg']]:  
-        try:
-            result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
-        except: 
-            result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
+        if self.active[self.dict_of_scripts['alg']]:  
+            try:
+                result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
+            except: 
+                result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
         return result
         

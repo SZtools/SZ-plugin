@@ -6,9 +6,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, f1_score, cohen_kappa_score
 from scipy.stats import pearsonr
 import csv
+from copy import copy
 
 #from pygam import LogisticGAM, s, f, terms
 
@@ -96,13 +97,16 @@ class SZ_utils():
         del gdp
         gdp=pd.read_csv(directory+'/file.csv')
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-        if parameters['time']==None:
-            df=gdp[parameters['field1']]
-            print('ciccia')
+        if 'time' in parameters:
+            if parameters['time']==None:
+                #df=gdp[parameters['field1']]
+                df=pd.DataFrame(gdp[parameters['field1']].copy())
+            else:
+                df=pd.DataFrame(gdp[parameters['field1']+[parameters['time']]].copy())
+                #df=gdp[parameters['field1']+[parameters['time']]]
         else:
-            df=gdp[parameters['field1']+[parameters['time']]]
-        df = df.applymap(lambda x: pd.to_numeric(x, errors='coerce'))
-        #nomi=list(df.head())
+            df=pd.DataFrame(gdp[parameters['field1']].copy())
+        #df = df.applymap(lambda x: pd.to_numeric(x, errors='coerce'))
         lsd=gdp[parameters['lsd']]
         lsd[lsd>0]=1
         df['y']=lsd#.astype(int)
@@ -121,9 +125,16 @@ class SZ_utils():
         norm=(scores-scores.min())/(scores.max()-scores.min())
         r=roc_auc_score(y_true, scores)
 
+        idx = np.argmax(tpr1 - fpr1)  # x YOUDEN INDEX
+        suscept01 = copy(scores)
+        suscept01[scores > tresh1[idx]] = 1
+        suscept01[scores <= tresh1[idx]] = 0
+        f1_tot = f1_score(y_true, suscept01)
+        ck_tot = cohen_kappa_score(y_true, suscept01)
+
         fig=plt.figure()
         lw = 2
-        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f)' %r)
+        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f, f1 = %0.2f, ckappa = %0.2f)' %(r, f1_tot,ck_tot))
         plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
@@ -147,11 +158,18 @@ class SZ_utils():
         fig=plt.figure()
         plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
         for i in range(len(test_ind)):
-            print(scores_v[test_ind[i]].isna().sum().sum(),'null')
             fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
             aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
             print('ROC '+ str(i) +' AUC=',aucv)
-            plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' (AUC = %0.2f)' %aucv)
+
+            idx = np.argmax(tprv - fprv)  # x YOUDEN INDEX
+            suscept01 = copy(scores_v)
+            suscept01[scores_v > treshv[idx]] = 1
+            suscept01[scores_v <= treshv[idx]] = 0
+            f1_tot = f1_score(y_v, suscept01)
+            ck_tot = cohen_kappa_score(y_v, suscept01)
+
+            plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' AUC = %0.2f, f1 = %0.2f, ckappa = %0.2f' %(aucv, f1_tot,ck_tot))
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
         plt.xlabel('False Positive Rate')
