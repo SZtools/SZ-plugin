@@ -67,10 +67,14 @@ class Algorithms():
         else:
             prob=gam.predict(X.loc[test,nomi].to_numpy())#[::,1]
             #CI=gam.prediction_intervals(X.iloc[test,:].to_numpy())
+
+        print(X.loc[train,nomi])
+        print(y.iloc[train])
+        print(X.loc[test,nomi])
         GAM_utils.GAM_plot(gam,df.loc[train,nomi],nomi,fold,filename,X.loc[train,nomi])
-        GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
+        #GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
+        
         #GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob,CI,fold, filename)
-        #print(CI)
         CI=[]
         return prob,CI,gam
     
@@ -231,6 +235,7 @@ class GAM_utils():
         return splines,dtypes
     
     def GAM_plot(gam,df,nomi,fold,filename,scaled_df):
+        print('plot')
 
         GAM_sel=nomi
         #sc=StandardScaler()
@@ -239,12 +244,13 @@ class GAM_utils():
         maX=[]
         miN=[]
         for i, term in enumerate(gam.terms):
-            #print(gam.terms[i])
+            print(term)
             if term.isintercept:
                 continue
-            if isinstance(gam.terms[i], terms.FactorTerm):
+            elif isinstance(gam.terms[i], terms.FactorTerm):
+                #pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
                 continue
-            else:
+            elif isinstance(gam.terms[i], terms.LinearTerm) or isinstance(gam.terms[i], terms.SplineTerm):
                 pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
             maX=maX+[np.max(confi0[:,1])]
             miN=miN+[np.min(confi0[:,0])]
@@ -285,7 +291,7 @@ class GAM_utils():
                 if ii != i: 
                     X[:, ii] = 0
             pdep, confi = gam.partial_dependence(term=i, X=X, width=0.95)
-            #print(pdep,'pdep')
+            print(confi,'confi')
             ##
 
             YY=pdep
@@ -296,24 +302,20 @@ class GAM_utils():
             
             plt.subplot(rows, 3, i+1)
 
-            # if isinstance(gam.terms[i], terms.FactorTerm):
-            #     plt.plot(np.sort(df[GAM_sel[i]].unique()),pdep[range(1, len(pdep), 3)], 'o', c='blue')
-            #     for j in pdep[range(1, len(pdep), 3)]:
-            #         if j>1.5:
-            #             plt.axvline(np.sort(df[GAM_sel[0]].unique())[np.where(pdep[range(1, len(pdep), 3)] == j)[0][0]],
-            #                         color='k', linewidth=0.5, linestyle="--")
-            #     plt.xticks(np.sort(df[GAM_sel[i]].unique()), rotation=90)
-            #     plt.xlabel(GAM_sel[i])
-            #     plt.ylabel('Partial Effect')
-            #     continue
             if isinstance(gam.terms[i], terms.FactorTerm):
-                plt.plot(np.sort(df[GAM_sel[i]].unique()),
-                        pdep[range(1, len(pdep), 3)], 'o', c='gray')
-                for j in pdep[range(1, len(pdep), 3)]:
-                    if j>1.5:
-                        plt.axvline(np.sort(df[GAM_sel[0]].unique())[np.where(pdep[range(1, len(pdep), 3)] == j)[0][0]],
-                                    color='k', linewidth=0.5, linestyle="--")
-                plt.xticks(np.sort(df[GAM_sel[i]].unique()), rotation=90)
+                x=np.sort(df[GAM_sel[i]].unique())
+                y=[]
+                y1=[]
+                y2=[]
+
+                for j in np.sort(df[GAM_sel[i]].unique()):
+                    y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
+                    y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+                    y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+                plt.plot(x,y,'o', c='blue')
+                plt.plot(x,y1,'o', c='gray')
+                plt.plot(x,y2,'o', c='gray')
+                plt.xticks(np.sort(df[GAM_sel[i]].unique()), rotation=45)
                 plt.xlabel(GAM_sel[i])
                 plt.ylabel('Regression coefficient')
                 continue
@@ -323,7 +325,7 @@ class GAM_utils():
 
             plt.xlabel(GAM_sel[i])
             plt.ylabel('Partial Effect')
-            #plt.ylim(MIN,MAX)
+            plt.ylim(MIN,MAX)
 
         #if len(x_linear)>0:
         #    print(x_linear,y_linear)
