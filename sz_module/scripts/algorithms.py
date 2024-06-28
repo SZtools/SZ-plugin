@@ -12,7 +12,7 @@ import math
 import pickle
 import os
 from collections import OrderedDict
-from pygam import terms
+#from pygam import terms
 import csv
 import matplotlib.pyplot as plt
 import json

@@ -61,12 +61,12 @@ from sz_module.scripts.sz_train_simple_GAM import CoreAlgorithmGAM
 from sz_module.scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
 from sz_module.scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
 from sz_module.scripts.algorithms import Algorithms
-from sz_module.scripts.segmentation_aspect import segmentationAspect
+#from sz_module.scripts.segmentation_aspect import segmentationAspect
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-from pygam import LogisticGAM
+#from pygam import LogisticGAM
 
 class classeProvider(QgsProcessingProvider):
 
@@ -272,7 +272,7 @@ class classeProvider(QgsProcessingProvider):
         self.addAlgorithm(classvAlgorithm())
         self.addAlgorithm(classvAlgorithmW())
         self.addAlgorithm(FPAlgorithm())
-        self.addAlgorithm(segmentationAspect())
+        #self.addAlgorithm(segmentationAspect())
 
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
@@ -342,9 +342,9 @@ class Instance(QgsProcessingAlgorithm):
             'fr_cv':Algorithms.fr_cv,
             'DT_simple':Algorithms.DT_simple,
             'DT_cv':Algorithms.DT_cv,
-            'GAM_simple':Algorithms.GAM_simple,
-            'GAM_cv':Algorithms.GAM_cv,
-            'GAM_trans':Algorithms.GAM_simple,
+            #'GAM_simple':Algorithms.GAM_simple,
+            #'GAM_cv':Algorithms.GAM_cv,
+            #'GAM_trans':Algorithms.GAM_simple,
         }
 
         self.classifier={
@@ -354,15 +354,15 @@ class Instance(QgsProcessingAlgorithm):
             'LR_cv':LogisticRegression(),
             'fr_cv':None,
             'DT_cv':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
-            'GAM_cv':LogisticGAM,
+            #'GAM_cv':LogisticGAM,
             'woe_simple':None,
             'SCV_simple':None,
             'RF_simple':None,
             'LR_simple':None,
             'fr_simple':None,
             'DT_simple':None,
-            'GAM_simple':None,
-            'GAM_trans':None,
+            #'GAM_simple':None,
+            #'GAM_trans':None,
         }
 
     def tr(self, string):
