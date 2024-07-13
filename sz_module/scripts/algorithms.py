@@ -104,10 +104,10 @@ class CV_utils():
             train_ind,test_ind,iters_count = CV_utils.cv_method(parameters,df_scaled,df,parameters['nomi'])
             for i in range(iters_count):
                 if algorithm==Algorithms.alg_GAMrun:
-                    prob[i],CI[i],gam=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
+                    prob[i],CI[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
                     #df.loc[test,'CI']=CI[i]
                 else:
-                    prob[i]=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i))
+                    prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i))
                     gam=None
                 df.loc[test_ind[i],'SI']=prob[i]
         elif parameters['testN']==1:
@@ -244,7 +244,6 @@ class GAM_utils():
         maX=[]
         miN=[]
         for i, term in enumerate(gam.terms):
-            print(term)
             if term.isintercept:
                 continue
             elif isinstance(gam.terms[i], terms.FactorTerm):
@@ -277,21 +276,35 @@ class GAM_utils():
                 continue
             ##
             XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
-            #pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+            print(XX,'XX')
+            print(min(XX[:,i]))
+            print(max(XX[:,i]))
+            print(len(XX))
+            pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
             ##
-            #XX=df[GAM_sel[i]].to_numpy()
-            try:
-                sorted_indices = np.argsort(scaled_df.iloc[:, i])
-                X = scaled_df.iloc[sorted_indices].to_numpy()
-            except:
-                sorted_indices = np.argsort(scaled_df[:, i])
-                X = scaled_df[sorted_indices]
+            
 
-            for ii in range(len(GAM_sel)):
-                if ii != i: 
-                    X[:, ii] = 0
-            pdep, confi = gam.partial_dependence(term=i, X=X, width=0.95)
-            print(confi,'confi')
+            try:
+                sorted_indices = np.argsort(df.iloc[:, i])
+                X = df.iloc[sorted_indices].to_numpy()
+            except:
+                sorted_indices = np.argsort(df[:, i])
+                X = df[sorted_indices]
+            
+            X=np.array([min(df.iloc[:, i])])
+            m=np.min(df.iloc[:, i])
+            interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(len(df[GAM_sel[i]])-1)
+            for n in range(len(df[GAM_sel[i]])-1):
+                X=np.append(X,m+interval)
+                m=m+interval
+
+
+            # for ii in range(len(GAM_sel)):
+            #     if ii != i: 
+            #         X[:, ii] = 0
+            # pdep, confi = gam.partial_dependence(term=i, X=X, width=0.95)
+            
+
             ##
 
             YY=pdep
@@ -317,11 +330,15 @@ class GAM_utils():
                 plt.plot(x,y2,'o', c='gray')
                 plt.xticks(np.sort(df[GAM_sel[i]].unique()), rotation=45)
                 plt.xlabel(GAM_sel[i])
-                plt.ylabel('Regression coefficient')
+                plt.ylabel('Partial Effect')
+                plt.ylim(MIN,MAX)
                 continue
 
-            plt.plot(XX[:, term.feature], pdep, c='blue')
-            plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+            plt.plot(X, pdep, c='blue')
+            #plt.xticks(XX[:, term.feature], X[:,term.feature])
+            
+            plt.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+            #plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
 
             plt.xlabel(GAM_sel[i])
             plt.ylabel('Partial Effect')
