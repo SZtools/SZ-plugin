@@ -276,20 +276,8 @@ class GAM_utils():
                 continue
             ##
             XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
-            print(XX,'XX')
-            print(min(XX[:,i]))
-            print(max(XX[:,i]))
-            print(len(XX))
             pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
             ##
-            
-
-            try:
-                sorted_indices = np.argsort(df.iloc[:, i])
-                X = df.iloc[sorted_indices].to_numpy()
-            except:
-                sorted_indices = np.argsort(df[:, i])
-                X = df[sorted_indices]
             
             X=np.array([min(df.iloc[:, i])])
             m=np.min(df.iloc[:, i])
@@ -297,13 +285,6 @@ class GAM_utils():
             for n in range(len(df[GAM_sel[i]])-1):
                 X=np.append(X,m+interval)
                 m=m+interval
-
-
-            # for ii in range(len(GAM_sel)):
-            #     if ii != i: 
-            #         X[:, ii] = 0
-            # pdep, confi = gam.partial_dependence(term=i, X=X, width=0.95)
-            
 
             ##
 
@@ -353,6 +334,60 @@ class GAM_utils():
 
         plt.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
         #plt.show()  
+
+        for i, term in enumerate(gam.terms):
+            if term.isintercept:
+                continue
+            ##
+            XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+            pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+            ##
+
+            YY=pdep
+            if int(np.ceil(count/3.))<4:
+                rows=4
+            else:
+                rows=int(np.ceil(count/3.))
+            
+            plt.subplot(rows, 3, i+1)
+
+            if isinstance(gam.terms[i], terms.FactorTerm):
+                x=np.sort(df[GAM_sel[i]].unique())
+                y=[]
+                y1=[]
+                y2=[]
+
+                for j in np.sort(df[GAM_sel[i]].unique()):
+                    y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
+                    y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+                    y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+                plt.plot(x,y,'o', c='blue')
+                plt.plot(x,y1,'o', c='gray')
+                plt.plot(x,y2,'o', c='gray')
+                plt.xticks(np.sort(df[GAM_sel[i]].unique()), rotation=45)
+                plt.xlabel(GAM_sel[i])
+                plt.ylabel('Partial Effect')
+                plt.ylim(MIN,MAX)
+                continue
+
+            plt.plot(XX[:, term.feature], pdep, c='blue')
+            #plt.xticks(XX[:, term.feature], X[:,term.feature])
+            
+            plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+            #plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+
+            plt.xlabel(GAM_sel[i])
+            plt.ylabel('Partial Effect')
+            plt.ylim(MIN,MAX)
+
+        #if len(x_linear)>0:
+        #    print(x_linear,y_linear)
+        #    plt.plot(x_linear,y_linear, 'o', c='blue')
+        #    plt.xticks(x_tic,rotation=90)
+        #    #plt.xlabel(GAM_sel[i])
+        #    plt.ylabel('Regression coefficient')
+
+        plt.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
         
     def GAM_save(gam,coeffs,fold,nomi,filename=''):
         filename_pkl = fold+'/gam_coeff'+filename+'.pkl'
