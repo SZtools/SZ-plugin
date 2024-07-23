@@ -65,6 +65,7 @@ class CoreAlgorithmGAM_cv():
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Spline smoothing parameter'), type=QgsProcessingParameterNumber.Integer,defaultValue=10))
         self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterEnum(self.STRING4, 'Family', options=['binomial','gaussian'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Scale (for Gaussian Family only)', options=['linear scale','log scale'], allowMultiple=False, usesStaticStrings=False, defaultValue=[],optional=True))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'CV method', options=['random CV','spatial CV','temporal CV (Time Series Split)','temporal CV (Leave One Out)', 'space-time CV (Leave One Out)'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         self.addParameter(QgsProcessingParameterField(self.STRING6, 'Time field (for temporal CV)', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any, optional=True ))
@@ -81,6 +82,7 @@ class CoreAlgorithmGAM_cv():
 
         family={'0':'binomial','1':'gaussian'}
         cv_method={'0':'random','1':'spatial','2':'temporal_TSS','3':'temporal_LOO','4':'spacetime_LOO'}
+        gauss_scale={'0':'linear scale','1':'log scale'}
 
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
@@ -110,6 +112,10 @@ class CoreAlgorithmGAM_cv():
         parameters['family'] = self.parameterAsString(parameters, self.STRING4, context)
         if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING4))
+        
+        parameters['gauss_scale'] = self.parameterAsString(parameters, self.STRING7, context)
+        if parameters['gauss_scale'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING7))
         
         parameters['num1'] = self.parameterAsInt(parameters, self.NUMBER1, context)
         if parameters['num1'] is None:
@@ -151,6 +157,7 @@ class CoreAlgorithmGAM_cv():
             'lsd' : parameters['fieldlsd'],
             'family':family[parameters['family']],
             'time':parameters['time'],
+            'gauss_scale':gauss_scale[parameters['gauss_scale']],
         }
 
         outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)

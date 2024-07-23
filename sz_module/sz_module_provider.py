@@ -312,6 +312,7 @@ class Instance(QgsProcessingAlgorithm):
     STRING4 = 'STRING4'#'string4'
     STRING5 = 'STRING5'
     STRING6 = 'STRING6'
+    STRING7 = 'STRING7'
     NUMBER = 'NUMBER'#'testN'
     NUMBER1 = 'NUMBER1'#'num1'
     NUMBER2 = 'NUMBER2'

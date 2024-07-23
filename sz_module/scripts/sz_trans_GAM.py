@@ -67,6 +67,7 @@ class CoreAlgorithmGAM_trans():
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Spline smoothing parameter'), type=QgsProcessingParameterNumber.Integer,defaultValue=10))
         self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterEnum(self.STRING4, 'Family', options=['binomial','gaussian'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Scale (for Gaussian Family only)', options=['linear scale','log scale'], allowMultiple=False, usesStaticStrings=False, defaultValue=[],optional=True))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT1, self.tr('Input layer for transferability'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None, optional=False))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT1, 'Output trans',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
@@ -79,6 +80,8 @@ class CoreAlgorithmGAM_trans():
         outputs = {}
 
         family={'0':'binomial','1':'gaussian'}
+        gauss_scale={'0':'linear scale','1':'log scale'}
+
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -102,6 +105,10 @@ class CoreAlgorithmGAM_trans():
         parameters['family'] = self.parameterAsString(parameters, self.STRING4, context)
         if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING4))
+        
+        parameters['gauss_scale'] = self.parameterAsString(parameters, self.STRING7, context)
+        if parameters['gauss_scale'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING7))
         
         parameters['fieldlsd'] = self.parameterAsString(parameters, self.STRING2, context)
         if parameters['fieldlsd'] is None:
@@ -135,7 +142,9 @@ class CoreAlgorithmGAM_trans():
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'lsd' : parameters['fieldlsd'],
-            'family':family[parameters['family']]
+            'family':family[parameters['family']],
+            'gauss_scale':gauss_scale[parameters['gauss_scale']],
+
         }
         outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
