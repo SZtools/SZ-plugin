@@ -313,6 +313,8 @@ class Instance(QgsProcessingAlgorithm):
     STRING5 = 'STRING5'
     STRING6 = 'STRING6'
     STRING7 = 'STRING7'
+    STRING8 = 'STRING8'
+    STRING9 = 'STRING9'
     NUMBER = 'NUMBER'#'testN'
     NUMBER1 = 'NUMBER1'#'num1'
     NUMBER2 = 'NUMBER2'

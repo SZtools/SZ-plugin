@@ -305,3 +305,12 @@ class SZ_utils():
             writer.writerow(["Pearson Coefficient", pearson_coefficient])
         return(errors)
     
+    def check_validity(parameters):
+        for i in parameters['tensor']:
+            if i not in parameters['linear']+parameters['continuous']+parameters['categorical']:
+                continue
+            else:
+                return False
+        return True
+            
+    

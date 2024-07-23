@@ -22,6 +22,8 @@ from shapely.wkt import loads
 
 from sklearn.tree import export_text
 
+from mpl_toolkits import mplot3d
+
 
 class Algorithms():
 
@@ -88,7 +90,7 @@ class CV_utils():
         #print(df,'df')
         y=df['y']
         if algorithm==Algorithms.alg_GAMrun:
-            df_scaled=CV_utils.scaler(x,parameters['linear']+parameters['continuous'],'custom')
+            df_scaled=CV_utils.scaler(x,parameters['linear']+parameters['continuous']+parameters['tensor'],'custom')
             #X[parameters['categorical']]=df[parameters['categorical']]
         else:
             df_scaled=CV_utils.scaler(df,nomi,'standard')
@@ -221,16 +223,33 @@ class GAM_utils():
             elif GAM_sel[i] in parameters['linear']:
                 dtypes = dtypes + ['numerical']
                 vars_dict[GAM_sel[i]]={'term':'l'}
-        
+            elif GAM_sel[i] in parameters['tensor']:
+                dtypes = dtypes + ['numerical']
+                vars_dict[i]={'term':'te'}
+
+        # for i in tensor:
+        #     dtypes = dtypes + ['numerical']
+        #     vars_dict[i]={'term':'te'}
+                
+        tensor_id=[]
         splines = terms.TermList()
         for i,v in enumerate(vars_dict .keys()):
+            print(i,v)
             if vars_dict[v]['term'] == 's':
                 term = terms.SplineTerm(i, n_splines=vars_dict[v].get('n_splines', 10))
             elif vars_dict[v]['term'] == 'l':
                 term = terms.LinearTerm(i)
             elif vars_dict[v]['term'] == 'f':
                 term = terms.FactorTerm(i)
+            elif vars_dict[v]['term'] == 'te':
+                tensor_id=tensor_id + [i]
+                if len(tensor_id)==2:
+                    term=terms.TensorTerm(tensor_id[0],tensor_id[1]) 
             splines += term
+        #splines += terms.TensorTerm(tensor_id[0],tensor_id[1]) 
+
+        print(splines)
+        print(dtypes)    
 
         return splines,dtypes
     
@@ -239,7 +258,7 @@ class GAM_utils():
 
         GAM_sel=nomi
         #sc=StandardScaler()
-        fig = plt.figure(figsize=(20, 25))
+        #fig = plt.figure(figsize=(20, 25))
 
         maX=[]
         miN=[]
@@ -267,20 +286,17 @@ class GAM_utils():
             count+=1
         count=count+countIns
 
-        x_tic=[]
-        x_linear=np.array([])
-        y_linear=np.array([])
+        if int(np.ceil(count/3.))<4:
+            rows=4
+        else:
+            rows=int(np.ceil(count/3.))
 
-        fig = plt.figure(figsize=(15,15),dpi=300)
-            
+        fig = plt.figure(figsize=(15,15))
         for i, term in enumerate(gam.terms):
+            print(term,'term')
+
             if term.isintercept:
                 continue
-            ##
-            XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
-            pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-            ##
-            
             X=np.array([min(df.iloc[:, i])])
             m=np.min(df.iloc[:, i])
             interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(len(df[GAM_sel[i]])-1)
@@ -289,18 +305,13 @@ class GAM_utils():
                 m=m+interval
 
             ##
-
-            YY=pdep
-            if int(np.ceil(count/3.))<4:
-                rows=4
-            else:
-                rows=int(np.ceil(count/3.))
-
-            ax=fig.add_subplot(rows, 3, i+1)
-            #plt.subplot(rows, 3, i+1)
-            
-
+            ax=fig.add_subplot(rows, 3, i+1)            
             if isinstance(gam.terms[i], terms.FactorTerm):
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                print(gam.terms[i],'aa')
                 x=np.sort(df[GAM_sel[i]].unique())
                 y=[]
                 y1=[]
@@ -318,27 +329,49 @@ class GAM_utils():
                 ax.set_ylabel('Partial Effect')
                 ax.set_ylim(MIN,MAX)
                 continue
-
-            ax.plot(X, pdep, c='blue')
-            #plt.xticks(XX[:, term.feature], X[:,term.feature])
             
-            ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
-            #plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+            elif isinstance(gam.terms[i], terms.LinearTerm):
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                print(gam.terms[i],'bb')
+                ax.plot(X, pdep, c='blue')                
+                ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+                ax.set_xlabel(GAM_sel[i])
+                ax.set_ylabel('Partial Effect')
+                ax.set_ylim(MIN,MAX)
+                continue
+            
+            elif isinstance(gam.terms[i], terms.TensorTerm):
 
-            ax.set_xlabel(GAM_sel[i])
-            ax.set_ylabel('Partial Effect')
-            ax.set_ylim(MIN,MAX)
+                XX = gam.generate_X_grid(term=i,meshgrid=True)
+                Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
+                ax = plt.axes(projection='3d')
+                ax.plot_surface(XX[0], XX[1], Z, cmap='viridis') 
+                ax.set_position([0.5, 0.1, 0.4, 0.8])
 
-        #if len(x_linear)>0:
-        #    print(x_linear,y_linear)
-        #    plt.plot(x_linear,y_linear, 'o', c='blue')
-        #    plt.xticks(x_tic,rotation=90)
-        #    #plt.xlabel(GAM_sel[i])
-        #    plt.ylabel('Regression coefficient')
+                ax.set_xlabel(GAM_sel[i])
+                ax.set_ylabel(GAM_sel[i+1])
+                #ax.set_ylim(MIN,MAX)
+                continue
 
-        #fig.subplots_adjust(bottom=0.15, wspace=0.05)
+            elif isinstance(gam.terms[i], terms.SplineTerm):
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                print(gam.terms[i],'cc')
+                print('aoooo')
+                ax.plot(X, pdep, c='blue')
+                ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+                ax.set_xlabel(GAM_sel[i])
+                ax.set_ylabel('Partial Effect')
+                ax.set_ylim(MIN,MAX)
+                continue
+
         fig.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
-        #plt.show()  
+
 
         fig1 = plt.figure(figsize=(15,15))
         for i, term in enumerate(gam.terms):
@@ -348,12 +381,6 @@ class GAM_utils():
             XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
             pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
             ##
-
-            YY=pdep
-            if int(np.ceil(count/3.))<4:
-                rows=4
-            else:
-                rows=int(np.ceil(count/3.))
             
             ax1=fig1.add_subplot(rows, 3, i+1)
 
@@ -377,23 +404,11 @@ class GAM_utils():
                 continue
 
             ax1.plot(XX[:, term.feature], pdep, c='blue')
-            #plt.xticks(XX[:, term.feature], X[:,term.feature])
-            
             ax1.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
-            #plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
-
             ax1.set_xlabel(GAM_sel[i])
             ax1.set_ylabel('Partial Effect')
             ax1.set_ylim(MIN,MAX)
 
-        #if len(x_linear)>0:
-        #    print(x_linear,y_linear)
-        #    plt.plot(x_linear,y_linear, 'o', c='blue')
-        #    plt.xticks(x_tic,rotation=90)
-        #    #plt.xlabel(GAM_sel[i])
-        #    plt.ylabel('Regression coefficient')
-
-        #fig1.subplots_adjust(bottom=0.15, wspace=0.05)
         fig1.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
         
     def GAM_save(gam,coeffs,fold,nomi,filename=''):

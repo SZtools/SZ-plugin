@@ -63,6 +63,8 @@ class CoreAlgorithmGAM_cv():
         self.addParameter(QgsProcessingParameterField(self.STRING3, 'Linear independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Ordinal independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Spline smoothing parameter'), type=QgsProcessingParameterNumber.Integer,defaultValue=10))
+        self.addParameter(QgsProcessingParameterField(self.STRING8, 'Variables interaction A', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any,optional=True))
+        self.addParameter(QgsProcessingParameterField(self.STRING9, 'Variables interaction B', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterEnum(self.STRING4, 'Family', options=['binomial','gaussian'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Scale (for Gaussian Family only)', options=['linear scale','log scale'], allowMultiple=False, usesStaticStrings=False, defaultValue=[],optional=True))
@@ -83,7 +85,6 @@ class CoreAlgorithmGAM_cv():
         family={'0':'binomial','1':'gaussian'}
         cv_method={'0':'random','1':'spatial','2':'temporal_TSS','3':'temporal_LOO','4':'spacetime_LOO'}
         gauss_scale={'0':'linear scale','1':'log scale'}
-
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -116,6 +117,18 @@ class CoreAlgorithmGAM_cv():
         parameters['gauss_scale'] = self.parameterAsString(parameters, self.STRING7, context)
         if parameters['gauss_scale'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING7))
+        
+        parameters['var_interaction_A'] = self.parameterAsFields(parameters, self.STRING8, context)
+        if parameters['var_interaction_A'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING8))
+        
+        parameters['var_interaction_B'] = self.parameterAsFields(parameters, self.STRING9, context)
+        if parameters['var_interaction_B'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING9))
+        
+        parameters['field1'] = self.parameterAsFields(parameters, self.STRING, context)
+        if parameters['field1'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING))
         
         parameters['num1'] = self.parameterAsInt(parameters, self.NUMBER1, context)
         if parameters['num1'] is None:
@@ -150,10 +163,25 @@ class CoreAlgorithmGAM_cv():
             if parameters['time']=='':
                 log(f"Time field is missing for temporal CV")
                 raise RuntimeError("Time field is missing for temporal CV")
+        
+        print(parameters['var_interaction_A'],'daiiii')
+        if parameters['var_interaction_A'] != [] and parameters['var_interaction_B'] != []: 
+            tensor=[parameters['var_interaction_A'][0],parameters['var_interaction_B'][0]]
 
+            alg_params = {
+                'linear': parameters['field3'],
+                'continuous': parameters['field1'],
+                'categorical': parameters['field2'],
+                'tensor': tensor,
+            }
+            if SZ_utils.check_validity(alg_params) is False:
+                return ''
+        else:
+            tensor=[]
+        
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field3']+parameters['field1']+parameters['field2'],
+            'field1': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'lsd' : parameters['fieldlsd'],
             'family':family[parameters['family']],
             'time':parameters['time'],
@@ -170,8 +198,11 @@ class CoreAlgorithmGAM_cv():
             'linear': parameters['field3'],
             'continuous': parameters['field1'],
             'categorical': parameters['field2'],
-            'nomi': parameters['field3']+parameters['field1']+parameters['field2'],
-            'spline': parameters['num1']
+            'tensor': tensor,
+            'nomi': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
+            'spline': parameters['num1'],
+            #'var_interaction_A':parameters['var_interaction_A'],
+            #'var_interaction_B':parameters['var_interaction_B'],
         }
 
         outputs['splines'],outputs['dtypes']=GAM_utils.GAM_formula(alg_params)
@@ -181,16 +212,16 @@ class CoreAlgorithmGAM_cv():
             return {}
 
         alg_params = {
-            'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'testN':parameters['testN'],
             'fold':parameters['folder'],
-            'nomi':parameters['field3']+parameters['field1']+parameters['field2'],
+            'nomi':parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'df':outputs['df'],
             'splines':outputs['splines'],
             'dtypes':outputs['dtypes'],
             'categorical':parameters['field2'],
             'linear':parameters['field3'],
             'continuous':parameters['field1'],
+            'tensor': tensor,
             'family':family[parameters['family']],
             'cv_method':cv_method[parameters['cv_method']],
             'time':parameters['time']
@@ -248,8 +279,11 @@ class CoreAlgorithmGAM_cv():
         feedback.setCurrentStep(5)
         if feedback.isCanceled():
             return {}
+    
+    
 
         return results
+
 
 
 
