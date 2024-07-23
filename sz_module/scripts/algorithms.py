@@ -70,9 +70,6 @@ class Algorithms():
             prob=gam.predict(X.loc[test,nomi].to_numpy())#[::,1]
             #CI=gam.prediction_intervals(X.iloc[test,:].to_numpy())
 
-        print(X.loc[train,nomi])
-        print(y.iloc[train])
-        print(X.loc[test,nomi])
         GAM_utils.GAM_plot(gam,df.loc[train,nomi],nomi,fold,filename,X.loc[train,nomi])
         #GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
         
@@ -86,8 +83,6 @@ class CV_utils():
         df=parameters['df']
         nomi=parameters['nomi']
         x=df[parameters['nomi']]
-        #print(x,'x')
-        #print(df,'df')
         y=df['y']
         if algorithm==Algorithms.alg_GAMrun:
             df_scaled=CV_utils.scaler(x,parameters['linear']+parameters['continuous']+parameters['tensor'],'custom')
@@ -148,7 +143,6 @@ class CV_utils():
             for i, (train, test) in enumerate(method.split(time_index)):
                 X_train[i]=np.where(df[parameters['time']] != time_index[test[0]])[0]
                 X_test[i]=np.where(df[parameters['time']] == time_index[test[0]])[0]
-                print('train',X_train)
         elif parameters['cv_method']=='temporal_LOO':
             time_index=sorted(df[parameters['time']].unique())
             method = LeaveOneOut()
@@ -234,7 +228,6 @@ class GAM_utils():
         tensor_id=[]
         splines = terms.TermList()
         for i,v in enumerate(vars_dict .keys()):
-            print(i,v)
             if vars_dict[v]['term'] == 's':
                 term = terms.SplineTerm(i, n_splines=vars_dict[v].get('n_splines', 10))
             elif vars_dict[v]['term'] == 'l':
@@ -247,9 +240,6 @@ class GAM_utils():
                     term=terms.TensorTerm(tensor_id[0],tensor_id[1]) 
             splines += term
         #splines += terms.TensorTerm(tensor_id[0],tensor_id[1]) 
-
-        print(splines)
-        print(dtypes)    
 
         return splines,dtypes
     
@@ -280,8 +270,7 @@ class GAM_utils():
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
-            if isinstance(gam.terms[i], terms.FactorTerm):
-                countIns+=1
+            if isinstance(gam.terms[i], terms.TensorTerm):
                 continue
             count+=1
         count=count+countIns
@@ -290,11 +279,10 @@ class GAM_utils():
             rows=4
         else:
             rows=int(np.ceil(count/3.))
+        
 
         fig = plt.figure(figsize=(15,15))
         for i, term in enumerate(gam.terms):
-            print(term,'term')
-
             if term.isintercept:
                 continue
             X=np.array([min(df.iloc[:, i])])
@@ -304,14 +292,13 @@ class GAM_utils():
                 X=np.append(X,m+interval)
                 m=m+interval
 
-            ##
-            ax=fig.add_subplot(rows, 3, i+1)            
+            ##         
             if isinstance(gam.terms[i], terms.FactorTerm):
+                ax=fig.add_subplot(rows, 3, i+1)   
                 ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
                 ##
-                print(gam.terms[i],'aa')
                 x=np.sort(df[GAM_sel[i]].unique())
                 y=[]
                 y1=[]
@@ -331,11 +318,11 @@ class GAM_utils():
                 continue
             
             elif isinstance(gam.terms[i], terms.LinearTerm):
+                ax=fig.add_subplot(rows, 3, i+1)   
                 ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
                 ##
-                print(gam.terms[i],'bb')
                 ax.plot(X, pdep, c='blue')                
                 ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
                 ax.set_xlabel(GAM_sel[i])
@@ -344,25 +331,38 @@ class GAM_utils():
                 continue
             
             elif isinstance(gam.terms[i], terms.TensorTerm):
+                # for i, term in enumerate(gam.terms):
+                #     if term.isintercept:
+                #         continue
+                #     X=np.array([min(df.iloc[:, i])])
+                #     m=np.min(df.iloc[:, i])
+                #     interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(len(df[GAM_sel[i]])-1)
+                #     for n in range(len(df[GAM_sel[i]])-1):
+                #         X=np.append(X,m+interval)
+                #         m=m+interval
 
+
+
+                fig2=plt.figure(figsize=(15,15))
+                #ax=fig.add_subplot(rows, 3, i+1)   
                 XX = gam.generate_X_grid(term=i,meshgrid=True)
                 Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
-                ax = plt.axes(projection='3d')
-                ax.plot_surface(XX[0], XX[1], Z, cmap='viridis') 
-                ax.set_position([0.5, 0.1, 0.4, 0.8])
+                ax3d = plt.axes(projection='3d')
+                ax3d.plot_surface(XX[0], XX[1], Z, cmap='viridis') 
+                #ax.set_position([0.5, 0.1, 0.4, 0.8])
 
-                ax.set_xlabel(GAM_sel[i])
-                ax.set_ylabel(GAM_sel[i+1])
+                ax3d.set_xlabel(GAM_sel[i])
+                ax3d.set_ylabel(GAM_sel[i+1])
                 #ax.set_ylim(MIN,MAX)
+                fig2.savefig(fold+'/Model_covariates_interaction'+filename+'.pdf', bbox_inches='tight')
                 continue
 
             elif isinstance(gam.terms[i], terms.SplineTerm):
+                ax=fig.add_subplot(rows, 3, i+1)   
                 ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
                 ##
-                print(gam.terms[i],'cc')
-                print('aoooo')
                 ax.plot(X, pdep, c='blue')
                 ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
                 ax.set_xlabel(GAM_sel[i])
@@ -372,19 +372,20 @@ class GAM_utils():
 
         fig.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
 
-
+        ########################################################################
         fig1 = plt.figure(figsize=(15,15))
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
-            ##
-            XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
-            pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-            ##
+
             
             ax1=fig1.add_subplot(rows, 3, i+1)
 
             if isinstance(gam.terms[i], terms.FactorTerm):
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
                 x=np.sort(df[GAM_sel[i]].unique())
                 y=[]
                 y1=[]
@@ -403,11 +404,44 @@ class GAM_utils():
                 ax1.set_ylim(MIN,MAX)
                 continue
 
-            ax1.plot(XX[:, term.feature], pdep, c='blue')
-            ax1.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
-            ax1.set_xlabel(GAM_sel[i])
-            ax1.set_ylabel('Partial Effect')
-            ax1.set_ylim(MIN,MAX)
+            elif isinstance(gam.terms[i], terms.LinearTerm):
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                ax1.plot(XX[:, term.feature], pdep, c='blue')
+                ax1.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+                ax1.set_xlabel(GAM_sel[i])
+                ax1.set_ylabel('Partial Effect')
+                ax1.set_ylim(MIN,MAX)
+                continue
+
+            elif isinstance(gam.terms[i], terms.TensorTerm):
+                fig2=plt.figure(figsize=(15,15))
+                #ax=fig.add_subplot(rows, 3, i+1)   
+                XX = gam.generate_X_grid(term=i,meshgrid=True)
+                Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
+                ax3d = plt.axes(projection='3d')
+                ax3d.plot_surface(XX[0], XX[1], Z, cmap='viridis') 
+                #ax.set_position([0.5, 0.1, 0.4, 0.8])
+
+                ax3d.set_xlabel(GAM_sel[i])
+                ax3d.set_ylabel(GAM_sel[i+1])
+                #ax.set_ylim(MIN,MAX)
+                fig2.savefig(fold+'/Model_covariates_interaction_scaled'+filename+'.pdf', bbox_inches='tight')
+                continue
+
+            elif isinstance(gam.terms[i], terms.SplineTerm):
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                ax1.plot(XX[:, term.feature], pdep, c='blue')
+                ax1.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+                ax1.set_xlabel(GAM_sel[i])
+                ax1.set_ylabel('Partial Effect')
+                ax1.set_ylim(MIN,MAX)
+                continue
 
         fig1.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
         
