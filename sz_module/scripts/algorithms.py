@@ -270,6 +270,8 @@ class GAM_utils():
         x_tic=[]
         x_linear=np.array([])
         y_linear=np.array([])
+
+        fig = plt.figure(figsize=(15,15),dpi=300)
             
         for i, term in enumerate(gam.terms):
             if term.isintercept:
@@ -293,8 +295,10 @@ class GAM_utils():
                 rows=4
             else:
                 rows=int(np.ceil(count/3.))
+
+            ax=fig.add_subplot(rows, 3, i+1)
+            #plt.subplot(rows, 3, i+1)
             
-            plt.subplot(rows, 3, i+1)
 
             if isinstance(gam.terms[i], terms.FactorTerm):
                 x=np.sort(df[GAM_sel[i]].unique())
@@ -306,24 +310,24 @@ class GAM_utils():
                     y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
                     y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
                     y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
-                plt.plot(x,y,'o', c='blue')
-                plt.plot(x,y1,'o', c='gray')
-                plt.plot(x,y2,'o', c='gray')
-                plt.xticks(np.sort(df[GAM_sel[i]].unique()), rotation=45)
-                plt.xlabel(GAM_sel[i])
-                plt.ylabel('Partial Effect')
-                plt.ylim(MIN,MAX)
+                ax.plot(x,y,'o', c='blue')
+                ax.plot(x,y1,'o', c='gray')
+                ax.plot(x,y2,'o', c='gray')
+                ax.set_xticks(np.sort(df[GAM_sel[i]].unique()), rotation=45)
+                ax.set_xlabel(GAM_sel[i])
+                ax.set_ylabel('Partial Effect')
+                ax.set_ylim(MIN,MAX)
                 continue
 
-            plt.plot(X, pdep, c='blue')
+            ax.plot(X, pdep, c='blue')
             #plt.xticks(XX[:, term.feature], X[:,term.feature])
             
-            plt.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+            ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
             #plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
 
-            plt.xlabel(GAM_sel[i])
-            plt.ylabel('Partial Effect')
-            plt.ylim(MIN,MAX)
+            ax.set_xlabel(GAM_sel[i])
+            ax.set_ylabel('Partial Effect')
+            ax.set_ylim(MIN,MAX)
 
         #if len(x_linear)>0:
         #    print(x_linear,y_linear)
@@ -332,9 +336,11 @@ class GAM_utils():
         #    #plt.xlabel(GAM_sel[i])
         #    plt.ylabel('Regression coefficient')
 
-        plt.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
+        #fig.subplots_adjust(bottom=0.15, wspace=0.05)
+        fig.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
         #plt.show()  
 
+        fig1 = plt.figure(figsize=(15,15))
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
@@ -349,7 +355,7 @@ class GAM_utils():
             else:
                 rows=int(np.ceil(count/3.))
             
-            plt.subplot(rows, 3, i+1)
+            ax1=fig1.add_subplot(rows, 3, i+1)
 
             if isinstance(gam.terms[i], terms.FactorTerm):
                 x=np.sort(df[GAM_sel[i]].unique())
@@ -361,24 +367,24 @@ class GAM_utils():
                     y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
                     y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
                     y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
-                plt.plot(x,y,'o', c='blue')
-                plt.plot(x,y1,'o', c='gray')
-                plt.plot(x,y2,'o', c='gray')
-                plt.xticks(np.sort(df[GAM_sel[i]].unique()), rotation=45)
-                plt.xlabel(GAM_sel[i])
-                plt.ylabel('Partial Effect')
-                plt.ylim(MIN,MAX)
+                ax1.plot(x,y,'o', c='blue')
+                ax1.plot(x,y1,'o', c='gray')
+                ax1.plot(x,y2,'o', c='gray')
+                ax1.set_xticks(np.sort(df[GAM_sel[i]].unique()), rotation=45)
+                ax1.set_xlabel(GAM_sel[i])
+                ax1.set_ylabel('Partial Effect')
+                ax1.set_ylim(MIN,MAX)
                 continue
 
-            plt.plot(XX[:, term.feature], pdep, c='blue')
+            ax1.plot(XX[:, term.feature], pdep, c='blue')
             #plt.xticks(XX[:, term.feature], X[:,term.feature])
             
-            plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+            ax1.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
             #plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
 
-            plt.xlabel(GAM_sel[i])
-            plt.ylabel('Partial Effect')
-            plt.ylim(MIN,MAX)
+            ax1.set_xlabel(GAM_sel[i])
+            ax1.set_ylabel('Partial Effect')
+            ax1.set_ylim(MIN,MAX)
 
         #if len(x_linear)>0:
         #    print(x_linear,y_linear)
@@ -387,7 +393,8 @@ class GAM_utils():
         #    #plt.xlabel(GAM_sel[i])
         #    plt.ylabel('Regression coefficient')
 
-        plt.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
+        #fig1.subplots_adjust(bottom=0.15, wspace=0.05)
+        fig1.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
         
     def GAM_save(gam,coeffs,fold,nomi,filename=''):
         filename_pkl = fold+'/gam_coeff'+filename+'.pkl'
