@@ -331,28 +331,33 @@ class GAM_utils():
                 continue
             
             elif isinstance(gam.terms[i], terms.TensorTerm):
-                # for i, term in enumerate(gam.terms):
-                #     if term.isintercept:
-                #         continue
-                #     X=np.array([min(df.iloc[:, i])])
-                #     m=np.min(df.iloc[:, i])
-                #     interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(len(df[GAM_sel[i]])-1)
-                #     for n in range(len(df[GAM_sel[i]])-1):
-                #         X=np.append(X,m+interval)
-                #         m=m+interval
 
-
+                X0=np.array([min(df.iloc[:, i])])
+                m=np.min(df.iloc[:, i])
+                interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(100-1)
+                for n in range(100-1):
+                    X0=np.append(X0,m+interval)
+                    m=m+interval
+                
+                X1=np.array([min(df.iloc[:, i+1])])
+                m=np.min(df.iloc[:, i+1])
+                interval=(np.max(df.iloc[:, i+1])-np.min(df.iloc[:, i+1]))/(100-1)
+                for n in range(100-1):
+                    X1=np.append(X1,m+interval)
+                    m=m+interval
 
                 fig2=plt.figure(figsize=(15,15))
                 #ax=fig.add_subplot(rows, 3, i+1)   
                 XX = gam.generate_X_grid(term=i,meshgrid=True)
                 Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
+
                 ax3d = plt.axes(projection='3d')
-                ax3d.plot_surface(XX[0], XX[1], Z, cmap='viridis') 
+                ax3d.plot_surface(X0, X1, Z, cmap='viridis') 
                 #ax.set_position([0.5, 0.1, 0.4, 0.8])
 
                 ax3d.set_xlabel(GAM_sel[i])
                 ax3d.set_ylabel(GAM_sel[i+1])
+                ax3d.set_zlabel('Partial Effect')
                 #ax.set_ylim(MIN,MAX)
                 fig2.savefig(fold+'/Model_covariates_interaction'+filename+'.pdf', bbox_inches='tight')
                 continue
@@ -427,7 +432,7 @@ class GAM_utils():
 
                 ax3d.set_xlabel(GAM_sel[i])
                 ax3d.set_ylabel(GAM_sel[i+1])
-                #ax.set_ylim(MIN,MAX)
+                ax3d.set_zlabel('Partial Effect')
                 fig2.savefig(fold+'/Model_covariates_interaction_scaled'+filename+'.pdf', bbox_inches='tight')
                 continue
 
