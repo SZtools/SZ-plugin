@@ -79,6 +79,7 @@ from osgeo import gdal,osr,ogr
 import sys
 import math
 import csv
+from .utils import SZ_utils
 
 # import plotly.tools as plotly_tools
 # import plotly.graph_objs as go
@@ -143,6 +144,9 @@ class statistickernel(QgsProcessingAlgorithm):
         parameters['folder'] = self.parameterAsString(parameters, self.FOLDER, context)
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.FOLDER))
+        
+        SZ_utils.make_directory({'path':parameters['folder']})
+
 
         alg_params = {
             #'OUTPUT': parameters['outcsv'],

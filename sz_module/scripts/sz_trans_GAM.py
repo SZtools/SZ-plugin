@@ -143,8 +143,8 @@ class CoreAlgorithmGAM_trans():
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
         
-        if not os.path.exists(parameters['folder']):
-            os.mkdir(parameters['folder'])
+        SZ_utils.make_directory({'path':parameters['folder']})
+
         
         parameters['testN']=1
 

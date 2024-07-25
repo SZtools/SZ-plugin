@@ -154,8 +154,7 @@ class CoreAlgorithmGAM_cv():
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
         
-        if not os.path.exists(parameters['folder']):
-            os.mkdir(parameters['folder'])
+        SZ_utils.make_directory({'path':parameters['folder']})
 
         if cv_method[parameters['cv_method']]=='random' or cv_method[parameters['cv_method']]=='spatial':
             parameters['time']=None

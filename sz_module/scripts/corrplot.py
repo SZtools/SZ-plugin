@@ -109,12 +109,14 @@ class CorrAlgorithm(QgsProcessingAlgorithm):
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
         
+        SZ_utils.make_directory({'path':parameters['folder']})
+        
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field1'],
         }
 
-        outputs['df'],outputs['crs']=SZ_utils.load_cv(alg_params)
+        outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
         
         feedback.setCurrentStep(1)
         if feedback.isCanceled():

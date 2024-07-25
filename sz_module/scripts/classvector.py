@@ -148,6 +148,8 @@ class classvAlgorithm(QgsProcessingAlgorithm):
         #QgsMessageLog.logMessage(parameters['lsi'], 'MyPlugin', level=Qgis.Info)
         #QgsMessageLog.logMessage(parameters['lsi'], 'MyPlugin', level=Qgis.Info)
 
+        SZ_utils.make_directory({'path':parameters['edgesGA']})
+
 
         alg_params = {
             #'INPUT_RASTER_LAYER': parameters['Slope'],
@@ -159,7 +161,7 @@ class classvAlgorithm(QgsProcessingAlgorithm):
             #'INPUT_INT': parameters['BufferRadiousInPxl'],
             #'INPUT_INT_1': parameters['minSlopeAcceptable'],
         }
-        outputs['gdp'],outputs['crs']=SZ_utils.load_cv(alg_params)
+        outputs['gdp'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
         #list_of_values=list(np.arange(10))
         self.list_of_values=outputs['gdp']['SI']

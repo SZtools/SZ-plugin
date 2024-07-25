@@ -76,6 +76,7 @@ from processing.algs.gdal.GdalUtils import GdalUtils
 #import chart_studio
 import plotly.offline
 import plotly.graph_objs as go
+from .utils import SZ_utils
 
 class statistic(QgsProcessingAlgorithm):
     # INPUT = 'INPUT'
@@ -134,6 +135,7 @@ class statistic(QgsProcessingAlgorithm):
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.FOLDER))
 
+        SZ_utils.make_directory({'path':parameters['folder']})
 
         #cio
         #output, outputFormat = GdalUtils.ogrConnectionStringAndFormat(outFile, context)

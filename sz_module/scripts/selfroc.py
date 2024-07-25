@@ -169,6 +169,7 @@ class rocGenerator(QgsProcessingAlgorithm):
 
         #QgsMessageLog.logMessage(parameters['lsi'], 'MyPlugin', level=Qgis.Info)
         #QgsMessageLog.logMessage(parameters['lsi'], 'MyPlugin', level=Qgis.Info)
+        SZ_utils.make_directory({'path':parameters['fold']})
 
 
         alg_params = {

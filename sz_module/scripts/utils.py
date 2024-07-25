@@ -99,26 +99,26 @@ class SZ_utils():
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
         if 'time' in parameters:
             if parameters['time']==None:
-                #df=gdp[parameters['field1']]
                 df=pd.DataFrame(gdp[parameters['field1']].copy())
             else:
                 df=pd.DataFrame(gdp[parameters['field1']+[parameters['time']]].copy())
-                #df=gdp[parameters['field1']+[parameters['time']]]
         else:
             df=pd.DataFrame(gdp[parameters['field1']].copy())
-        #df = df.applymap(lambda x: pd.to_numeric(x, errors='coerce'))
-        lsd=gdp[parameters['lsd']]
         try:
-            if parameters['family']=='binomial':
+            lsd=gdp[parameters['lsd']]
+            try:
+                if parameters['family']=='binomial':
+                    lsd[lsd>0]=1
+                elif parameters['family']=='binomial' and parameters['gauss_scale']=='log scale':
+                    lsd[lsd>0]=np.log(lsd[lsd>0])
+            except:
                 lsd[lsd>0]=1
-            elif parameters['family']=='binomial' and parameters['gauss_scale']=='log scale':
-                lsd[lsd>0]=np.log(lsd[lsd>0])
+            df['y']=lsd#.astype(int)
         except:
-            lsd[lsd>0]=1
-        df['y']=lsd#.astype(int)
+            print('no lsd required')
         df['ID']=gdp['ID']
         df['geom']=gdp['geom']
-        df=df.dropna(how='any',axis=0)
+        #df=df.dropna(how='any',axis=0)
         return(df,crs)
     
 
@@ -314,5 +314,9 @@ class SZ_utils():
             else:
                 return False
         return True
+    
+    def make_directory(parameters):
+        if not os.path.exists(parameters['path']):
+            os.mkdir(parameters['path'])
             
     
