@@ -78,33 +78,33 @@ import plotly.offline
 import plotly.graph_objs as go
 
 class statistic(QgsProcessingAlgorithm):
-    INPUT = 'lsd'
-    OUTPUT = 'OUTPUT'
-    STRING = 'fieldID'
-    FOLDER = 'folder'
+    # INPUT = 'INPUT'
+    # OUTPUT = 'OUTPUT'
+    # STRING = 'STRING'
+    # FOLDER = 'FOLDER'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return statistic()
+    # def createInstance(self):
+    #     return statistic()
 
-    def name(self):
-        return 'attributes analysis'
+    # def name(self):
+    #     return 'attributes analysis'
 
-    def displayName(self):
-        return self.tr('02 Attribute Table Statistics')
+    # def displayName(self):
+    #     return self.tr('02 Attribute Table Statistics')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("analysis of the points density distribution by attribute fields")
+    # def shortHelpString(self):
+    #     return self.tr("analysis of the points density distribution by attribute fields")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
 
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Vector'), types=[QgsProcessing.TypeVectorAnyGeometry], defaultValue=None))
         #self.addParameter(QgsProcessingParameterField('fieldID', 'fieldID', type=QgsProcessingParameterField.Any, parentLayerParameterName='lsd', allowMultiple=False, defaultValue=None))
@@ -113,7 +113,7 @@ class statistic(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFolderDestination(self.FOLDER, 'Folder destination', defaultValue=None,createByDefault = True))
         #parameters['fieldID']='ev_id'
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}
         outputs = {}
@@ -144,12 +144,13 @@ class statistic(QgsProcessingAlgorithm):
             'INPUT2': parameters['lsd'],
             'PATH' : parameters['folder']
         }
-        self.input(alg_params)
+        Functions.input(alg_params)
 
         ##############################################
         return{}
 
-    def input(self,parameters):
+class Functions():
+    def input(parameters):
         shapefile = parameters['INPUT2']
         driver = ogr.GetDriverByName("ESRI Shapefile")
         dataSource = driver.Open(shapefile, 0)

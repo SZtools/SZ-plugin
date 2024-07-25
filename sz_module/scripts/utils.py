@@ -6,9 +6,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, f1_score, cohen_kappa_score
 from scipy.stats import pearsonr
 import csv
+from copy import copy
 
 #from pygam import LogisticGAM, s, f, terms
 
@@ -31,49 +32,49 @@ from collections import OrderedDict
 
 class SZ_utils():
 
-    def load_simple(directory,parameters):
-        layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
-        crs=layer.crs()
-        campi=[]
-        for field in layer.fields():
-            campi.append(field.name())
-        campi.append('geom')
-        gdp=pd.DataFrame(columns=campi,dtype=float)
-        features = layer.getFeatures()
-        count=0
-        feat=[]
-        for feature in features:
-            attr=feature.attributes()
-            geom = feature.geometry()
-            feat=attr+[geom.asWkt()]
-            gdp.loc[len(gdp)] = feat
-            count=+ 1
-        gdp.to_csv(directory+'/file.csv')
-        del gdp
-        gdp=pd.read_csv(directory+'/file.csv')
-        gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-        df=gdp[parameters['field1']]
-        nomi=list(df.head())
-        lsd=gdp[parameters['lsd']]
-        print(parameters,'printalo')
-        if parameters['family']=='binomial':
-            lsd[lsd>0]=1
-        else:
-            lsd[lsd>0]=np.log(lsd[lsd>0])
-            print('lsd',lsd,'lsd')
-        df['y']=lsd#.astype(int)
-        df['ID']=gdp['ID']
-        df['geom']=gdp['geom']
-        df=df.dropna(how='any',axis=0)
-        X=[parameters['field1']]
-        if parameters['testN']==0:
-            train=df
-            test=pd.DataFrame(columns=nomi,dtype=float)
-        else:
-            # split the data into train and test set
-            per=int(np.ceil(df.shape[0]*parameters['testN']/100))
-            train, test = train_test_split(df, test_size=per, random_state=42, shuffle=True)
-        return train, test, nomi,crs,df
+    # def load_simple(directory,parameters):
+    #     layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
+    #     crs=layer.crs()
+    #     campi=[]
+    #     for field in layer.fields():
+    #         campi.append(field.name())
+    #     campi.append('geom')
+    #     gdp=pd.DataFrame(columns=campi,dtype=float)
+    #     features = layer.getFeatures()
+    #     count=0
+    #     feat=[]
+    #     for feature in features:
+    #         attr=feature.attributes()
+    #         geom = feature.geometry()
+    #         feat=attr+[geom.asWkt()]
+    #         gdp.loc[len(gdp)] = feat
+    #         count=+ 1
+    #     gdp.to_csv(directory+'/file.csv')
+    #     del gdp
+    #     gdp=pd.read_csv(directory+'/file.csv')
+    #     gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
+    #     df=gdp[parameters['field1']]
+    #     nomi=list(df.head())
+    #     lsd=gdp[parameters['lsd']]
+    #     print(parameters,'printalo')
+    #     if parameters['family']=='binomial':
+    #         lsd[lsd>0]=1
+    #     else:
+    #         lsd[lsd>0]=np.log(lsd[lsd>0])
+    #         print('lsd',lsd,'lsd')
+    #     df['y']=lsd#.astype(int)
+    #     df['ID']=gdp['ID']
+    #     df['geom']=gdp['geom']
+    #     df=df.dropna(how='any',axis=0)
+    #     X=[parameters['field1']]
+    #     if parameters['testN']==0:
+    #         train=df
+    #         test=pd.DataFrame(columns=nomi,dtype=float)
+    #     else:
+    #         # split the data into train and test set
+    #         per=int(np.ceil(df.shape[0]*parameters['testN']/100))
+    #         train, test = train_test_split(df, test_size=per, random_state=42, shuffle=True)
+    #     return train, test, nomi,crs,df
     
     def load_cv(directory,parameters):
         layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
@@ -96,15 +97,29 @@ class SZ_utils():
         del gdp
         gdp=pd.read_csv(directory+'/file.csv')
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-        df=gdp[parameters['field1']]
-        nomi=list(df.head())
+        if 'time' in parameters:
+            if parameters['time']==None:
+                #df=gdp[parameters['field1']]
+                df=pd.DataFrame(gdp[parameters['field1']].copy())
+            else:
+                df=pd.DataFrame(gdp[parameters['field1']+[parameters['time']]].copy())
+                #df=gdp[parameters['field1']+[parameters['time']]]
+        else:
+            df=pd.DataFrame(gdp[parameters['field1']].copy())
+        #df = df.applymap(lambda x: pd.to_numeric(x, errors='coerce'))
         lsd=gdp[parameters['lsd']]
-        lsd[lsd>0]=1
+        try:
+            if parameters['family']=='binomial':
+                lsd[lsd>0]=1
+            elif parameters['family']=='binomial' and parameters['gauss_scale']=='log scale':
+                lsd[lsd>0]=np.log(lsd[lsd>0])
+        except:
+            lsd[lsd>0]=1
         df['y']=lsd#.astype(int)
         df['ID']=gdp['ID']
         df['geom']=gdp['geom']
         df=df.dropna(how='any',axis=0)
-        return(df,nomi,crs)
+        return(df,crs)
     
 
     def stampfit(parameters):
@@ -116,9 +131,16 @@ class SZ_utils():
         norm=(scores-scores.min())/(scores.max()-scores.min())
         r=roc_auc_score(y_true, scores)
 
+        idx = np.argmax(tpr1 - fpr1)  # x YOUDEN INDEX
+        suscept01 = copy(scores)
+        suscept01[scores > tresh1[idx]] = 1
+        suscept01[scores <= tresh1[idx]] = 0
+        f1_tot = f1_score(y_true, suscept01)
+        ck_tot = cohen_kappa_score(y_true, suscept01)
+
         fig=plt.figure()
         lw = 2
-        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f)' %r)
+        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f, f1 = %0.2f, ckappa = %0.2f)' %(r, f1_tot,ck_tot))
         plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
@@ -145,7 +167,15 @@ class SZ_utils():
             fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
             aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
             print('ROC '+ str(i) +' AUC=',aucv)
-            plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' (AUC = %0.2f)' %aucv)
+
+            idx = np.argmax(tprv - fprv)  # x YOUDEN INDEX
+            suscept01 = copy(scores_v)
+            suscept01[scores_v > treshv[idx]] = 1
+            suscept01[scores_v <= treshv[idx]] = 0
+            f1_tot = f1_score(y_v, suscept01)
+            ck_tot = cohen_kappa_score(y_v, suscept01)
+
+            plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' AUC = %0.2f, f1 = %0.2f, ckappa = %0.2f' %(aucv, f1_tot,ck_tot))
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
         plt.xlabel('False Positive Rate')
@@ -276,3 +306,13 @@ class SZ_utils():
             writer.writerow(["R-squared", r_squared])
             writer.writerow(["Pearson Coefficient", pearson_coefficient])
         return(errors)
+    
+    def check_validity(parameters):
+        for i in parameters['tensor']:
+            if i not in parameters['linear']+parameters['continuous']+parameters['categorical']:
+                continue
+            else:
+                return False
+        return True
+            
+    

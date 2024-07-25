@@ -54,39 +54,40 @@ from processing.algs.gdal.GdalUtils import GdalUtils
 import pandas as pd
 import tempfile
 import seaborn as sns
+from .utils import SZ_utils
 
 class CorrAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'covariates'
-    STRING = 'field1'
-    OUTPUT3 = 'OUTPUT3'
+    # INPUT = 'covariates'
+    # STRING = 'field1'
+    # OUTPUT3 = 'OUTPUT3'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return CorrAlgorithm()
+    # def createInstance(self):
+    #     return CorrAlgorithm()
 
-    def name(self):
-        return 'Correlation plot'
+    # def name(self):
+    #     return 'Correlation plot'
 
-    def displayName(self):
-        return self.tr('08 Correlation plot')
+    # def displayName(self):
+    #     return self.tr('08 Correlation plot')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("This function calculate the correlation plot between continuous variables")
+    # def shortHelpString(self):
+    #     return self.tr("This function calculate the correlation plot between continuous variables")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Continuous independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
@@ -113,7 +114,7 @@ class CorrAlgorithm(QgsProcessingAlgorithm):
             'field1': parameters['field1'],
         }
 
-        outputs['df'],outputs['nomi'],outputs['crs']=self.load(alg_params)
+        outputs['df'],outputs['crs']=SZ_utils.load_cv(alg_params)
         
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
@@ -121,12 +122,12 @@ class CorrAlgorithm(QgsProcessingAlgorithm):
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field1'],
+            #'field1': parameters['field1'],
             'df':outputs['df'],
-            'nomi': outputs['nomi'],
+            'nomi': parameters['field1'],
             'OUT':parameters['folder']
         }
-        results['folder']=self.corr(alg_params)
+        results['folder']=Functions.corr(alg_params)
     
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
@@ -135,36 +136,36 @@ class CorrAlgorithm(QgsProcessingAlgorithm):
         return results
     
 
-    def load(self,parameters):
-        layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
-        crs=layer.crs()
-        campi=[]
-        for field in layer.fields():
-            campi.append(field.name())
-        campi.append('geom')
-        gdp=pd.DataFrame(columns=campi,dtype=float)
-        features = layer.getFeatures()
-        count=0
-        feat=[]
-        for feature in features:
-            attr=feature.attributes()
-            geom = feature.geometry()
-            feat=attr+[geom.asWkt()]
-            gdp.loc[len(gdp)] = feat
-            count=+ 1
-        gdp.to_csv(self.f+'/file.csv')
-        del gdp
-        gdp=pd.read_csv(self.f+'/file.csv')
-        gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-        df=gdp[parameters['field1']]
-        nomi=list(df.head())
-        df['ID']=gdp['ID']
-        df['geom']=gdp['geom']
-        df=df.dropna(how='any',axis=0)
-        return(df,nomi,crs)
+    # def load(self,parameters):
+    #     layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
+    #     crs=layer.crs()
+    #     campi=[]
+    #     for field in layer.fields():
+    #         campi.append(field.name())
+    #     campi.append('geom')
+    #     gdp=pd.DataFrame(columns=campi,dtype=float)
+    #     features = layer.getFeatures()
+    #     count=0
+    #     feat=[]
+    #     for feature in features:
+    #         attr=feature.attributes()
+    #         geom = feature.geometry()
+    #         feat=attr+[geom.asWkt()]
+    #         gdp.loc[len(gdp)] = feat
+    #         count=+ 1
+    #     gdp.to_csv(self.f+'/file.csv')
+    #     del gdp
+    #     gdp=pd.read_csv(self.f+'/file.csv')
+    #     gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
+    #     df=gdp[parameters['field1']]
+    #     nomi=list(df.head())
+    #     df['ID']=gdp['ID']
+    #     df['geom']=gdp['geom']
+    #     df=df.dropna(how='any',axis=0)
+    #     return(df,nomi,crs)
 
-
-    def corr(self,parameters):
+class Functions():
+    def corr(parameters):
         df=parameters['df']
         cov_list_numeric=parameters['nomi']
         fig, ax = plt.subplots(figsize=(13, 6))

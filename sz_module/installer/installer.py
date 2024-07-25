@@ -89,17 +89,17 @@ class installer():
                         list_libraries[library]=version
                     else:
                         if str(installed_version)==str(version) or version==None:
-                            iface.messageBar().pushMessage("SZ:",f'{library} is already installed!',Qgis.Success)
+                            iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed!',Qgis.Success)
                             log(f'{library} is already installed!')
                         else:
                             log(f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!')
-                            iface.messageBar().pushMessage("SZ:",f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!',Qgis.Warning)
+                            iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!',Qgis.Warning)
         return self.install(list_libraries)
 
     def install(self,list_libraries):
             if len(list_libraries.keys())>0:
                 reqs_to_install = [f"{library}=={version}" if version else library for library, version in list_libraries.items()]
-                if QMessageBox.question(None, "SZ for Processing Python dependencies not installed",
+                if QMessageBox.question(None, f"{os.getenv('PLUGIN_NAME')} for Processing Python dependencies not installed",
                     f"Do you automatically want install missing python modules {reqs_to_install}? \r\n"
                     "QGIS will be non-responsive for a couple of minutes.",
                     QMessageBox.Ok | QMessageBox.Cancel) == QMessageBox.Ok:
@@ -113,19 +113,19 @@ class installer():
                             command=pip_install_reqs(self.prefix_path,self.plugin_venv,reqs_to_install,os.path.join(self.venv_path,"bin","pip"))
                         QMessageBox.information(None, "Packages successfully installed",
                                                 #"To make all parts of the plugin work it is recommended to restart your QGIS-session.")
-                                                "You can find the SZ-plugin in the Processing-toolbox")
+                                                f"You can find the {os.getenv('PLUGIN_NAME')}-plugin in the Processing-toolbox")
                     except Exception as e:
                         QgsMessageLog.logMessage(traceback.format_exc(), level=Qgis.Warning)
                         QMessageBox.information(None, "An error occurred",
-                                                "SZ couldn't install Python packages!\n"
+                                                f"{os.getenv('PLUGIN_NAME')} couldn't install Python packages!\n"
                                                 "See 'General' tab in 'Log Messages' panel for details.\n"
                                                 "Report any errors to https://github.com/SZtools/SZ/issues")
                         log("An error occurred:", e)
                         return False
                 else:
-                    QMessageBox.information(None,"Information", "Packages not installed. Some SZ tools will not be fully operational.")
+                    QMessageBox.information(None,"Information", f"Packages not installed. Some {os.getenv('PLUGIN_NAME')} tools will not be fully operational.")
                     sys.path_importer_cache.clear()
-                    log("Packages not installed. Some SZ tools will not be fully operational.")
+                    log(f"Packages not installed. Some {os.getenv('PLUGIN_NAME')} tools will not be fully operational.")
                     return False
                 
                 sys.path_importer_cache.clear()

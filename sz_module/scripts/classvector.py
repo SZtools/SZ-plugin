@@ -64,7 +64,7 @@ from sklearn.metrics import roc_auc_score
 import math
 import operator
 import matplotlib.pyplot as plt
-
+import os
 from qgis import processing
 from osgeo import gdal,ogr,osr
 import numpy as np
@@ -83,46 +83,18 @@ import plotly.graph_objs as go
 #import geopandas as gd
 import pandas as pd
 import tempfile
+from sz_module.scripts.utils import SZ_utils
+
 
 class classvAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'INPUT'
-    STRING = 'STRING'
-    STRING2 = 'STRING2'
-    #STRING3 = 'STRING3'
-    NUMBER = 'classes'
-    OUTPUT1 = 'OUTPUT1'
-    OUTPUT2 = 'OUTPUT2'
-    OUTPUT3 = 'OUTPUT3'
-
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
-
-    def createInstance(self):
-        return classvAlgorithm()
-
-    def name(self):
-        return 'classy vector by ROC'
-
-    def displayName(self):
-        return self.tr('01 Classify vector by ROC')
-
-    def group(self):
-        return self.tr('04 Classify SI')
-
-    def groupId(self):
-        return '04 Classify SI'
-
-    def shortHelpString(self):
-        return self.tr("Classifies a index (SI) maximizing the AUC of the relative ROC curve.")
-
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'SI field', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Number of classes'), type=QgsProcessingParameterNumber.Integer, defaultValue = None,  minValue=1))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Folder destination', defaultValue=None, createByDefault = True))
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         self.f=tempfile.gettempdir()
         #parameters['classes']=5
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
@@ -187,7 +159,7 @@ class classvAlgorithm(QgsProcessingAlgorithm):
             #'INPUT_INT': parameters['BufferRadiousInPxl'],
             #'INPUT_INT_1': parameters['minSlopeAcceptable'],
         }
-        outputs['gdp'],outputs['crs']=self.load(alg_params)
+        outputs['gdp'],outputs['crs']=SZ_utils.load_cv(alg_params)
 
         #list_of_values=list(np.arange(10))
         self.list_of_values=outputs['gdp']['SI']
@@ -204,7 +176,7 @@ class classvAlgorithm(QgsProcessingAlgorithm):
             'NUMBER': parameters['classes'],
             'OUTPUT': parameters['edgesGA']
         }
-        outputs['ga']=self.classy(alg_params)
+        outputs['ga']=Functions.classy(alg_params)
 
         # alg_params = {
         #     'OUTPUT': parameters['edgesJenks'],
@@ -217,9 +189,9 @@ class classvAlgorithm(QgsProcessingAlgorithm):
             return {}
         return results
 
+class Functions():
 
-
-    def load(self,parameters):
+    def load(parameters):
         layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
         crs=layer.crs()
         campi=[]
@@ -260,42 +232,7 @@ class classvAlgorithm(QgsProcessingAlgorithm):
         #df['ID']=df['ID'].astype('Int32')
         return df,crs
 
-
-    # def raster2array(self,parameters):
-    #     self.ds22 = gdal.Open(parameters['INPUT'])
-    #     if self.ds22 is None:#####################verify empty row input
-    #         #QgsMessageLog.logMessage("ERROR: can't open raster input", tag="WoE")
-    #         raise ValueError  # can't open raster input, see 'WoE' Log Messages Panel
-    #     self.gt=self.ds22.GetGeoTransform()
-    #     self.xsize = self.ds22.RasterXSize
-    #     self.ysize = self.ds22.RasterYSize
-    #     #print(w,h,xmin,xmax,ymin,ymax,self.xsize,self.ysize)
-    #     aa=self.ds22.GetRasterBand(1)
-    #     NoData=aa.GetNoDataValue()
-    #     matrix = np.array(aa.ReadAsArray())
-    #     bands = self.ds22.RasterCount
-    #     if bands>1:#####################verify bands
-    #         #QgsMessageLog.logMessage("ERROR: input rasters shoud be 1-band raster", tag="WoE")
-    #         raise ValueError  # input rasters shoud be 1-band raster, see 'WoE' Log Messages Panel
-    #     return matrix
-
-    # def jenk(self,parameters):
-    #     breaks = jenkspy.jenks_breaks(self.list_of_values, nb_class=parameters['NUMBER'])
-    #     QgsMessageLog.logMessage(str(breaks), 'ClassyLSI', level=Qgis.Info)
-    #     np.savetxt(parameters['OUTPUT'], breaks, delimiter=",")
-    #
-    # def equal(self,parameters):
-    #     interval=(np.max(self.list_of_values)-np.min(self.list_of_values))/parameters['NUMBER']
-    #     QgsMessageLog.logMessage(str(interval), 'ClassyLSI', level=Qgis.Info)
-    #     edges=[]
-    #     for i in range(parameters['NUMBER']):
-    #         QgsMessageLog.logMessage(str(i), 'ClassyLSI', level=Qgis.Info)
-    #         edges=np.append(edges,np.min(self.list_of_values)+(i*interval))
-    #     edges=np.append(edges,np.max(self.list_of_values))
-    #     np.savetxt(parameters['OUTPUT'], edges, delimiter=",")
-
-
-    def classy(self,parameters):
+    def classy(parameters):
 
         df=parameters['df']
         y_true=np.array(df['y']).reshape(-1,1)
@@ -317,8 +254,8 @@ class classvAlgorithm(QgsProcessingAlgorithm):
 
         giri=20*parameters['NUMBER']
 
-        self.numOff=giri#divisibile per 5
-        self.Off=giri
+        numOff=giri#divisibile per 5
+        Off=giri
         # l=self.xsize*self.ysize
         # self.matrix=np.reshape(parameters['INPUT1'],-1)
         # self.inventory=np.reshape(parameters['INPUT2'],-1)
@@ -340,7 +277,7 @@ class classvAlgorithm(QgsProcessingAlgorithm):
         c={}
         ran=np.array([])
         summ=0
-        while count<self.Off:
+        while count<Off:
             weight={}
             fpr={}
             tpr={}
@@ -352,7 +289,7 @@ class classvAlgorithm(QgsProcessingAlgorithm):
             mm=None
             if count==0:
                 c={}
-                for pop in range(self.numOff):
+                for pop in range(numOff):
                     ran=np.sort(np.random.random_sample(nclasses-1)*(M-m))
                     #c[pop]=np.hstack((m,m+ran,M+1))############
                     c[pop]=np.hstack((m,m+ran,M))
@@ -360,7 +297,7 @@ class classvAlgorithm(QgsProcessingAlgorithm):
                     #print ciao
             else:
                 c=file
-            for k in range(self.numOff):
+            for k in range(numOff):
                 #print weight,'weight'
                 weight[k]=y_scores
                 for i in range(nclasses):
@@ -369,7 +306,7 @@ class classvAlgorithm(QgsProcessingAlgorithm):
                     weight[k][index]=float(i+1)
                 #################################
                 #FPR[k],TPR[k]=curve(self,W,y_true,weight[k],nclasses)
-                FPR[k],TPR[k]=rok(self,y_true,scores,nclasses,c[k])
+                FPR[k],TPR[k]=Functions.rok(y_true,scores,nclasses,c[k])
                 #######################
                 roc_auc[k]=np.trapz(TPR[k],FPR[k])
             #print(roc_auc[k],'area')
@@ -404,7 +341,7 @@ class classvAlgorithm(QgsProcessingAlgorithm):
             file={}
             qq=0
             #print(file)
-            for q in range(0,self.numOff,nclasses):
+            for q in range(0,numOff,nclasses):
                 #print q,'qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'
                 a=np.array([])
                 bb={}
@@ -441,84 +378,39 @@ class classvAlgorithm(QgsProcessingAlgorithm):
         file.write('false positive, true positive: %s\n' %var)#################save fp,tp
         np.savetxt(parameters['OUTPUT']+'/SIclasses.txt', classes1, delimiter=',')
 
-    # def vector2array(self,parameters):
-    #     inn=parameters['INPUT']
-    #     w=self.gt[1]
-    #     h=self.gt[5]
-    #     xmin=self.gt[0]
-    #     ymax=self.gt[3]
-    #     xmax=xmin+(self.xsize*w)
-    #     ymin=ymax+(self.ysize*h)
-    #
-    #     pxlw=w
-    #     pxlh=h
-    #     xm=xmin
-    #     ym=ymin
-    #     xM=xmax
-    #     yM=ymax
-    #     sizex=self.xsize
-    #     sizey=self.ysize
-    #
-    #     driverd = ogr.GetDriverByName('ESRI Shapefile')
-    #     ds9 = driverd.Open(inn)
-    #     layer = ds9.GetLayer()
-    #     count=0
-    #     for feature in layer:
-    #         count+=1
-    #         geom = feature.GetGeometryRef()
-    #         xy=np.array([geom.GetX(),geom.GetY()])
-    #         try:
-    #             XY=np.vstack((XY,xy))
-    #         except:
-    #             XY=xy
-    #     size=np.array([pxlw,pxlh])
-    #     OS=np.array([xm,yM])
-    #     NumPxl=(np.ceil(abs((XY-OS)/size)-1))#from 0 first cell
-    #     valuess=np.zeros((sizey,sizex),dtype='int16')
-    #     try:
-    #         for i in range(count):
-    #             #print(i,'i')
-    #             if XY[i,1]<yM and XY[i,1]>ym and XY[i,0]<xM and XY[i,0]>xm:
-    #                 valuess[NumPxl[i,1].astype(int),NumPxl[i,0].astype(int)]=1
-    #     except:#only 1 feature
-    #         if XY[1]<yM and XY[1]>ym and XY[0]<xM and XY[0]>xm:
-    #             valuess[NumPxl[1].astype(int),NumPxl[0].astype(int)]=1
-    #     fuori = valuess.astype('float32')
-    #     return fuori
+# def curve(x,y,w,nclasses):
+#     #x Area
+#     #y 0 1
+#     #w lsi
+#     d={'x':list(x),'y':list(y),'w':list(w)}
+#     df=pd.DataFrame(data=d)
+#     #print(w,'w')
+#     sortdf=df.sort_values(by='w', ascending=False)
+#     sortdf['ysum']=sortdf['x'].cumsum()
+#     m1=sum(sortdf['ysum'])
+#     sortdf1=sortdf.loc[sortdf['y']==1,:]
+#     #sortdf=sortdf[sortdf['y']==1,]
+#     sortdf1['xsum']=sortdf1['x'].cumsum()
+#     m2=sum(sortdf1['xsum'])
+#     xx=np.array([0])
+#     yy=np.array([0])
+#     for i in range(nclasses):
+#         sortdf1n=sortdf1.loc[sortdf1['w']>=nclasses-i,:]
+#         xn=sortdf1n['xsum'].sum()
+#         sortdfn=sortdf.loc[sortdf['w']>=nclasses-i,:]
+#         yn=sortdfn['ysum'].sum()
+#         xx=np.append(xx,xn)
+#         yy=np.append(yy,yn)
+#     xx=xx/m2
+#     yy=yy/m1
+#     #print(x,'x')
+#     #print(y,'y')
+#     #print(np.array([0,1,2]))
+#     #print(ciao)
 
-def curve(self,x,y,w,nclasses):
-    #x Area
-    #y 0 1
-    #w lsi
-    d={'x':list(x),'y':list(y),'w':list(w)}
-    df=pd.DataFrame(data=d)
-    #print(w,'w')
-    sortdf=df.sort_values(by='w', ascending=False)
-    sortdf['ysum']=sortdf['x'].cumsum()
-    m1=sum(sortdf['ysum'])
-    sortdf1=sortdf.loc[sortdf['y']==1,:]
-    #sortdf=sortdf[sortdf['y']==1,]
-    sortdf1['xsum']=sortdf1['x'].cumsum()
-    m2=sum(sortdf1['xsum'])
-    xx=np.array([0])
-    yy=np.array([0])
-    for i in range(nclasses):
-        sortdf1n=sortdf1.loc[sortdf1['w']>=nclasses-i,:]
-        xn=sortdf1n['xsum'].sum()
-        sortdfn=sortdf.loc[sortdf['w']>=nclasses-i,:]
-        yn=sortdfn['ysum'].sum()
-        xx=np.append(xx,xn)
-        yy=np.append(yy,yn)
-    xx=xx/m2
-    yy=yy/m1
-    #print(x,'x')
-    #print(y,'y')
-    #print(np.array([0,1,2]))
-    #print(ciao)
+#     return(xx,yy)
 
-    return(xx,yy)
-
-def rok(self,y,w,nclasses,c):
+def rok(y,w,nclasses,c):
     #fpra,tpra,t=roc_curve(y, w, None)
     fpra,tpra,t=roc_curve(y,w)
     xx=np.array([])
@@ -529,30 +421,4 @@ def rok(self,y,w,nclasses,c):
         yy=np.append(tpra[index],yy)
     xx=np.append(np.array([0]),xx)
     yy=np.append(np.array([0]),yy)
-
-
-    # print(x[index])
-    # fpr = {}
-    # tpr = {}
-    # #print(x)
-    # #print(x[x==0.])
-    # P=float(len(y[y==1.]))#tp+fn
-    # N=float(len(y[y==0.]))#tn+fp
-    # #print(N)
-    # for i in range(nclasses):
-    #     index=np.array([])
-    #     fptp=np.array([])
-    #     index=np.where(w<=i+1)
-    #     fptp=y[index]
-    #     tp=float(len(np.argwhere(fptp==1)))
-    #     fp=float(len(np.argwhere(fptp==0)))
-    #     fpr[i]=float(fp/N)
-    #     tpr[i]=float(tp/P)
-    # xx=np.array([0])
-    # yy=np.array([0])
-    # for aa in range(nclasses):
-    #     xx=np.append(xx,xx[aa]+fpr[nclasses-aa-1])
-    #     yy=np.append(yy,yy[aa]+tpr[nclasses-aa-1])
-    #print(xx,'x')
-    #print(yy,'y')
     return(xx,yy)

@@ -52,38 +52,41 @@ import random
 from qgis import *
 from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
+import os
+from osgeo import gdal,ogr
+
 
 class samplerAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'lsd'
-    OUTPUT1 = 'vout'
-    OUTPUT2 = 'tout'
-    MASK = 'poly'
-    NUMBER = 'w'
-    NUMBER1 = 'h'
-    NUMBER2 = 'train'
+    # INPUT = 'lsd'
+    # OUTPUT1 = 'vout'
+    # OUTPUT2 = 'tout'
+    # MASK = 'poly'
+    # NUMBER = 'w'
+    # NUMBER1 = 'h'
+    # NUMBER2 = 'train'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return samplerAlgorithm()
+    # def createInstance(self):
+    #     return samplerAlgorithm()
 
-    def name(self):
-        return 'points sampler'
+    # def name(self):
+    #     return 'points sampler'
 
-    def displayName(self):
-        return self.tr('05 Points Sampler')
+    # def displayName(self):
+    #     return self.tr('05 Points Sampler')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("Sample randomly training and validating datasets with the contraint to have only training or validating points per pixel")
+    # def shortHelpString(self):
+    #     return self.tr("Sample randomly training and validating datasets with the contraint to have only training or validating points per pixel")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Points'), types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
         self.addParameter(QgsProcessingParameterVectorLayer(self.MASK, self.tr('Contour polygon'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, 'Pixel width', type=QgsProcessingParameterNumber.Integer, defaultValue = 0,  minValue=0))
@@ -92,7 +95,7 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT1, 'Layer of sample', defaultValue=None, fileFilter='ESRI Shapefile (*.shp *.SHP)'))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT2, 'Layer of 1-sample',  defaultValue=None, fileFilter='ESRI Shapefile (*.shp *.SHP)'))
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         self.f=tempfile.gettempdir()
 
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
@@ -134,24 +137,27 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
             'h': parameters['h'],
             'train': parameters['train']
         }
-        v,t,xy=self.resampler(alg_params)
+        v,t,xy,ref=Functions.resampler(alg_params)
         outputs['V'] = v
         outputs['T'] = t
         outputs['xy'] = xy
+        outputs['ref'] = ref
 
         alg_params = {
             'INPUT1': parameters['vout'],
             'INPUT2': outputs['V'],
-            'INPUT3': outputs['xy']
+            'INPUT3': outputs['xy'],
+            'ref': outputs['ref']
         }
-        self.save(alg_params)
+        Functions.save(alg_params)
 
         alg_params = {
             'INPUT1': parameters['tout'],
             'INPUT2': outputs['T'],
-            'INPUT3': outputs['xy']
+            'INPUT3': outputs['xy'],
+            'ref': outputs['ref']
         }
-        self.save(alg_params)
+        Functions.save(alg_params)
 
 
         vlayer = QgsVectorLayer(parameters['vout'], 'valid', "ogr")
@@ -202,58 +208,60 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
             return {}
         return results
 
-    def resampler(self,parameters):
-        self.poly=parameters['INPUT1']
-        vlayer = QgsVectorLayer(self.poly, "layer", "ogr")
+class Functions():
+    def resampler(parameters):
+        f=parameters['fold']
+        poly=parameters['INPUT1']
+        vlayer = QgsVectorLayer(poly, "layer", "ogr")
         ext=vlayer.extent()#xmin
-        self.xmin = ext.xMinimum()
-        self.xmax = ext.xMaximum()
-        self.ymin = ext.yMinimum()
-        self.ymax = ext.yMaximum()
-        self.newXNumPxl=(np.ceil(abs(self.xmax-self.xmin)/(parameters['w']))-1).astype(int)
-        self.newYNumPxl=(np.ceil(abs(self.ymax-self.ymin)/(parameters['h']))-1).astype(int)
-        self.xsize=self.newXNumPxl
-        self.ysize=self.newYNumPxl
-        self.origine=[self.xmin,self.ymax]
+        xmin = ext.xMinimum()
+        xmax = ext.xMaximum()
+        ymin = ext.yMinimum()
+        ymax = ext.yMaximum()
+        newXNumPxl=(np.ceil(abs(xmax-xmin)/(parameters['w']))-1).astype(int)
+        newYNumPxl=(np.ceil(abs(ymax-ymin)/(parameters['h']))-1).astype(int)
+        xsize=newXNumPxl
+        ysize=newYNumPxl
+        origine=[xmin,ymax]
         #########################################
         #try:
-        dem_datas=np.zeros((self.ysize,self.xsize),dtype='int64')
+        dem_datas=np.zeros((ysize,xsize),dtype='int64')
         # write the data to output file
-        rf1=self.f+'/inv_sampler.tif'
+        rf1=f+'/inv_sampler.tif'
         dem_datas1=np.zeros(np.shape(dem_datas),dtype='float32')
         dem_datas1[:]=dem_datas[:]#[::-1]
         w1=parameters['w']
         h1=parameters['h']*(-1)
-        self.array2raster(rf1,w1,h1,dem_datas1,self.origine,parameters['INPUT'])##########rasterize inventory
+        Functions.array2raster(rf1,w1,h1,dem_datas1,origine,parameters['INPUT'])##########rasterize inventory
         del dem_datas
         del dem_datas1
         ##################################
         IN1a=rf1
-        IN2a=self.f+'/invq_sampler.tif'
-        IN3a=self.f+'/inventorynxn_sampler.tif'
-        self.cut(IN1a,IN3a)##########traslate inventory
-        self.ds15=None
-        self.ds15 = gdal.Open(IN3a)
-        if self.ds15 is None:#####################verify empty row input
+        IN2a=f+'/invq_sampler.tif'
+        IN3a=f+'/inventorynxn_sampler.tif'
+        Functions.cut(IN1a,IN3a,poly)##########traslate inventory
+        ds15=None
+        ds15 = gdal.Open(IN3a)
+        if ds15 is None:#####################verify empty row input
             QgsMessageLog.logMessage("ERROR: can't open raster input", tag="WoE")
             raise ValueError  # can't open raster input, see 'WoE' Log Messages Panel
-        ap=self.ds15.GetRasterBand(1)
+        ap=ds15.GetRasterBand(1)
         NoData=ap.GetNoDataValue()
         invmatrix = np.array(ap.ReadAsArray()).astype(np.int64)
-        bands = self.ds15.RasterCount
+        bands = ds15.RasterCount
         if bands>1:#####################verify bands
             QgsMessageLog.logMessage("ERROR: input rasters shoud be 1-band raster", tag="WoE")
             raise ValueError  # input rasters shoud be 1-band raster, see 'WoE' Log Messages Panel
         ###########################################load inventory
-        self.catalog0=np.zeros(np.shape(invmatrix),dtype='int64')
+        catalog0=np.zeros(np.shape(invmatrix),dtype='int64')
         print(np.shape(invmatrix),'shape catalog')
-        self.catalog0[:]=invmatrix[:]
+        catalog0[:]=invmatrix[:]
         del invmatrix
         #######################################inventory from shp to tif
-        v,t,XY=self.vector2arrayinv(IN3a,parameters['INPUT'],self.catalog0,parameters['train'])
-        return v,t,XY
+        v,t,XY,ref=Functions.vector2arrayinv(IN3a,parameters['INPUT'],catalog0,parameters['train'])
+        return v,t,XY,ref
 
-    def array2raster(self,newRasterfn,pixelWidth,pixelHeight,array,oo,lsd):
+    def array2raster(newRasterfn,pixelWidth,pixelHeight,array,oo,lsd):
         ds = ogr.Open(lsd)
         cr=np.shape(array)
         cols=cr[1]
@@ -281,20 +289,20 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         print(cols,rows,originX, pixelWidth,originY, pixelHeight, 'array2raster')
         del array
 
-    def cut(self,in1,in3):
-        print(self.newYNumPxl,self.newXNumPxl,'cause dimensions')
+    def cut(in1,in3,poly):
+
         #if self.polynum==1:
         try:
             if os.path.isfile(in3):
                 os.remove(in3)
 
-            processing.run('gdal:cliprasterbymasklayer', {'INPUT': in1,'MASK': self.poly, 'NODATA': -9999, 'ALPHA_BAND': False, 'CROP_TO_CUTLINE': True, 'KEEP_RESOLUTION': True, 'MULTITHREADING': True, 'OPTIONS': '', 'DATA_TYPE': 6,'OUTPUT': in3})
+            processing.run('gdal:cliprasterbymasklayer', {'INPUT': in1,'MASK': poly, 'NODATA': -9999, 'ALPHA_BAND': False, 'CROP_TO_CUTLINE': True, 'KEEP_RESOLUTION': True, 'MULTITHREADING': True, 'OPTIONS': '', 'DATA_TYPE': 6,'OUTPUT': in3})
 
         except:
             QgsMessageLog.logMessage("Failure to save sized /tmp input", tag="WoE")
             raise ValueError  # Failure to save sized /tmp input Log Messages Panel
 
-    def vector2arrayinv(self,raster,lsd,invzero,parameters):
+    def vector2arrayinv(raster,lsd,invzero,parameters):
         rlayer = QgsRasterLayer(raster, "layer")
         if not rlayer.isValid():
             print("Layer failed to load!")
@@ -313,7 +321,7 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         driverd = ogr.GetDriverByName('ESRI Shapefile')
         ds9 = driverd.Open(lsd)
         layer = ds9.GetLayer()
-        self.ref = layer.GetSpatialRef()
+        ref = layer.GetSpatialRef()
         count=0
         for feature in layer:
             count+=1
@@ -356,10 +364,10 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         for i in range(len(validcells)):
             vv=np.where((NumPxl[:,1]==validcells[i,0]) & (NumPxl[:,0]==validcells[i,1]))
             v=v+list(vv[0])
-        return v,t,XY
+        return v,t,XY,ref
 
-    def save(self,parameters):
-     
+    def save(parameters):
+        ref=parameters['ref']
         XY=parameters['INPUT3']
         driver = ogr.GetDriverByName("ESRI Shapefile")
         if os.path.exists(parameters['INPUT1']):
@@ -367,7 +375,7 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         # create the data source
         ds=driver.CreateDataSource(parameters['INPUT1'])
         # create the layer
-        layer = ds.CreateLayer("vector", self.ref, ogr.wkbPoint)
+        layer = ds.CreateLayer("vector", ref, ogr.wkbPoint)
         # Add the fields we're interested in
         field_name = ogr.FieldDefn("id", ogr.OFTInteger)
         field_name.SetWidth(100)
@@ -394,21 +402,21 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         # add the layer to the registry
         QgsProject.instance().addMapLayer(vlayer)
 
-    def addmap(self,parameters):
-        context=parameters()
-        fileName = parameters['trainout']
-        layer = QgsVectorLayer(fileName,"train","ogr")
-        subLayers =layer.dataProvider().subLayers()
+    # def addmap(parameters):
+    #     context=parameters()
+    #     fileName = parameters['trainout']
+    #     layer = QgsVectorLayer(fileName,"train","ogr")
+    #     subLayers =layer.dataProvider().subLayers()
 
-        for subLayer in subLayers:
-            name = subLayer.split('!!::!!')[1]
-            print(name,'name')
-            uri = "%s|layername=%s" % (fileName, name,)
-            print(uri,'uri')
-            # Create layer
-            sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-            if not sub_vlayer.isValid():
-                print('layer failed to load')
-            # Add layer to map
-            context.temporaryLayerStore().addMapLayer(sub_vlayer)
-            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
+    #     for subLayer in subLayers:
+    #         name = subLayer.split('!!::!!')[1]
+    #         print(name,'name')
+    #         uri = "%s|layername=%s" % (fileName, name,)
+    #         print(uri,'uri')
+    #         # Create layer
+    #         sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
+    #         if not sub_vlayer.isValid():
+    #             print('layer failed to load')
+    #         # Add layer to map
+    #         context.temporaryLayerStore().addMapLayer(sub_vlayer)
+    #         context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))

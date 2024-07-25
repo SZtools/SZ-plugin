@@ -70,40 +70,41 @@ import scipy.ndimage
 from qgis.utils import iface
 from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
+import os
 
 class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'INPUT'
-    INPUT1 = 'INPUT1'
-    OUTPUT = 'OUTPUT'
-    EXTENT = 'POLY'
-    RADIUS = 'BufferRadiousInPxl'
+    # INPUT = 'INPUT'
+    # INPUT1 = 'INPUT1'
+    # OUTPUT = 'OUTPUT'
+    # EXTENT = 'POLY'
+    # RADIUS = 'BufferRadiousInPxl'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return rasterstatkernelAlgorithm()
+    # def createInstance(self):
+    #     return rasterstatkernelAlgorithm()
 
-    def name(self):
-        return 'kernel stat'
+    # def name(self):
+    #     return 'kernel stat'
 
-    def displayName(self):
-        return self.tr('03 Points Kernel Statistics')
+    # def displayName(self):
+    #     return self.tr('03 Points Kernel Statistics')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("It calculates kernel statistic from raster around points: real, max, min, std, sum, average, range")
+    # def shortHelpString(self):
+    #     return self.tr("It calculates kernel statistic from raster around points: real, max, min, std, sum, average, range")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Points'), types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT1, self.tr('Raster'), defaultValue=None))
         self.addParameter(QgsProcessingParameterVectorLayer(self.EXTENT, self.tr('Contour polygon'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
-        self.addParameter(QgsProcessingParameterNumber(self.RADIUS, 'Buffer radious in pixels', type=QgsProcessingParameterNumber.Integer, defaultValue = 4,  minValue=1))
+        self.addParameter(QgsProcessingParameterNumber(self.NUMBER, 'Buffer radious in pixels', type=QgsProcessingParameterNumber.Integer, defaultValue = 4,  minValue=1))
         #self.addParameter(QgsProcessingParameterNumber('minSlopeAcceptable', 'Min slope acceptable', type=QgsProcessingParameterNumber.Integer, defaultValue = 3,  minValue=1))
         #self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT, 'Output layer', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, defaultValue='/tmp/nasa_1km3857clean_r6s3SE250mcomplete.shp'))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, self.tr('Output layer'), defaultValue=None,fileFilter='ESRI Shapefile (*.shp *.SHP)'))
@@ -111,7 +112,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         #self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT1, 'Output layer', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, defaultValue=None))
 
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         self.f=tempfile.gettempdir()
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}
@@ -152,7 +153,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
             'INPUT2': parameters['Slope'],
             'INPUT3' : parameters['Inventory']
         }
-        raster,ds1,XY,crs=self.importing(alg_params)
+        raster,ds1,XY,crs=Functions.importing(alg_params)
         outputs['raster'] = raster
         outputs['ds1'] = ds1
         outputs['XY'] = XY
@@ -166,7 +167,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
             'INPUT1': outputs['ds1'],
             'CRS': outputs['crs']
         }
-        XYcoord,attributi=self.indexing(alg_params)
+        XYcoord,attributi=Functions.indexing(alg_params)
         outputs['XYcoord'] = XYcoord
         outputs['attributi'] = attributi
 
@@ -178,7 +179,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
             'INPUT3': outputs['attributi'],
             'CRS':outputs['crs']
         }
-        self.saveV(alg_params)
+        Functions.saveV(alg_params)
 
         # vlayer = QgsVectorLayer(parameters['Out'], 'vector', "ogr")
         # QgsProject.instance().addMapLayer(vlayer)
@@ -222,7 +223,8 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
             return {}
         return results
 
-    def importing(self,parameters):
+class Functions():
+    def importing(parameters):
         vlayer = QgsVectorLayer(parameters['INPUT'], "layer", "ogr")
         ext=vlayer.extent()#xmin
         xmin = ext.xMinimum()
@@ -314,7 +316,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         #del ds9
         return raster,ds1,XY,crs
 
-    def indexing(self,parameters):
+    def indexing(parameters):
         ggg=np.zeros(np.shape(parameters['INPUT3'][0]),dtype=np.float32)
         ggg[:]=parameters['INPUT3'][0][:]
         ggg[(ggg==-9999)]=np.nan
@@ -431,7 +433,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         #print(attributi[0][0])
         return XYcoord,attributi
 
-    def saveV(self,parameters):
+    def saveV(parameters):
         if os.path.isfile(parameters['OUTPUT']):
             os.remove(parameters['OUTPUT'])
         # set up the shapefile driver
@@ -492,7 +494,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         #     fet.setAttributes(list(map(float,list(df.loc[ i, df.columns != 'geom']))))
         #     writer.addFeature(fet)
 
-    def addmap(self,parameters):
+    def addmap(parameters):
         context=parameters()
         fileName = parameters['trainout']
         layer = QgsVectorLayer(fileName,"train","ogr")

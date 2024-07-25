@@ -3,7 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold,LeaveOneOut,TimeSeriesSplit
 from sklearn.svm import SVC
 import pandas as pd
 import numpy as np
@@ -16,397 +16,81 @@ from pygam import terms
 import csv
 import matplotlib.pyplot as plt
 import json
+from sklearn.cluster import KMeans
+from shapely.geometry import MultiPolygon, Polygon
+from shapely.wkt import loads
+
+from sklearn.tree import export_text
+
+from mpl_toolkits import mplot3d
 
 
 class Algorithms():
 
-    def LR_simple(parameters):
-        sc = StandardScaler()
-        nomi=parameters['nomi']
-        train=parameters['train']
-        test=parameters['testy']
-        X_train = sc.fit_transform(train[nomi])
-        logistic_regression = LogisticRegression()
-        logistic_regression.fit(X_train,train['y'])
-        prob_fit=logistic_regression.predict_proba(X_train)[::,1]
-        if parameters['testN']>0:
-            X_test = sc.transform(test[nomi])
-            predictions = logistic_regression.predict(X_test)
-            #CI = logistic_regression.prediction_intervals(X_test, width=.95)
-            prob_predic=logistic_regression.predict_proba(X_test)[::,1]
-            test['SI']=prob_predic
-        train['SI']=prob_fit
-        return(train,test)
-        
-    def DT_simple(parameters):
-        sc = StandardScaler()
-        nomi=parameters['nomi']
-        train=parameters['train']
-        test=parameters['testy']
-        X_train = sc.fit_transform(train[nomi])
-        classifier = DecisionTreeClassifier(criterion = 'entropy', random_state = 0)
-        classifier.fit(X_train,train['y'])
-        prob_fit=classifier.predict_proba(X_train)[::,1]
-        if parameters['testN']>0:
-            X_test = sc.transform(test[nomi])
-            predictions = classifier.predict(X_test)
-            #CI = classifier.prediction_intervals(X_test, width=.95)
-            prob_predic=classifier.predict_proba(X_test)[::,1]
-            test['SI']=prob_predic
-        train['SI']=prob_fit
-        return(train,test)
-    
-    def RF_simple(parameters):
-        sc = StandardScaler()
-        nomi=parameters['nomi']
-        train=parameters['train']
-        test=parameters['testy']
-        X_train = sc.fit_transform(train[nomi])
-        classifier = RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0)
-        classifier.fit(X_train,train['y'])
-        prob_fit=classifier.predict_proba(X_train)[::,1]
-        if parameters['testN']>0:
-            X_test = sc.transform(test[nomi])
-            predictions = classifier.predict(X_test)
-            #CI = classifier.prediction_intervals(X_test, width=.95)
-            prob_predic=classifier.predict_proba(X_test)[::,1]
-            test['SI']=prob_predic
-        train['SI']=prob_fit
-        return(train,test)
-    
-    def SVC_simple(parameters):
-        sc = StandardScaler()
-        nomi=parameters['nomi']
-        train=parameters['train']
-        test=parameters['testy']
-        X_train = sc.fit_transform(train[nomi])
-        classifier = SVC(kernel = 'linear', random_state = 0,probability=True)
-        classifier.fit(X_train,train['y'])
-        prob_fit=classifier.predict_proba(X_train)[::,1]
-        if parameters['testN']>0:
-            X_test = sc.transform(test[nomi])
-            predictions = classifier.predict(X_test)
-            #CI = classifier.prediction_intervals(X_test, width=.95)
-            prob_predic=classifier.predict_proba(X_test)[::,1]
-            test['SI']=prob_predic
-        train['SI']=prob_fit
-        return(train,test)
-    
-    def fr_simple(parameters):
-        df=parameters['train']
-        test=parameters['testy']
-        nomi=parameters['nomi']
-        Npx1=None
-        Npx2=None
-        Npx3=None
-        Npx4=None
-        file = open(parameters['fold']+'/r_coeffs.txt','w')#################save W+, W- and Wf
-        file.write('covariate,class,Npx1,Npx2,Npx3,Npx4,Wf\n')
-        #print('covariates:',nomi)
-        for ii in nomi:
-            classi=df[ii].unique()
-            for i in classi:
-                dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 1 and x[ii] == i else False, axis = 1)
-                Npx1 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x[ii] == i else False, axis = 1)
-                Npx2 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 1 else False, axis = 1)
-                Npx3 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                #dd = df.apply(lambda x : True if x['y'] == 0 and x['y'] == 1 else False, axis = 1)
-                Npx4 = df.shape[0]#len(dd[dd == True].index)
-                #print(Npx1,Npx2,Npx3,Npx4)
-                if Npx1==0 or Npx3==0:
-                    Wf=0.
-                    #print(ii,i)
-                else:
-                    Wf=(np.divide((np.divide(Npx1,Npx2)),(np.divide(Npx3,Npx4))))
-                #Wf=Wplus-Wminus
-                var=[ii,i,Npx1,Npx2,Npx3,Npx4,Wf]
-                file.write(','.join(str(e) for e in var)+'\n')#################save W+, W- and Wf
-                df[ii][df[ii]==i]=float(Wf)
-                test[ii][test[ii]==i]=float(Wf)
-            #df.to_csv(self.f+'/file'+ii+'.csv')
-        file.close()
-        df['SI']=df[nomi].sum(axis=1)
-        test['SI']=test[nomi].sum(axis=1)
-        return(df,test)
-    
-    def woe_simple(parameters):
-        df=parameters['train']
-        test=parameters['testy']
-        nomi=parameters['nomi']
-        Npx1=None
-        Npx2=None
-        Npx3=None
-        Npx4=None
-        file = open(parameters['fold']+'/r_coeffs.txt','w')#################save W+, W- and Wf
-        file.write('covariate,class,Npx1,Npx2,Npx3,Npx4,W+,W-,Wf\n')
-        for ii in nomi:
-            classi=df[ii].unique()
-            for i in classi:
-                dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 1 and x[ii] == i else False, axis = 1)
-                Npx1 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 1 and x[ii] != i else False, axis = 1)
-                Npx2 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 0 and x[ii] == i else False, axis = 1)
-                Npx3 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                dd = df.apply(lambda x : True if x['y'] == 0 and x[ii] != i else False, axis = 1)
-                Npx4 = len(dd[dd == True].index)
-                if Npx1==0 or Npx3==0:
-                    Wplus=0.
-                else:
-                    Wplus=math.log((Npx1/(Npx1+Npx2))/(Npx3/(Npx3+Npx4)))
-                if Npx2==0 or Npx4==0:
-                    Wminus=0.
-                else:
-                    Wminus=math.log((Npx2/(Npx1+Npx2))/(Npx4/(Npx3+Npx4)))
-                Wf=Wplus-Wminus
-                var=[ii,i,Npx1,Npx2,Npx3,Npx4,Wplus,Wminus,Wf]
-                file.write(','.join(str(e) for e in var)+'\n')#################save W+, W- and Wf
-                df[ii][df[ii]==i]=float(Wf)
-                test[ii][test[ii]==i]=float(Wf)
-            #df.to_csv(self.f+'/file'+ii+'.csv')
-        file.close()
-        df['SI']=df[nomi].sum(axis=1)
-        test['SI']=test[nomi].sum(axis=1)
-        return(df,test)
-    
-    # def GAM(parameters):
-    #     nomi=parameters['nomi']
-    #     X = parameters['df'][nomi].to_numpy()
-    #     y = parameters['df'].PresAbs.to_numpy()
-    #     lams = np.empty(len(nomi))
-    #     lams.fill(0.5)
-    #     gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
-    #     gam.gridsearch(X, y, lam=lams, progress=False)   
-
-    #     # save
-    #     filename = folder_models+'/cv_fold_'+hazard+'_'+str(n_fold)+'.pkl'
-    #     with open(filename, 'wb') as filez:
-    #         pickle.dump(gam, filez)
-    #     return gam
-    
-    def GAM_simple(parameters):
-        sc = StandardScaler()
-        nomi=parameters['nomi']
-        train=parameters['train']
-        test=parameters['testy']
-        #X_train=Algorithms.scaler(train,parameters['linear']+parameters['continuous'])
-        X_train_sc = sc.fit_transform(train[parameters['linear']+parameters['continuous']])
-        X_train = np.hstack((X_train_sc, train[parameters['categorical']]))
-        lams = np.empty(len(nomi))
-        lams.fill(0.5)        
-
-        if parameters['family']=='binomial':
-            gam = LogisticGAM(parameters['splines'], dtype=parameters['dtypes'])
-            gam.gridsearch(X_train, train['y'], lam=lams)
-            GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
-            GAM_utils.GAM_save(gam,parameters['fold'])
-            prob_fit=gam.predict_proba(X_train)#[::,1]
-            train['SI']=prob_fit
-            if parameters['testN']>0:
-                X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
-                X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
-                prob_predic=gam.predict_proba(X_test)#[::,1]
-                test['SI']=prob_predic
-                train['SI']=prob_fit
-        else:
-            gam = LinearGAM(parameters['splines'], dtype=parameters['dtypes'])
-            gam.gridsearch(X_train, train['y'],lam=lams)
-            GAM_utils.GAM_plot(gam,parameters['train'],nomi,parameters['fold'],'',X_train)
-            GAM_utils.GAM_save(gam,parameters['fold'])
-            prob_fit=gam.predict(X_train)#[::,1]
-            #CI = gam.prediction_intervals(X_train, width=.95)
-            train['SI']=prob_fit#np.exp(prob_fit)
-            if parameters['testN']>0:
-                X_test_sc = sc.transform(test[parameters['linear']+parameters['continuous']])
-                X_test = np.hstack((X_test_sc, test[parameters['categorical']]))
-                prob_predic=gam.predict(X_test)#[::,1]
-                #CI = gam.prediction_intervals(X_test, width=.95)
-                test['SI']=prob_predic#np.exp(prob_predic)
-                train['SI']=prob_fit#np.exp(prob_fit)
-        return(train,test,gam)
+    def ML_transfer(parameters):
+        nomi=parameters['field1']
+        df=parameters['df']
+        df_scaled=CV_utils.scaler(df,nomi,'standard')
+        prob_predic=parameters['predictors_weights'].predict_proba(df_scaled.loc[:,nomi].to_numpy())[::,1]
+        #ML_utils.ML_save(classifier,fold,nomi,filename)
+        df['SI']=prob_predic
+        return df
     
     def GAM_transfer(parameters):
-        sc = StandardScaler()
         nomi=parameters['nomi']
-        trans=parameters['trans']
-        #X_trans = sc.fit_transform(trans[nomi])
-        X_train_sc = sc.fit_transform(trans[parameters['linear']+parameters['continuous']])
-        X_trans = np.hstack((X_train_sc, trans[parameters['categorical']]))
-        if parameters['family']=='binomial':
-            prob_fit=parameters['gam'].predict_proba(X_trans)#[::,1]
-            trans['SI']=prob_fit
-        else:
-            prob_fit=parameters['gam'].predict(X_trans)#[::,1]
-            #CI = parameters['gam'].prediction_intervals(X_trans, width=.95)
-            trans['SI']=prob_fit#np.exp(prob_fit)
-        return(trans)
+        df=parameters['df']
+        #x=df[parameters['field1']]
+        df_scaled=CV_utils.scaler(df,parameters['linear']+parameters['continuous'],'custom')
 
+        if parameters['family']=='binomial':
+            prob_fit=parameters['predictors_weights'].predict_proba(df_scaled[nomi])#[::,1]
+            df['SI']=prob_fit
+        else:
+            prob_fit=parameters['predictors_weights'].predict(df_scaled[nomi])#[::,1]
+            #CI = parameters['gam'].prediction_intervals(X_trans, width=.95)
+            df['SI']=prob_fit#np.exp(prob_fit)
+        return(df)
+
+    def alg_MLrun(classifier,X,y,train,test,df,fold,nomi,filename=''):
+        classifier.fit(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy())
+        prob_predic=classifier.predict_proba(X.loc[test,nomi].to_numpy())[::,1]
+        ML_utils.ML_save(classifier,fold,nomi,filename)
+        return prob_predic,classifier
     
-    ####################################
-    
-    def LR_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
-        classifier.fit(X[train], y[train])
-        prob_predic=classifier.predict_proba(X[test])[::,1]
-        regression_coeff=classifier.coef_
-        regression_intercept=classifier.intercept_
-        coeff=np.hstack((regression_intercept,regression_coeff[0]))
-        print(coeff,'regression coeff')
-        #prob_fit=classifier.predict_proba(X[train])[::,1]
-        return prob_predic,coeff
-    
-    def DT_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
-        classifier.fit(X[train], y[train])
-        prob_predic=classifier.predict_proba(X[test])[::,1]
-        # regression_coeff=classifier.coef_
-        # regression_intercept=classifier.intercept_
-        # coeff=np.hstack((regression_intercept,regression_coeff[0]))
-        # print(coeff,'regression coeff')
-        return prob_predic,None
-    
-    def RF_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
-        classifier.fit(X[train], y[train])
-        prob_predic=classifier.predict_proba(X[test])[::,1]
-        # regression_coeff=classifier.coef_
-        # regression_intercept=classifier.intercept_
-        # coeff=np.hstack((regression_intercept,regression_coeff[0]))
-        # print(coeff,'regression coeff')
-        return prob_predic,None
-    
-    def SVC_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
-        classifier.fit(X[train], y[train])
-        prob_predic=classifier.predict_proba(X[test])[::,1]
-        regression_coeff=classifier.coef_
-        regression_intercept=classifier.intercept_
-        coeff=np.hstack((regression_intercept,regression_coeff[0]))
-        print(coeff,'regression coeff')
-        return prob_predic,coeff
-    
-    def fr_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
-        dff=df.loc[train,:]
-        test=df.loc[test,:]
-        Npx1=None
-        Npx2=None
-        Npx3=None
-        Npx4=None
-        file = open(fold+'/r_coeff.txt','w')#################save W+, W- and Wf
-        file.write('covariate,class,Npx1,Npx2,Npx3,Npx4,Wf\n')
-        for ii in nomi:
-            classi=dff[ii].unique()
-            for i in classi:
-                dd=pd.DataFrame()
-                dd = dff.apply(lambda x : True if x['y'] == 1 and x[ii] == i else False, axis = 1)
-                Npx1 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                dd = dff.apply(lambda x : True if x[ii] == i else False, axis = 1)
-                Npx2 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                dd = dff.apply(lambda x : True if x['y'] == 1 else False, axis = 1)
-                Npx3 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                Npx4 = dff.shape[0]#len(dd[dd == True].index)
-                if Npx1==0 or Npx3==0:
-                    Wf=0.
-                else:
-                    Wf=(np.divide((np.divide(Npx1,Npx2)),(np.divide(Npx3,Npx4))))
-                var=[ii,i,Npx1,Npx2,Npx3,Npx4,Wf]
-                file.write(','.join(str(e) for e in var)+'\n')#################save W+, W- and Wf
-                dff[ii][dff[ii]==i]=float(Wf)
-                test[ii][test[ii]==i]=float(Wf)
-        file.close()
-        dff['SI']=dff[nomi].sum(axis=1)
-        test['SI']=test[nomi].sum(axis=1)
-        return(test['SI'],None)
-    
-    def woe_cv(classifier,X,y,train,test,fold=None,df=None,nomi=None):
-        dff=df.loc[train,:]
-        test=df.loc[test,:]
-        Npx1=None
-        Npx2=None
-        Npx3=None
-        Npx4=None
-        file = open(fold+'/r_coeff.txt','w')#################save W+, W- and Wf
-        file.write('covariate,class,Npx1,Npx2,Npx3,Npx4,W+,W-,Wf\n')
-        for ii in nomi:
-            classi=dff[ii].unique()
-            for i in classi:
-                dd=pd.DataFrame()
-                dd = dff.apply(lambda x : True if x['y'] == 1 and x[ii] == i else False, axis = 1)
-                Npx1 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                dd = dff.apply(lambda x : True if x['y'] == 1 and x[ii] != i else False, axis = 1)
-                Npx2 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                dd = dff.apply(lambda x : True if x['y'] == 0 and x[ii] == i else False, axis = 1)
-                Npx3 = len(dd[dd == True].index)
-                dd=pd.DataFrame()
-                dd = dff.apply(lambda x : True if x['y'] == 0 and x[ii] != i else False, axis = 1)
-                Npx4 = len(dd[dd == True].index)
-                if Npx1==0 or Npx3==0:
-                    Wplus=0.
-                else:
-                    Wplus=math.log((Npx1/(Npx1+Npx2))/(Npx3/(Npx3+Npx4)))
-                if Npx2==0 or Npx4==0:
-                    Wminus=0.
-                else:
-                    Wminus=math.log((Npx2/(Npx1+Npx2))/(Npx4/(Npx3+Npx4)))
-                Wf=Wplus-Wminus
-                var=[ii,i,Npx1,Npx2,Npx3,Npx4,Wplus,Wminus,Wf]
-                file.write(','.join(str(e) for e in var)+'\n')#################save W+, W- and Wf
-                dff[ii][dff[ii]==i]=float(Wf)
-                test[ii][test[ii]==i]=float(Wf)
-            #df.to_csv(self.f+'/file'+ii+'.csv')
-        file.close()
-        dff['SI']=dff[nomi].sum(axis=1)
-        test['SI']=test[nomi].sum(axis=1)
-        return(test['SI'],None)
-    
-    def GAM_cv(classifier,X,y,train,test,splines=None,dtypes=None,nomi=None,df=None,fold=None,filename=None,scaler=None):
+
+    def alg_GAMrun(classifier,X,y,train,test,df,splines=None,dtypes=None,nomi=None,fold=None,filename='',family=None):
         lams = np.empty(len(nomi))
         lams.fill(0.5)
-        gam = classifier(splines, dtype=dtypes)
-        gam.gridsearch(X[train,], y[train], lam=lams,progress=False)
-        GAM_utils.GAM_plot(gam,df.iloc[train,],nomi,fold,filename,X[train,])
-        GAM_utils.GAM_save(gam,fold,filename)
-        prob_predic=gam.predict_proba(X[test])#[::,1]
-        CI={}#gam.prediction_intervals(X[test])
-        GAM_utils.plot_predict(X[test],prob_predic,CI,fold,filename)
+        classifier_selected=classifier[family]
+        gam = classifier_selected(splines, dtype=dtypes)
+        gam.gridsearch(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy(), lam=lams,progress=False)
+        if family=='binomial':
+            prob=gam.predict_proba(X.loc[test,nomi].to_numpy())#[::,1]
+            #CI=gam.confidence_intervals(X.iloc[test,:].to_numpy(),width=0.95)
+        else:
+            prob=gam.predict(X.loc[test,nomi].to_numpy())#[::,1]
+            #CI=gam.prediction_intervals(X.iloc[test,:].to_numpy())
 
-        return prob_predic,None,CI
-    
-    def scaler(df,nomes):
-        df_scaled=df.copy()
-        for nome in nomes:
-            s=df[nome].std()
-            u=df[nome].mean()
-            df_scaled[nome]=(df[nome]-u)/s
-        return df_scaled
-            
+        GAM_utils.GAM_plot(gam,df.loc[train,nomi],nomi,fold,filename,X.loc[train,nomi])
+        #♂GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
+        GAM_utils.GAM_save(gam,fold,filename)
+        
+        #GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob,CI,fold, filename)
+        CI=[]
+        return prob,CI,gam
     
 class CV_utils():
+
     def cross_validation(parameters,algorithm,classifier):
         df=parameters['df']
         nomi=parameters['nomi']
-        x=df[parameters['field1']]
+        x=df[parameters['nomi']]
         y=df['y']
-        if algorithm==Algorithms.GAM_cv:
-            X=Algorithms.scaler(x,parameters['linear']+parameters['continuous'])
-            X[parameters['categorical']]=df[parameters['categorical']]
+        if algorithm==Algorithms.alg_GAMrun:
+            df_scaled=CV_utils.scaler(x,parameters['linear']+parameters['continuous']+parameters['tensor'],'custom')
+            #X[parameters['categorical']]=df[parameters['categorical']]
         else:
-            sc = StandardScaler()#####scaler
-            X = sc.fit_transform(x)
-        #X=x
-        #sc_fit = sc.fit(df[parameters['linear']+parameters['continuous']])
-        
+            df_scaled=CV_utils.scaler(df,nomi,'standard')
         train_ind={}
         test_ind={}
         prob={}
@@ -414,56 +98,108 @@ class CV_utils():
         cofl=[]
         df["SI"] = np.nan
         df["CI"] = np.nan
+        coeff=None
         if parameters['testN']>1:
-            cv = StratifiedKFold(n_splits=parameters['testN'])
-            for i, (train, test) in enumerate(cv.split(X, y)):
-                train_ind[i]=train
-                test_ind[i]=test
-                if algorithm==Algorithms.GAM_cv:
-                    #X_train=X[train,]             
-                    #X_train[parameters['linear']+parameters['continuous']]=sc.transform(X_train[parameters['linear']+parameters['continuous']])
-                    #X_test=X[test,]             
-                    #X_test[parameters['linear']+parameters['continuous']]=sc.transform(X_test[parameters['linear']+parameters['continuous']])
-                    #print(X_train,X_test)
-                    #prob[i],coeff=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename=str(i),scaler=sc)
-                    lams = np.empty(len(nomi))
-                    lams.fill(0.5)
-                    gam = classifier(parameters['splines'], dtype=parameters['dtypes'])
-                    gam.gridsearch(X.iloc[train,:].to_numpy(), y.iloc[train].to_numpy(), lam=lams,progress=False)
-                    GAM_utils.GAM_plot(gam,df.iloc[train,:],nomi,parameters['fold'],str(i),X.iloc[train,:])
-                    GAM_utils.GAM_save(gam,parameters['fold'],str(i))
-                    prob[i]=gam.predict_proba(X.iloc[test,:].to_numpy())#[::,1]
-                    CI[i]=[]#gam.prediction_intervals(X.iloc[test,:].to_numpy())
-                    GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob[i],CI,parameters['fold'], str(i))
-                    coeff=None
+            train_ind,test_ind,iters_count = CV_utils.cv_method(parameters,df_scaled,df,parameters['nomi'])
+            for i in range(iters_count):
+                if algorithm==Algorithms.alg_GAMrun:
+                    prob[i],CI[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
+                    #df.loc[test,'CI']=CI[i]
                 else:
-                    print(parameters['fold'],'parms')
-                    prob[i],coeff=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
-                df.loc[test,'SI']=prob[i]
-                #df.loc[test,'CI']=[]#CI[i]
-                cofl.append(coeff)
+                    prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i))
+                    gam=None
+                df.loc[test_ind[i],'SI']=prob[i]
         elif parameters['testN']==1:
             train=np.arange(len(y))
             test=np.arange(len(y))
-            if algorithm==Algorithms.GAM_cv:
-                prob[0],coeff,CI[0]=algorithm(classifier,X,y,train,test,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,df=df,fold=parameters['fold'],filename='')
+            if algorithm==Algorithms.alg_GAMrun:
+                prob[0],CI[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],family=parameters['family'])
+                #df.loc[test,'CI']=CI[0]
             else:
-                prob[0],coeff=algorithm(classifier,X,y,train,test,fold=parameters['fold'],df=df,nomi=nomi)
+                prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi)
+                #predictors_weights=None
             df.loc[test,'SI']=prob[0]
-            #df.loc[test,'CI']=[]#CI[0]
+            
             test_ind[0]=test
-            cofl.append(coeff)
-        if not os.path.exists(parameters['fold']):
-            os.mkdir(parameters['fold'])
-        if coeff is not None:
-            with open(parameters['fold']+'/r_coeffs.csv', 'w') as f:
-                write = csv.writer(f)
-                ll=['intercept']
-                lll=ll+nomi
-                write.writerow(lll)
-                write.writerows(cofl)
-        return prob,test_ind
+        return prob,test_ind,predictors_weights
     
+    def cv_method(parameters,df_scaled,df,nomi):
+        X_train={}
+        X_test={}
+        y = df['y'].to_numpy()
+        if parameters['cv_method']=='spatial':
+            kmeans = CV_utils.kmeans_clustering(parameters,df,df_scaled)
+            method = LeaveOneOut()
+            for i, (train, test) in enumerate(method.split(np.arange(parameters['testN']))):
+                X_train[i] = np.where(kmeans.labels_ != test[0])[0]
+                X_test[i] = np.where(kmeans.labels_ == test[0])[0]
+        elif parameters['cv_method']=='random':
+            method=StratifiedKFold(n_splits=parameters['testN'])
+            for i, (train, test) in enumerate(method.split(df_scaled, y)):
+                X_train[i]=train
+                X_test[i]=test
+        elif parameters['cv_method']=='temporal_TSS':
+            time_index=sorted(df[parameters['time']].unique())
+            method=TimeSeriesSplit(n_splits=len(time_index)-1)
+            for i, (train, test) in enumerate(method.split(time_index)):
+                X_train[i]=np.where(df[parameters['time']] != time_index[test[0]])[0]
+                X_test[i]=np.where(df[parameters['time']] == time_index[test[0]])[0]
+        elif parameters['cv_method']=='temporal_LOO':
+            time_index=sorted(df[parameters['time']].unique())
+            method = LeaveOneOut()
+            for i, (train, test) in enumerate(method.split(time_index)):
+                X_train[i]=np.where(df[parameters['time']] != time_index[test[0]])[0]
+                X_test[i]=np.where(df[parameters['time']] == time_index[test[0]])[0]
+        elif parameters['cv_method']=='spacetime_LOO':
+            kmeans = CV_utils.kmeans_clustering(parameters,df,df_scaled)
+            time_index=sorted(df[parameters['time']].unique())
+            method = LeaveOneOut()
+            count=0
+            for ii, (train_time, test_time) in enumerate(method.split(time_index)):
+                #X_train_time=np.where(df[parameters['time']] != time_index[test_time[0]])[0]
+                X_test_time_index=np.where(df[parameters['time']] == time_index[test_time[0]])[0]
+                for i, (train, test) in enumerate(method.split(np.arange(parameters['testN']))):
+                    #X_train[i] = np.where(kmeans.labels_ != test[0])[0]
+                    X_test_space_index = np.where(kmeans.labels_ == test[0])[0]
+                    X_test[count]=np.intersect1d(X_test_time_index, X_test_space_index)
+                    mask = ~np.isin(np.arange(len(df)), X_test[count])
+                    X_train[count] = np.arange(len(df))[mask]
+                    count+=1
+
+        return X_train,X_test,len(X_test)
+    
+    def scaler(df,nomes,scale_method='standard'):
+        df_scaled=df.copy()
+        if scale_method=='custom':
+            for nome in nomes:
+                s=df[nome].std()
+                u=df[nome].mean()
+                df_scaled[nome]=(df[nome]-u)/s
+        elif scale_method=='standard':
+            sc = StandardScaler()#####scaler
+            array_scaled = sc.fit_transform(df[nomes])  
+            df_scaled = pd.DataFrame(array_scaled, columns=nomes)
+        none_values = df.isnull().sum()
+        return df_scaled
+    
+    def kmeans_clustering(parameters,df,df_scaled):
+        for index, row in df.iterrows():
+            multipolygon = loads(df.loc[index,'geom'])
+            # Compute the centroid of the MultiPolygon
+            centroid = multipolygon.centroid
+            # Get the x and    y coordinates of the centroid
+            x, y = centroid.x, centroid.y
+            # Extract x and y coordinates
+            df_scaled.loc[index,'X_coord'] = x
+            df_scaled.loc[index,'Y_coord'] = y
+        # Create a DataFrame with the coordinates
+        coords = df_scaled[['X_coord', 'Y_coord']]
+        # Standardize the coordinates
+        scaler = StandardScaler()
+        coords_scaled = scaler.fit_transform(coords)
+        kmeans = KMeans(n_clusters=parameters['testN'], random_state=10, n_init=2, max_iter=10).fit(coords_scaled)
+        return kmeans
+
 class GAM_utils():
     def GAM_formula(parameters):
         GAM_sel = parameters['nomi']
@@ -482,7 +218,15 @@ class GAM_utils():
             elif GAM_sel[i] in parameters['linear']:
                 dtypes = dtypes + ['numerical']
                 vars_dict[GAM_sel[i]]={'term':'l'}
-        
+            elif GAM_sel[i] in parameters['tensor']:
+                dtypes = dtypes + ['numerical']
+                vars_dict[i]={'term':'te'}
+
+        # for i in tensor:
+        #     dtypes = dtypes + ['numerical']
+        #     vars_dict[i]={'term':'te'}
+                
+        tensor_id=[]
         splines = terms.TermList()
         for i,v in enumerate(vars_dict .keys()):
             if vars_dict[v]['term'] == 's':
@@ -491,23 +235,32 @@ class GAM_utils():
                 term = terms.LinearTerm(i)
             elif vars_dict[v]['term'] == 'f':
                 term = terms.FactorTerm(i)
+            elif vars_dict[v]['term'] == 'te':
+                tensor_id=tensor_id + [i]
+                if len(tensor_id)==2:
+                    term=terms.TensorTerm(tensor_id[0],tensor_id[1]) 
             splines += term
+        #splines += terms.TensorTerm(tensor_id[0],tensor_id[1]) 
 
         return splines,dtypes
     
     def GAM_plot(gam,df,nomi,fold,filename,scaled_df):
+        print('plot')
+
         GAM_sel=nomi
         #sc=StandardScaler()
-        fig = plt.figure(figsize=(20, 25))
+        #fig = plt.figure(figsize=(20, 25))
 
         maX=[]
         miN=[]
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
-            pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
-            if isinstance(gam.terms[i], terms.FactorTerm):
+            elif isinstance(gam.terms[i], terms.FactorTerm):
+                #pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
                 continue
+            elif isinstance(gam.terms[i], terms.LinearTerm) or isinstance(gam.terms[i], terms.SplineTerm):
+                pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
             maX=maX+[np.max(confi0[:,1])]
             miN=miN+[np.min(confi0[:,0])]
         MAX=max(maX)+1
@@ -518,79 +271,185 @@ class GAM_utils():
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
-            if isinstance(gam.terms[i], terms.FactorTerm):
-                countIns+=1
+            if isinstance(gam.terms[i], terms.TensorTerm):
                 continue
             count+=1
         count=count+countIns
 
-        x_tic=[]
-        x_linear=np.array([])
-        y_linear=np.array([])
-            
+        if int(np.ceil(count/3.))<4:
+            rows=4
+        else:
+            rows=int(np.ceil(count/3.))
+        
+
+        fig = plt.figure(figsize=(15,15))
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
-            ##
-            #XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
-            #pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-            ##
-            XX=df[GAM_sel[i]].to_numpy()
-            try:
-                sorted_indices = np.argsort(scaled_df.iloc[:, i])
-                X = scaled_df.iloc[sorted_indices].to_numpy()
-            except:
-                sorted_indices = np.argsort(scaled_df[:, i])
-                X = scaled_df[sorted_indices]
+            X=np.array([min(df.iloc[:, i])])
+            m=np.min(df.iloc[:, i])
+            interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(len(df[GAM_sel[i]])-1)
+            for n in range(len(df[GAM_sel[i]])-1):
+                X=np.append(X,m+interval)
+                m=m+interval
 
-            for ii in range(len(GAM_sel)):
-                if ii != i: 
-                    X[:, ii] = 0
-            pdep, confi = gam.partial_dependence(term=i, X=X, width=0.95)
-            ##
+            ##         
+            if isinstance(gam.terms[i], terms.FactorTerm):
+                ax=fig.add_subplot(rows, 3, i+1)   
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                x=np.sort(df[GAM_sel[i]].unique())
+                y=[]
+                y1=[]
+                y2=[]
 
-            YY=pdep
-            if int(np.ceil(count/3.))<4:
-                rows=4
-            else:
-                rows=int(np.ceil(count/3.))
+                for j in np.sort(df[GAM_sel[i]].unique()):
+                    y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
+                    y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+                    y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+                ax.plot(x,y,'o', c='blue')
+                ax.plot(x,y1,'o', c='gray')
+                ax.plot(x,y2,'o', c='gray')
+                ax.set_xticks(np.sort(df[GAM_sel[i]].unique()), rotation=45)
+                ax.set_xlabel(GAM_sel[i])
+                ax.set_ylabel('Partial Effect')
+                ax.set_ylim(MIN,MAX)
+                continue
             
-            plt.subplot(rows, 3, i+1)
+            elif isinstance(gam.terms[i], terms.LinearTerm):
+                ax=fig.add_subplot(rows, 3, i+1)   
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                ax.plot(X, pdep, c='blue')                
+                ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+                ax.set_xlabel(GAM_sel[i])
+                ax.set_ylabel('Partial Effect')
+                ax.set_ylim(MIN,MAX)
+                continue
+            
+            elif isinstance(gam.terms[i], terms.TensorTerm):
+
+                X0=np.array([min(df.iloc[:, i])])
+                m=np.min(df.iloc[:, i])
+                interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(100-1)
+                for n in range(100-1):
+                    X0=np.append(X0,m+interval)
+                    m=m+interval
+                
+                X1=np.array([min(df.iloc[:, i+1])])
+                m=np.min(df.iloc[:, i+1])
+                interval=(np.max(df.iloc[:, i+1])-np.min(df.iloc[:, i+1]))/(100-1)
+                for n in range(100-1):
+                    X1=np.append(X1,m+interval)
+                    m=m+interval
+
+                fig2=plt.figure(figsize=(15,15))
+                #ax=fig.add_subplot(rows, 3, i+1)   
+                XX = gam.generate_X_grid(term=i,meshgrid=True)
+                Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
+
+                ax3d = plt.axes(projection='3d')
+                ax3d.plot_surface(X0, X1, Z, cmap='viridis') 
+                #ax.set_position([0.5, 0.1, 0.4, 0.8])
+
+                ax3d.set_xlabel(GAM_sel[i])
+                ax3d.set_ylabel(GAM_sel[i+1])
+                ax3d.set_zlabel('Partial Effect')
+                #ax.set_ylim(MIN,MAX)
+                fig2.savefig(fold+'/Model_covariates_interaction'+filename+'.pdf', bbox_inches='tight')
+                continue
+
+            elif isinstance(gam.terms[i], terms.SplineTerm):
+                ax=fig.add_subplot(rows, 3, i+1)   
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                ax.plot(X, pdep, c='blue')
+                ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+                ax.set_xlabel(GAM_sel[i])
+                ax.set_ylabel('Partial Effect')
+                ax.set_ylim(MIN,MAX)
+                continue
+
+        fig.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
+
+        ########################################################################
+        fig1 = plt.figure(figsize=(15,15))
+        for i, term in enumerate(gam.terms):
+            if term.isintercept:
+                continue
+
+            
+            ax1=fig1.add_subplot(rows, 3, i+1)
 
             if isinstance(gam.terms[i], terms.FactorTerm):
-                plt.plot(np.sort(df[GAM_sel[i]]),pdep, 'o', c='blue')
-                plt.xticks(np.sort(df[GAM_sel[i]].unique()), rotation=90)
-                plt.xlabel(GAM_sel[i])
-                plt.ylabel('Partial Effect')
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                x=np.sort(df[GAM_sel[i]].unique())
+                y=[]
+                y1=[]
+                y2=[]
+
+                for j in np.sort(df[GAM_sel[i]].unique()):
+                    y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
+                    y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+                    y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+                ax1.plot(x,y,'o', c='blue')
+                ax1.plot(x,y1,'o', c='gray')
+                ax1.plot(x,y2,'o', c='gray')
+                ax1.set_xticks(np.sort(df[GAM_sel[i]].unique()), rotation=45)
+                ax1.set_xlabel(GAM_sel[i])
+                ax1.set_ylabel('Partial Effect')
+                ax1.set_ylim(MIN,MAX)
                 continue
-            #elif isinstance(gam.terms[i], terms.LinearTerm):
-            #    print(pdep)
-            #    x_linear=np.append(x_linear,i)
-            #    y_linear=np.append(y_linear,np.unique(pdep))
-            #    x_tic=x_tic+[GAM_sel[i]]
-            #    continue
-            ##
-            #plt.plot(XX[:, term.feature], pdep, c='blue')
-            #plt.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
-            ##
-            ## plt.plot(XX[:, term.feature], confi, c='r', ls='--')
-            plt.plot(np.sort(XX), pdep, c='blue')
-            plt.fill_between(np.sort(XX), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
 
-            plt.xlabel(GAM_sel[i])
-            plt.ylabel('Partial Effect')
-            plt.ylim(MIN,MAX)
+            elif isinstance(gam.terms[i], terms.LinearTerm):
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                ax1.plot(XX[:, term.feature], pdep, c='blue')
+                ax1.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+                ax1.set_xlabel(GAM_sel[i])
+                ax1.set_ylabel('Partial Effect')
+                ax1.set_ylim(MIN,MAX)
+                continue
 
-        #if len(x_linear)>0:
-        #    print(x_linear,y_linear)
-        #    plt.plot(x_linear,y_linear, 'o', c='blue')
-        #    plt.xticks(x_tic,rotation=90)
-        #    #plt.xlabel(GAM_sel[i])
-        #    plt.ylabel('Regression coefficient')
+            elif isinstance(gam.terms[i], terms.TensorTerm):
+                fig2=plt.figure(figsize=(15,15))
+                #ax=fig.add_subplot(rows, 3, i+1)   
+                XX = gam.generate_X_grid(term=i,meshgrid=True)
+                Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
+                ax3d = plt.axes(projection='3d')
+                ax3d.plot_surface(XX[0], XX[1], Z, cmap='viridis') 
+                #ax.set_position([0.5, 0.1, 0.4, 0.8])
 
-        plt.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
-        #plt.show()
-    
+                ax3d.set_xlabel(GAM_sel[i])
+                ax3d.set_ylabel(GAM_sel[i+1])
+                ax3d.set_zlabel('Partial Effect')
+                fig2.savefig(fold+'/Model_covariates_interaction_scaled'+filename+'.pdf', bbox_inches='tight')
+                continue
+
+            elif isinstance(gam.terms[i], terms.SplineTerm):
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                ax1.plot(XX[:, term.feature], pdep, c='blue')
+                ax1.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+                ax1.set_xlabel(GAM_sel[i])
+                ax1.set_ylabel('Partial Effect')
+                ax1.set_ylim(MIN,MAX)
+                continue
+
+        fig1.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
         
     def GAM_save(gam,fold,filename=''):
         filename_pkl = fold+'/gam_coeff'+filename+'.pkl'
@@ -598,19 +457,34 @@ class GAM_utils():
 
         with open(filename_pkl, 'wb') as filez:
             pickle.dump(gam, filez)
-        
-        #with open(filename_pkl, 'rb') as file_pickle:
-        #    loaded_data = pickle.load(file_pickle)
 
-        #with open(filename_txt, 'wb') as file_txt:
-        #    json.dump(loaded_data, file_txt, indent=2)
-    
-    def plot_predict(x,predict,CI,fold, filename=''):
-        plt.plot(x,predict,'r--')
-        #plt.plot(x,CI,color='b',ls='--')
-        plt.xlabel('Prediction8')
-        plt.ylabel('PDF')
-        plt.savefig(fold+'/Predict'+filename+'.pdf')
+class ML_utils():
+    def ML_save(classifier,fold,nomi, filename):
+        try:#RF,DT
+            regression_coeff=classifier.feature_importances_
+            coeff=regression_coeff
+            try:
+                tree_rules = export_text(classifier, feature_names=nomi)
+                tree_rules_list = tree_rules.split('\n')
+                rules_df = pd.DataFrame({'Tree Rules': tree_rules_list})
+                rules_df.to_csv(fold+'/decision_tree_rules'+filename+'.csv', index=False)
+            except:
+                print('no tree')
+            feature_importance_df = pd.DataFrame({
+                'Feature': nomi,
+                'Importance': coeff
+            })
+            feature_importance_df = feature_importance_df.sort_values(by='Importance', ascending=False)
+            feature_importance_df.to_csv(fold+'/feature_importances'+filename+'.csv', index=False)
+        except:#SVM
+            regression_coeff=classifier.coef_
+            regression_intercept=classifier.intercept_
+            coeff=np.hstack((regression_intercept,regression_coeff[0]))
+            coeff_df = pd.DataFrame({
+                'Feature': ['intercept'] + nomi,
+                'Coefficient': coeff
+            })
+            coeff_df.to_csv(fold+'/coefficients'+filename+'.csv', index=False)
 
 
     

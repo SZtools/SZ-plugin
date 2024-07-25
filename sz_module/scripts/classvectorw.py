@@ -70,7 +70,7 @@ from sklearn.metrics import roc_auc_score
 import math
 import operator
 import matplotlib.pyplot as plt
-
+import os
 from qgis import processing
 from osgeo import gdal,ogr,osr
 import numpy as np
@@ -89,39 +89,41 @@ import plotly.graph_objs as go
 #import geopandas as gd
 import pandas as pd
 import tempfile
+from sz_module.scripts.utils import SZ_utils
+
 
 class classvAlgorithmW(QgsProcessingAlgorithm):
-    INPUT = 'INPUT'
-    STRING = 'STRING'
-    STRING2 = 'STRING2'
-    STRING3 = 'STRING3'
-    NUMBER = 'classes'
-    OUTPUT1 = 'OUTPUT1'
-    OUTPUT2 = 'OUTPUT2'
-    OUTPUT3 = 'OUTPUT3'
+    # INPUT = 'INPUT'
+    # STRING = 'STRING'
+    # STRING2 = 'STRING2'
+    # STRING3 = 'STRING3'
+    # NUMBER = 'classes'
+    # OUTPUT1 = 'OUTPUT1'
+    # OUTPUT2 = 'OUTPUT2'
+    # OUTPUT3 = 'OUTPUT3'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return classvAlgorithmW()
+    # def createInstance(self):
+    #     return classvAlgorithmW()
 
-    def name(self):
-        return 'classy vector wROC'
+    # def name(self):
+    #     return 'classy vector wROC'
 
-    def displayName(self):
-        return self.tr('02 Classify vector by weighted ROC')
+    # def displayName(self):
+    #     return self.tr('02 Classify vector by weighted ROC')
 
-    def group(self):
-        return self.tr('04 Classify SI')
+    # def group(self):
+    #     return self.tr('04 Classify SI')
 
-    def groupId(self):
-        return '04 Classify SI'
+    # def groupId(self):
+    #     return '04 Classify SI'
 
-    def shortHelpString(self):
-        return self.tr("Classifies a index (SI) maximizing the AUC of the relative weighted ROC curve.")
+    # def shortHelpString(self):
+    #     return self.tr("Classifies a index (SI) maximizing the AUC of the relative weighted ROC curve.")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'SI field', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
@@ -131,7 +133,7 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
 
 
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         self.f=tempfile.gettempdir()
         #parameters['classes']=5
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
@@ -192,7 +194,7 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
             #'INPUT_INT': parameters['BufferRadiousInPxl'],
             #'INPUT_INT_1': parameters['minSlopeAcceptable'],
         }
-        outputs['gdp'],outputs['crs']=self.load(alg_params)
+        outputs['gdp'],outputs['crs']=SZ_utils.load_cv(alg_params)
 
         #list_of_values=list(np.arange(10))
         self.list_of_values=outputs['gdp']['SI']
@@ -209,7 +211,7 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
             'NUMBER': parameters['classes'],
             'OUTPUT': parameters['edgesGA']
         }
-        outputs['ga']=self.classy(alg_params)
+        outputs['ga']=Functions.classy(alg_params)
 
         # alg_params = {
         #     'OUTPUT': parameters['edgesJenks'],
@@ -223,47 +225,47 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
         return results
 
 
-
-    def load(self,parameters):
-        layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
-        crs=layer.crs()
-        campi=[]
-        for field in layer.fields():
-            campi.append(field.name())
-        campi.append('geom')
-        gdp=pd.DataFrame(columns=campi,dtype=float)
-        df=pd.DataFrame(dtype=float)
-        features = layer.getFeatures()
-        count=0
-        feat=[]
-        for feature in features:
-            attr=feature.attributes()
-            #print(attr)
-            geom = feature.geometry()
-            #print(type(geom.asWkt()))
-            feat=attr+[geom.asWkt()]
-            #print(feat)
-            gdp.loc[len(gdp)] = feat
-            #gdp = gdp.append(feat, ignore_index=True)
-            count=+ 1
-        gdp.to_csv(self.f+'/file.csv')
-        del gdp
-        gdp=pd.read_csv(self.f+'/file.csv')
-        #print(feat)
-        #print(gdp['S'].dtypes)
-        gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-        df['SI']=gdp.loc[:,parameters['field1']]
-        df['w']=gdp.loc[:,parameters['W']]
-        nomi=list(df.head())
-        #print(list(df['Sf']),'1')
-        lsd=gdp[parameters['lsd']]
-        lsd[lsd>0]=1
-        df['y']=lsd#.astype(int)
-        df['ID']=gdp['ID']
-        df['geom']=gdp['geom']
-        df=df.dropna(how='any',axis=0)
-        #df['ID']=df['ID'].astype('Int32')
-        return df,crs
+class Functions():
+    # def load(self,parameters):
+    #     layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
+    #     crs=layer.crs()
+    #     campi=[]
+    #     for field in layer.fields():
+    #         campi.append(field.name())
+    #     campi.append('geom')
+    #     gdp=pd.DataFrame(columns=campi,dtype=float)
+    #     df=pd.DataFrame(dtype=float)
+    #     features = layer.getFeatures()
+    #     count=0
+    #     feat=[]
+    #     for feature in features:
+    #         attr=feature.attributes()
+    #         #print(attr)
+    #         geom = feature.geometry()
+    #         #print(type(geom.asWkt()))
+    #         feat=attr+[geom.asWkt()]
+    #         #print(feat)
+    #         gdp.loc[len(gdp)] = feat
+    #         #gdp = gdp.append(feat, ignore_index=True)
+    #         count=+ 1
+    #     gdp.to_csv(self.f+'/file.csv')
+    #     del gdp
+    #     gdp=pd.read_csv(self.f+'/file.csv')
+    #     #print(feat)
+    #     #print(gdp['S'].dtypes)
+    #     gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
+    #     df['SI']=gdp.loc[:,parameters['field1']]
+    #     df['w']=gdp.loc[:,parameters['W']]
+    #     nomi=list(df.head())
+    #     #print(list(df['Sf']),'1')
+    #     lsd=gdp[parameters['lsd']]
+    #     lsd[lsd>0]=1
+    #     df['y']=lsd#.astype(int)
+    #     df['ID']=gdp['ID']
+    #     df['geom']=gdp['geom']
+    #     df=df.dropna(how='any',axis=0)
+    #     #df['ID']=df['ID'].astype('Int32')
+    #     return df,crs
 
 
     # def raster2array(self,parameters):
@@ -300,7 +302,7 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
     #     np.savetxt(parameters['OUTPUT'], edges, delimiter=",")
 
 
-    def classy(self,parameters):
+    def classy(parameters):
 
         df=parameters['df']
         y_true=np.array(df['y']).reshape(-1,1)
@@ -322,8 +324,8 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
 
         giri=20*parameters['NUMBER']
 
-        self.numOff=giri#divisibile per 5
-        self.Off=giri
+        numOff=giri#divisibile per 5
+        Off=giri
         # l=self.xsize*self.ysize
         # self.matrix=np.reshape(parameters['INPUT1'],-1)
         # self.inventory=np.reshape(parameters['INPUT2'],-1)
@@ -345,7 +347,7 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
         c={}
         ran=np.array([])
         summ=0
-        while count<self.Off:
+        while count<Off:
             weight={}
             fpr={}
             tpr={}
@@ -357,7 +359,7 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
             mm=None
             if count==0:
                 c={}
-                for pop in range(self.numOff):
+                for pop in range(numOff):
                     ran=np.sort(np.random.random_sample(nclasses-1)*(M-m))
                     #c[pop]=np.hstack((m,m+ran,M+1))############
                     c[pop]=np.hstack((m,m+ran,M))
@@ -365,7 +367,7 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
                     #print ciao
             else:
                 c=file
-            for k in range(self.numOff):
+            for k in range(numOff):
                 #print weight,'weight'
                 weight[k]=y_scores
                 for i in range(nclasses):
@@ -374,7 +376,7 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
                     weight[k][index]=float(i+1)
                 #################################
                 #FPR[k],TPR[k]=curve(self,W,y_true,weight[k],nclasses)
-                FPR[k],TPR[k]=rok(self,W,y_true,scores,nclasses,c[k])
+                FPR[k],TPR[k]=Functions.rok(W,y_true,scores,nclasses,c[k])
                 #######################
                 roc_auc[k]=np.trapz(TPR[k],FPR[k])
             #print(roc_auc[k],'area')
@@ -409,7 +411,7 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
             file={}
             qq=0
             #print(file)
-            for q in range(0,self.numOff,nclasses):
+            for q in range(0,numOff,nclasses):
                 #print q,'qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq'
                 a=np.array([])
                 bb={}
@@ -490,7 +492,7 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
     #     fuori = valuess.astype('float32')
     #     return fuori
 
-def curve(self,x,y,w,nclasses):
+def curve(x,y,w,nclasses):
     #x Area
     #y 0 1
     #w lsi
@@ -522,7 +524,7 @@ def curve(self,x,y,w,nclasses):
 
     return(xx,yy)
 
-def rok(self,x,y,w,nclasses,c):
+def rok(x,y,w,nclasses,c):
     #fpra,tpra,t=roc_curve(y, w, None)
     fpra,tpra,t=roc_curve(y,w,sample_weight=x)
     xx=np.array([])

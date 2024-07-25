@@ -56,17 +56,17 @@ import tempfile
 
 
 class cleankernelAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'Inventory'
-    INPUT1 = 'Slope'
-    EXTENT = 'Extension'
-    NUMBER = 'BufferRadiousInPxl'
-    NUMBER1 = 'minSlopeAcceptable'
-    OUTPUT = 'OUTPUT'
+    # INPUT = 'Inventory'
+    # INPUT1 = 'Slope'
+    # EXTENT = 'Extension'
+    # NUMBER = 'BufferRadiousInPxl'
+    # NUMBER1 = 'minSlopeAcceptable'
+    # OUTPUT = 'OUTPUT'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Points'), types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
 
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT1, self.tr('Raster'), defaultValue=None))
@@ -79,7 +79,7 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Min value acceptable'), type=QgsProcessingParameterNumber.Integer))
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
 
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
@@ -123,12 +123,81 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
             'INPUT_INT_1': parameters['minSlopeAcceptable'],
             'OUTPUT': parameters['out']
         }
-        self.extent(alg_params)
-        self.importingandcounting(alg_params)
-        self.indexing(alg_params)
-        self.vector()
-        del self.oout
-        outputs['cleaninventory']=self.saveV(alg_params)
+        outputs['xmin'],outputs['xmax'],outputs['ymin'],outputs['ymax']=Functions.extent(alg_params)
+
+        alg_params = {
+            'INPUT_RASTER_LAYER': parameters['Slope'],
+            'INPUT_EXTENT': parameters['Extension'],
+            'INPUT_VECTOR_LAYER': parameters['Inventory'],
+            'INPUT_INT': parameters['BufferRadiousInPxl'],
+            'INPUT_INT_1': parameters['minSlopeAcceptable'],
+            'OUTPUT': parameters['out'],
+            'xmin':outputs['xmin'],
+            'xmax':outputs['xmax'],
+            'ymin':outputs['ymin'],
+            'ymax':outputs['ymax'],
+            'fold':self.f
+
+        }
+        outputs['raster'],outputs['ds1'],outputs['XY']=Functions.importingandcounting(alg_params)
+
+        alg_params = {
+            'INPUT_RASTER_LAYER': parameters['Slope'],
+            'INPUT_EXTENT': parameters['Extension'],
+            'INPUT_VECTOR_LAYER': parameters['Inventory'],
+            'INPUT_INT': parameters['BufferRadiousInPxl'],
+            'INPUT_INT_1': parameters['minSlopeAcceptable'],
+            'OUTPUT': parameters['out'],
+            'xmin':outputs['xmin'],
+            'xmax':outputs['xmax'],
+            'ymin':outputs['ymin'],
+            'ymax':outputs['ymax'],
+            'raster':outputs['raster'],
+            'fold':self.f,
+            'ds1':outputs['ds1'],
+            'XY':outputs['XY']
+        }
+        outputs['oout']=Functions.indexing(alg_params)
+
+        alg_params = {
+            'INPUT_RASTER_LAYER': parameters['Slope'],
+            'INPUT_EXTENT': parameters['Extension'],
+            'INPUT_VECTOR_LAYER': parameters['Inventory'],
+            'INPUT_INT': parameters['BufferRadiousInPxl'],
+            'INPUT_INT_1': parameters['minSlopeAcceptable'],
+            'OUTPUT': parameters['out'],
+            'xmin':outputs['xmin'],
+            'xmax':outputs['xmax'],
+            'ymin':outputs['ymin'],
+            'ymax':outputs['ymax'],
+            'raster':outputs['raster'],
+            'fold':self.f,
+            'ds1':outputs['ds1'],
+            'XY':outputs['XY'],
+            'oout':outputs['oout']
+        }
+        outputs['XYcoord']=Functions.vector()
+        del alg_params['oout']
+
+        alg_params = {
+            'INPUT_RASTER_LAYER': parameters['Slope'],
+            'INPUT_EXTENT': parameters['Extension'],
+            'INPUT_VECTOR_LAYER': parameters['Inventory'],
+            'INPUT_INT': parameters['BufferRadiousInPxl'],
+            'INPUT_INT_1': parameters['minSlopeAcceptable'],
+            'OUTPUT': parameters['out'],
+            'xmin':outputs['xmin'],
+            'xmax':outputs['xmax'],
+            'ymin':outputs['ymin'],
+            'ymax':outputs['ymax'],
+            'raster':outputs['raster'],
+            'fold':self.f,
+            'ds1':outputs['ds1'],
+            'XY':outputs['XY'],
+            'oout':outputs['oout'],
+            'XYcoord':outputs['XYcoord']
+        }
+        outputs['cleaninventory']=Functions.saveV(alg_params)
         del self.raster
 
         feedback.setCurrentStep(1)
@@ -136,37 +205,39 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
             return {}
 
         return results
-
-    def extent(self,parameters):
+class Functions():
+    def extent(parameters):
         limits=np.fromstring(parameters['INPUT_EXTENT'], dtype=float, sep=',')
-        self.xmin=limits[0]
-        self.xmax=limits[1]
-        self.ymin=limits[2]
-        self.ymax=limits[3]
+        xmin=limits[0]
+        xmax=limits[1]
+        ymin=limits[2]
+        ymax=limits[3]
+        return xmin,xmax,ymin,ymax
 
-    def importingandcounting(self,parameters):
-        self.raster={}
+    def importingandcounting(parameters):
+        f=parameters['fold']
+        raster={}
         ds=gdal.Open(parameters['INPUT_RASTER_LAYER'])
         xc = ds.RasterXSize
         yc = ds.RasterYSize
         geot=ds.GetGeoTransform()
-        newXNumPxl=np.round(abs(self.xmax-self.xmin)/(abs(geot[1]))).astype(int)
-        newYNumPxl=np.round(abs(self.ymax-self.ymin)/(abs(geot[5]))).astype(int)
+        newXNumPxl=np.round(abs(parameters['xmax']-parameters['xmin'])/(abs(geot[1]))).astype(int)
+        newYNumPxl=np.round(abs(parameters['ymax']-parameters['ymin'])/(abs(geot[5]))).astype(int)
         try:
-            os.system('gdal_translate -of GTiff -ot Float32 -strict -outsize ' + str(newXNumPxl) +' '+ str(newYNumPxl) +' -projwin ' +str(self.xmin)+' '+str(self.ymax)+' '+ str(self.xmax) + ' ' + str(self.ymin) +' -co COMPRESS=DEFLATE -co PREDICTOR=1 -co ZLEVEL=6 ' + parameters['INPUT_RASTER_LAYER'] +' '+ self.f+'/sizedslopexxx.tif')
+            os.system('gdal_translate -of GTiff -ot Float32 -strict -outsize ' + str(newXNumPxl) +' '+ str(newYNumPxl) +' -projwin ' +str(parameters['xmin'])+' '+str(parameters['ymax'])+' '+ str(parameters['xmax']) + ' ' + str(parameters['ymin']) +' -co COMPRESS=DEFLATE -co PREDICTOR=1 -co ZLEVEL=6 ' + parameters['INPUT_RASTER_LAYER'] +' '+ f+'/sizedslopexxx.tif')
         except:
             raise ValueError  # Failure to save sized cause, see 'WoE' Log Messages Panel
         del ds
-        self.ds1=gdal.Open(self.f+'/sizedslopexxx.tif')
-        if self.ds1 is None:
+        ds1=gdal.Open(f+'/sizedslopexxx.tif')
+        if ds1 is None:
             print("ERROR: can't open raster input")
-        nodata=self.ds1.GetRasterBand(1).GetNoDataValue()
-        self.raster[0] = np.array(self.ds1.GetRasterBand(1).ReadAsArray())
-        self.raster[0][self.raster[0]==nodata]=-9999
-        x = self.ds1.RasterXSize
-        y = self.ds1.RasterYSize
+        nodata=ds1.GetRasterBand(1).GetNoDataValue()
+        raster[0] = np.array(ds1.GetRasterBand(1).ReadAsArray())
+        raster[0][raster[0]==nodata]=-9999
+        x = ds1.RasterXSize
+        y = ds1.RasterYSize
 
-        gtdem= self.ds1.GetGeoTransform()
+        gtdem= ds1.GetGeoTransform()
         size=np.array([abs(gtdem[1]),abs(gtdem[5])])
         OS=np.array([gtdem[0],gtdem[3]])
         xmin=OS[0]
@@ -181,71 +252,81 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
             geom = feature.geometry().asPoint()
             xy=np.array([geom[0],geom[1]])
             try:
-                self.XY=np.vstack((self.XY,xy))
+                XY=np.vstack((XY,xy))
             except:
-                self.XY=xy
-        gtdem= self.ds1.GetGeoTransform()
+                XY=xy
+        gtdem= ds1.GetGeoTransform()
         size=np.array([abs(gtdem[1]),abs(gtdem[5])])
         OS=np.array([gtdem[0],gtdem[3]])
-        NumPxl=(np.ceil((abs(self.XY-OS)/size)-1))#from 0 first cell
+        NumPxl=(np.ceil((abs(XY-OS)/size)-1))#from 0 first cell
         values=np.zeros((y,x), dtype=int)
         for i in range(count):
-            if self.XY[i,1]<=ymax and self.XY[i,1]>=ymin and self.XY[i,0]<=xmax and self.XY[i,0]>=xmin:
+            if XY[i,1]<=ymax and XY[i,1]>=ymin and XY[i,0]<=xmax and XY[i,0]>=xmin:
                 values[NumPxl[i,1].astype(int),NumPxl[i,0].astype(int)]=1
-        self.raster[1] = values.astype('float32')
+        raster[1] = values.astype('float32')
+        return raster,ds1,XY
 
-    def indexing(self, parameters):
+    def indexing(parameters):
+        raster=parameters['raster']
         ggg=np.array([])
-        ggg=self.raster[0].astype('float32')
+        ggg=raster[0].astype('float32')
         R=np.array([])
-        R=self.raster[1].astype(np.int16)
+        R=raster[1].astype(np.int16)
         numbb=parameters['INPUT_INT']*2+1
         g = generic_filter(ggg, np.nanmax, size=(numbb,numbb))
-        self.oout=np.array([])
-        self.oout=R*g
-        self.oout[(self.raster[0]==-9999)]=-9999
-        self.oout[(self.raster[1]==0)]=-9999
-        self.oout[(self.oout<parameters['INPUT_INT_1'])]=-9999
-        self.oout[self.oout>=parameters['INPUT_INT_1']]=1
+        oout=np.array([])
+        oout=R*g
+        oout[(raster[0]==-9999)]=-9999
+        oout[(raster[1]==0)]=-9999
+        oout[(oout<parameters['INPUT_INT_1'])]=-9999
+        oout[oout>=parameters['INPUT_INT_1']]=1
         g=None
         del ggg
+        return oout
 
-    def vector(self):
-        row,col=np.where(self.oout==1)
-        geo=self.ds1.GetGeoTransform()
+    def vector(parameters):
+        oout=parameters['oout']
+        ds1=parameters['ds1']
+        XY=parameters['XY']
+        row,col=np.where(oout==1)
+        geo=ds1.GetGeoTransform()
         xsize=geo[1]
         ysize=geo[5]
         OOx=geo[0]
         OOy=geo[3]
-        self.XYcoord=np.array([0,0])
+        XYcoord=np.array([0,0])
         for i in range(len(col)):
             xmin=OOx+(xsize*col[i])
             xmax=OOx+(xsize*col[i])+(xsize)
             ymax=OOy+(ysize*row[i])
             ymin=OOy+(ysize*row[i])+(ysize)
-            for ii in range(len(self.XY)):
-                if (self.XY[ii,0]>=xmin and self.XY[ii,0]<=xmax and self.XY[ii,1]>=ymin and self.XY[ii,1]<=ymax):
-                    self.XYcoord=np.vstack((self.XYcoord,self.XY[ii,:]))
-        self.XYcoord=self.XYcoord[:]
+            for ii in range(len(XY)):
+                if (XY[ii,0]>=xmin and XY[ii,0]<=xmax and XY[ii,1]>=ymin and XY[ii,1]<=ymax):
+                    XYcoord=np.vstack((XYcoord,XY[ii,:]))
+        XYcoord=XYcoord[:]
+        return XYcoord
 
-    def saveV(self, parameters):
+    def saveV(parameters):
+        ds1=parameters['ds1']
+        XYcoord=parameters['XY_coord']
+
         driver = ogr.GetDriverByName("ESRI Shapefile")
         if os.path.exists(parameters['OUTPUT']):
             driver.DeleteDataSource(parameters['OUTPUT'])
         ds=driver.CreateDataSource(parameters['OUTPUT'])
 
-        srs=osr.SpatialReference(wkt = self.ds1.GetProjection())
+        srs=osr.SpatialReference(wkt = s1.GetProjection())
         layer = ds.CreateLayer("inventory_cleaned", srs, ogr.wkbPoint)
         field_name = ogr.FieldDefn("id", ogr.OFTInteger)
         field_name.SetWidth(100)
         layer.CreateField(field_name)
-        for i in range(len(self.XYcoord)):
+        for i in range(len(XYcoord)):
             # create the feature
             feature = ogr.Feature(layer.GetLayerDefn())
             # Set the attributes using the values from the delimited text file
             feature.SetField("id", i)
             # create the WKT for the feature using Python string formatting
-            wkt = "POINT(%f %f)" % (float(self.XYcoord[i,0]) , float(self.XYcoord[i,1]))
+            wkt = "POINT(%f %f)" % (float(XYcoord[i,0]) , float(XYcoord[i,1]))
             # Create the point from the Well Known Txt
             point = ogr.CreateGeometryFromWkt(wkt)
             # Set the feature geometry using the point
@@ -258,20 +339,20 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         ds = None
         return parameters['OUTPUT']
 
-    def createInstance(self):
-        return cleankernelAlgorithm()
+    # def createInstance(self):
+    #     return cleankernelAlgorithm()
 
-    def name(self):
-        return 'clean points'
+    # def name(self):
+    #     return 'clean points'
 
-    def displayName(self):
-        return self.tr('01 Clean Points By Raster Kernel Value')
+    # def displayName(self):
+    #     return self.tr('01 Clean Points By Raster Kernel Value')
 
-    def group(self):
-        return self.tr('01 Data preparation')
+    # def group(self):
+    #     return self.tr('01 Data preparation')
 
-    def groupId(self):
-        return '01 Data preparation'
+    # def groupId(self):
+    #     return '01 Data preparation'
 
-    def shortHelpString(self):
-        return self.tr("It selects and remove features from point vector by a kernel raster condition")
+    # def shortHelpString(self):
+    #     return self.tr("It selects and remove features from point vector by a kernel raster condition")

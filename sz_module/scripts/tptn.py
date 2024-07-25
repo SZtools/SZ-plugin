@@ -94,48 +94,44 @@ import tempfile
 
 
 class FPAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'covariates'
-    STRING = 'field1'
-    #STRING1 = 'field2'
-    STRING2 = 'fieldlsd'
-    #INPUT1 = 'Slope'
-    #EXTENT = 'Extension'
-    NUMBER = 'testN'
-    #NUMBER1 = 'minSlopeAcceptable'
-    OUTPUT = 'OUTPUT'
-    #OUTPUT1 = 'OUTPUT1'
-    #OUTPUT2 = 'OUTPUT2'
-    #OUTPUT3 = 'OUTPUT3'
+    # INPUT = 'covariates'
+    # STRING = 'field1'
+    # #STRING1 = 'field2'
+    # STRING2 = 'fieldlsd'
+    # #INPUT1 = 'Slope'
+    # #EXTENT = 'Extension'
+    # NUMBER = 'testN'
+    # #NUMBER1 = 'minSlopeAcceptable'
+    # OUTPUT = 'OUTPUT'
+    # #OUTPUT1 = 'OUTPUT1'
+    # #OUTPUT2 = 'OUTPUT2'
+    # #OUTPUT3 = 'OUTPUT3'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
+    # def tr(self, string):
+    #     return QCoreApplication.translate('Processing', string)
 
-    def createInstance(self):
-        return FPAlgorithm()
+    # def createInstance(self):
+    #     return FPAlgorithm()
 
-    def name(self):
-        return 'TpTnFpFn'
+    # def name(self):
+    #     return 'TpTnFpFn'
 
-    def displayName(self):
-        return self.tr('03 Confusion Matrix')
+    # def displayName(self):
+    #     return self.tr('03 Confusion Matrix')
 
-    def group(self):
-        return self.tr('04 Classify SI')
+    # def group(self):
+    #     return self.tr('04 Classify SI')
 
-    def groupId(self):
-        return '04 Classify SI'
+    # def groupId(self):
+    #     return '04 Classify SI'
 
-    def shortHelpString(self):
-        return self.tr("This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)")
+    # def shortHelpString(self):
+    #     return self.tr("This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)")
 
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
 
         #self.addParameter( QgsProcessingParameterFeatureSource(self.INPUT,self.tr('Covariates'),[QgsProcessing.TypeVectorPolygon],defaultValue='covariatesclassed'))
-
-
-
-
         #self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         #self.addParameter(QgsProcessingParameterField(self.STRING1, 'Last field of covariates', parentLayerParameterName=self.INPUT, defaultValue=None))
         #self.addParameter(QgsProcessingParameterField('field', 'field', type=QgsProcessingParameterField.Any, parentLayerParameterName='v', allowMultiple=True, defaultValue=None))
@@ -143,8 +139,6 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
 
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Cutoff percentile (if empty use the YOUDEN index)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True))
-
-
 
         #self.addParameter(QgsProcessingParameterFeatureSink(self.OUTPUT, 'Output layer', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, defaultValue=None))
 
@@ -156,7 +150,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         #self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
 
-    def processAlgorithm(self, parameters, context, feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
@@ -207,13 +201,13 @@ class FPAlgorithm(QgsProcessingAlgorithm):
             'field1': parameters['field1'],
             #'field2': parameters['field2'],
             'lsd' : parameters['fieldlsd'],
-            'testN':parameters['testN']
-            #'fold':parameters['folder']
+            'testN':parameters['testN'],
+            'fold':self.f
             #'INPUT_INT': parameters['BufferRadiousInPxl'],
             #'INPUT_INT_1': parameters['minSlopeAcceptable'],
         }
 
-        outputs['df'],outputs['nomi'],outputs['crs']=self.load(alg_params)
+        outputs['df'],outputs['crs']=Functions.load(alg_params)
 
 
         feedback.setCurrentStep(1)
@@ -226,7 +220,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
             'crs': outputs['crs'],
             'OUT': parameters['out']
         }
-        self.save(alg_params)
+        Functions.save(alg_params)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
@@ -257,7 +251,9 @@ class FPAlgorithm(QgsProcessingAlgorithm):
 
         return results
 
-    def load(self,parameters):
+class Functions():
+    def load(parameters):
+        f=parameters['fold']
         layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
         crs=layer.crs()
         campi=[]
@@ -278,9 +274,9 @@ class FPAlgorithm(QgsProcessingAlgorithm):
             gdp.loc[len(gdp)] = feat
             #gdp = gdp.append(feat, ignore_index=True)
             count=+ 1
-        gdp.to_csv(self.f+'/file.csv')
+        gdp.to_csv(f+'/file.csv')
         del gdp
-        gdp=pd.read_csv(self.f+'/file.csv')
+        gdp=pd.read_csv(f+'/file.csv')
         #print(feat)
         #print(gdp['S'].dtypes)
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
@@ -353,7 +349,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
 
     
 
-    def save(self,parameters):
+    def save(parameters):
 
         #print(parameters['nomi'])
         df=parameters['df']
@@ -406,7 +402,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
 
         del writer
 
-    def addmap(self,parameters):
+    def addmap(parameters):
         context=parameters()
         fileName = parameters['trainout']
         layer = QgsVectorLayer(fileName,"train","ogr")
