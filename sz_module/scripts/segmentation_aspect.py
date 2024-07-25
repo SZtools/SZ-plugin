@@ -94,34 +94,9 @@ import os
 import processing
 import libpysal as lp
 
-class segmentationAspect(QgsProcessingAlgorithm):
-    INPUT = 'INPUT'
-    INPUT1 = 'input1'
-    STRING = 'field1'
-    OUTPUT = 'OUTPUT'
-
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
-
-    def createInstance(self):
-        return segmentationAspect()
-
-    def name(self):
-        return 'Segmentation aspect'
-
-    def displayName(self):
-        return self.tr('09 Segmentation aspect')
-
-    def group(self):
-        return self.tr('01 Data preparation')
-
-    def groupId(self):
-        return '01 Data preparation'
-
-    def shortHelpString(self):
-        return self.tr("Segmentation aspect metric proposed for SU by Alvioli et al (2016). For more details, please refer to the paper.")
-
-    def initAlgorithm(self, config=None):
+class segmentationAspectAlgorithm():
+   
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterMultipleLayers(self.INPUT, self.tr('Slope Units'), layerType=QgsProcessing.TypeVectorPolygon, defaultValue=None))
         #self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Slope Units'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None,allowMultiple=True))
         #self.addParameter(QgsProcessingParameterField(self.STRING, 'area', parentLayerParameterName=self.INPUT, defaultValue=None))
@@ -129,12 +104,12 @@ class segmentationAspect(QgsProcessingAlgorithm):
         #self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT, 'Folder destination', defaultValue=None, createByDefault = True))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output csv', '*.csv', defaultValue=None))
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
         #parameters['classes']=5
         # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
         # overall progress through the model
-        feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
+        feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
         outputs = {}
 

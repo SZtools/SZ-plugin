@@ -60,7 +60,7 @@ from .scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
 from .scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
 from .scripts.sz_trans_ML import CoreAlgorithmML_trans
 from .scripts.algorithms import Algorithms
-from sz_module.scripts.segmentation_aspect import segmentationAspect
+from sz_module.scripts.segmentation_aspect import segmentationAspectAlgorithm
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -267,6 +267,17 @@ class classeProvider(QgsProcessingProvider):
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
+        dict_of_scripts={
+            'alg': 'SegAsp',
+            'function': segmentationAspectAlgorithm,
+            'name':'Segmentation aspect',
+            'displayName':'09 Segmentation aspect',
+            'group':'01 Data preparation',
+            'groupId':'01 Data preparation',
+            'shortHelpString':"Segmentation aspect metric proposed for SU by Alvioli et al (2016). For more details, please refer to the paper.",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
 
@@ -348,6 +359,7 @@ class Instance(QgsProcessingAlgorithm):
             'GAM_cv':True,
             'GAM_trans':True,
             'ML_trans':True,
+            'SegAsp':True,
         }
 
         self.algorithms={
