@@ -57,6 +57,7 @@ class Algorithms():
         ML_utils.ML_save(classifier,fold,nomi,filename)
         return prob_predic,classifier
     
+
     def alg_GAMrun(classifier,X,y,train,test,df,splines=None,dtypes=None,nomi=None,fold=None,filename='',family=None):
         lams = np.empty(len(nomi))
         lams.fill(0.5)

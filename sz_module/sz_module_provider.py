@@ -60,6 +60,7 @@ from .scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
 from .scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
 from .scripts.sz_trans_ML import CoreAlgorithmML_trans
 from .scripts.algorithms import Algorithms
+from sz_module.scripts.segmentation_aspect import segmentationAspect
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
