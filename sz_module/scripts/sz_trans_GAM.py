@@ -65,6 +65,8 @@ class CoreAlgorithmGAM_trans():
         self.addParameter(QgsProcessingParameterField(self.STRING3, 'Linear independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Ordinal independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Spline smoothing parameter'), type=QgsProcessingParameterNumber.Integer,defaultValue=10))
+        self.addParameter(QgsProcessingParameterField(self.STRING8, 'Variables interaction A', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any,optional=True))
+        self.addParameter(QgsProcessingParameterField(self.STRING9, 'Variables interaction B', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
         self.addParameter(QgsProcessingParameterEnum(self.STRING4, 'Family', options=['binomial','gaussian'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Scale (for Gaussian Family only)', options=['linear scale','log scale'], allowMultiple=False, usesStaticStrings=False, defaultValue=[],optional=True))
@@ -110,6 +112,14 @@ class CoreAlgorithmGAM_trans():
         if parameters['gauss_scale'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING7))
         
+        parameters['var_interaction_A'] = self.parameterAsFields(parameters, self.STRING8, context)
+        if parameters['var_interaction_A'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING8))
+        
+        parameters['var_interaction_B'] = self.parameterAsFields(parameters, self.STRING9, context)
+        if parameters['var_interaction_B'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING9))
+        
         parameters['fieldlsd'] = self.parameterAsString(parameters, self.STRING2, context)
         if parameters['fieldlsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING2))
@@ -137,10 +147,24 @@ class CoreAlgorithmGAM_trans():
             os.mkdir(parameters['folder'])
         
         parameters['testN']=1
+
+        if parameters['var_interaction_A'] != [] and parameters['var_interaction_B'] != []: 
+            tensor=[parameters['var_interaction_A'][0],parameters['var_interaction_B'][0]]
+
+            alg_params = {
+                'linear': parameters['field3'],
+                'continuous': parameters['field1'],
+                'categorical': parameters['field2'],
+                'tensor': tensor,
+            }
+            if SZ_utils.check_validity(alg_params) is False:
+                return ''
+        else:
+            tensor=[]
         
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field3']+parameters['field1']+parameters['field2'],
+            'field1': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'lsd' : parameters['fieldlsd'],
             'family':family[parameters['family']],
             'gauss_scale':gauss_scale[parameters['gauss_scale']],
@@ -152,7 +176,8 @@ class CoreAlgorithmGAM_trans():
             'linear': parameters['field3'],
             'continuous': parameters['field1'],
             'categorical': parameters['field2'],
-            'nomi': parameters['field3']+parameters['field1']+parameters['field2'],
+            'tensor': tensor,
+            'nomi': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'spline': parameters['num1']
         }
         outputs['splines'],outputs['dtypes']=GAM_utils.GAM_formula(alg_params)    
@@ -181,13 +206,14 @@ class CoreAlgorithmGAM_trans():
             #'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'testN':parameters['testN'],
             'fold':parameters['folder'],
-            'nomi':parameters['field3']+parameters['field1']+parameters['field2'],
+            'nomi':parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'df':outputs['df'],
             'splines':outputs['splines'],
             'dtypes':outputs['dtypes'],
             'categorical':parameters['field2'],
             'linear':parameters['field3'],
             'continuous':parameters['field1'],
+            'tensor': tensor,
             'family':family[parameters['family']],
         }
 
@@ -199,7 +225,7 @@ class CoreAlgorithmGAM_trans():
         
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['input1'],
-            'field1': parameters['field3']+parameters['field1']+parameters['field2'],
+            'nomi':parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'lsd' : parameters['fieldlsd'],
             'family':family[parameters['family']]
         }
@@ -211,7 +237,7 @@ class CoreAlgorithmGAM_trans():
 
         alg_params = {
             'predictors_weights':outputs['predictors_weights'],
-            'nomi': parameters['field3']+parameters['field1']+parameters['field2'],
+            'nomi':parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'family':family[parameters['family']],
             'categorical':parameters['field2'],
             'linear':parameters['field3'],

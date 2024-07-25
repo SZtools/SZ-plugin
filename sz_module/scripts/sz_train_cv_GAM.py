@@ -164,7 +164,6 @@ class CoreAlgorithmGAM_cv():
                 log(f"Time field is missing for temporal CV")
                 raise RuntimeError("Time field is missing for temporal CV")
         
-        print(parameters['var_interaction_A'],'daiiii')
         if parameters['var_interaction_A'] != [] and parameters['var_interaction_B'] != []: 
             tensor=[parameters['var_interaction_A'][0],parameters['var_interaction_B'][0]]
 
