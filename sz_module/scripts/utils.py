@@ -108,11 +108,13 @@ class SZ_utils():
             df=pd.DataFrame(gdp[parameters['field1']].copy())
         #df = df.applymap(lambda x: pd.to_numeric(x, errors='coerce'))
         lsd=gdp[parameters['lsd']]
-        lsd[lsd>0]=1
-        if parameters['family']=='binomial':
+        try:
+            if parameters['family']=='binomial':
+                lsd[lsd>0]=1
+            elif parameters['family']=='binomial' and parameters['gauss_scale']=='log scale':
+                lsd[lsd>0]=np.log(lsd[lsd>0])
+        except:
             lsd[lsd>0]=1
-        elif parameters['family']=='binomial' and parameters['gauss_scale']=='log scale':
-            lsd[lsd>0]=np.log(lsd[lsd>0])
         df['y']=lsd#.astype(int)
         df['ID']=gdp['ID']
         df['geom']=gdp['geom']

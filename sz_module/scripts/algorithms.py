@@ -71,7 +71,8 @@ class Algorithms():
             #CI=gam.prediction_intervals(X.iloc[test,:].to_numpy())
 
         GAM_utils.GAM_plot(gam,df.loc[train,nomi],nomi,fold,filename,X.loc[train,nomi])
-        #GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
+        #♂GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
+        GAM_utils.GAM_save(gam,fold,filename)
         
         #GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob,CI,fold, filename)
         CI=[]
@@ -119,7 +120,6 @@ class CV_utils():
             df.loc[test,'SI']=prob[0]
             
             test_ind[0]=test
-
         return prob,test_ind,predictors_weights
     
     def cv_method(parameters,df_scaled,df,nomi):
@@ -450,32 +450,12 @@ class GAM_utils():
 
         fig1.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
         
-    def GAM_save(gam,coeffs,fold,nomi,filename=''):
+    def GAM_save(gam,fold,filename=''):
         filename_pkl = fold+'/gam_coeff'+filename+'.pkl'
         #filename_txt = parameters['fold']+'/gam_coeff.txt'
 
         with open(filename_pkl, 'wb') as filez:
             pickle.dump(gam, filez)
-        
-        #with open(filename_pkl, 'rb') as file_pickle:
-        #    loaded_data = pickle.load(file_pickle)
-
-        #with open(filename_txt, 'wb') as file_txt:
-        #    json.dump(loaded_data, file_txt, indent=2)
-
-        # with open(fold+'/r_coeffs.csv', 'w') as f:
-        #     write = csv.writer(f)
-        #     ll=['intercept']
-        #     lll=ll+nomi
-        #     write.writerow(lll)
-        #     write.writerows(coeffs)
-    
-    # def plot_predict(x,predict,CI,fold, filename=''):
-    #     plt.plot(x,predict,'r--')
-    #     #plt.plot(x,CI,color='b',ls='--')
-    #     plt.xlabel('Prediction8')
-    #     plt.ylabel('PDF')
-    #     plt.savefig(fold+'/Predict'+filename+'.pdf')
 
 class ML_utils():
     def ML_save(classifier,fold,nomi, filename):
