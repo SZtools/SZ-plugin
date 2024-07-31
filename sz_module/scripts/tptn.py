@@ -207,7 +207,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
             #'INPUT_INT_1': parameters['minSlopeAcceptable'],
         }
 
-        outputs['df'],outputs['crs']=Functions.load(alg_params)
+        outputs['df'],outputs['nomi'],outputs['crs']=Functions.load(alg_params)
 
 
         feedback.setCurrentStep(1)
@@ -299,9 +299,13 @@ class Functions():
         xx=df_sort[parameters['field1']].to_numpy()
         x=df[parameters['field1']].to_numpy()
         y=df['y'].to_numpy()
-        if parameters['testN']==None:
+        print(parameters['testN'])
+        if parameters['testN']==0:
             fpr1, tpr1, tresh1 = roc_curve(y,x)
-            cutoff = np.argmax(tpr1 - fpr1)  # x YOUDEN INDEX
+            cutoff = np.max(tpr1 - fpr1)  # x YOUDEN INDEX
+            print(tpr1 - fpr1)
+            print(y,x)
+            print(cutoff,'cutoff')
         else:
             cutoff=np.percentile(xx, parameters['testN'])
         print('cutoff: ',cutoff)
