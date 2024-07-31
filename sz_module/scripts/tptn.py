@@ -299,13 +299,9 @@ class Functions():
         xx=df_sort[parameters['field1']].to_numpy()
         x=df[parameters['field1']].to_numpy()
         y=df['y'].to_numpy()
-        print(parameters['testN'])
         if parameters['testN']==0:
             fpr1, tpr1, tresh1 = roc_curve(y,x)
             cutoff = np.max(tpr1 - fpr1)  # x YOUDEN INDEX
-            print(tpr1 - fpr1)
-            print(y,x)
-            print(cutoff,'cutoff')
         else:
             cutoff=np.percentile(xx, parameters['testN'])
         print('cutoff: ',cutoff)
