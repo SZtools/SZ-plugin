@@ -303,9 +303,9 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         xx=df_sort[parameters['field1']].to_numpy()
         x=df[parameters['field1']].to_numpy()
         y=df['y'].to_numpy()
-        if parameters['testN']==None:
+        if parameters['testN']==0:
             fpr1, tpr1, tresh1 = roc_curve(y,x)
-            cutoff = np.argmax(tpr1 - fpr1)  # x YOUDEN INDEX
+            cutoff = np.max(tpr1 - fpr1)  # x YOUDEN INDEX
         else:
             cutoff=np.percentile(xx, parameters['testN'])
         print('cutoff: ',cutoff)
