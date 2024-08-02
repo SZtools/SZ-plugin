@@ -259,6 +259,8 @@ class GAM_utils():
             elif isinstance(gam.terms[i], terms.FactorTerm):
                 #pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
                 continue
+            elif isinstance(gam.terms[i], terms.TensorTerm):
+                continue
             elif isinstance(gam.terms[i], terms.LinearTerm) or isinstance(gam.terms[i], terms.SplineTerm):
                 pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
             maX=maX+[np.max(confi0[:,1])]
@@ -281,6 +283,7 @@ class GAM_utils():
         else:
             rows=int(np.ceil(count/3.))
         
+        ########################################################################not scaled
 
         fig = plt.figure(figsize=(15,15))
         for i, term in enumerate(gam.terms):
@@ -300,18 +303,29 @@ class GAM_utils():
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
                 ##
-                x=np.sort(df[GAM_sel[i]].unique())
+                x=df[GAM_sel[i]].unique()
                 y=[]
                 y1=[]
                 y2=[]
+                
+                for j in range(len(df[GAM_sel[i]].unique())):
+                    pdep_unq=np.unique(pdep)
+                    confi025_unq=np.unique(confi[:,0])
+                    confi095_unq=np.unique(confi[:,1])
+                    y.append(pdep_unq[j])
+                    y1.append(confi025_unq[j])
+                    y2.append(confi095_unq[j])
+                    #y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
+                    #y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+                    #y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+                
+                paired_xy = list(zip(x, y, y1, y2))
+                paired_vectors_sorted = sorted(paired_xy, key=lambda x: x[0])
+                x, y, y1, y2= zip(*paired_vectors_sorted)
 
-                for j in np.sort(df[GAM_sel[i]].unique()):
-                    y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
-                    y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
-                    y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
-                ax.plot(x,y,'o', c='blue')
                 ax.plot(x,y1,'o', c='gray')
                 ax.plot(x,y2,'o', c='gray')
+                ax.plot(x,y,'o', c='blue')
                 ax.set_xticks(np.sort(df[GAM_sel[i]].unique()), rotation=45)
                 ax.set_xlabel(GAM_sel[i])
                 ax.set_ylabel('Partial Effect')
@@ -360,6 +374,7 @@ class GAM_utils():
                 ax3d.set_ylabel(GAM_sel[i+1])
                 ax3d.set_zlabel('Partial Effect')
                 #ax.set_ylim(MIN,MAX)
+                ax3d.view_init(elev=30, azim=60)
                 fig2.savefig(fold+'/Model_covariates_interaction'+filename+'.pdf', bbox_inches='tight')
                 continue
 
@@ -378,32 +393,44 @@ class GAM_utils():
 
         fig.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
 
-        ########################################################################
+        ########################################################################scaled
         fig1 = plt.figure(figsize=(15,15))
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
 
             
-            ax1=fig1.add_subplot(rows, 3, i+1)
+            #ax1=fig1.add_subplot(rows, 3, i+1)
 
             if isinstance(gam.terms[i], terms.FactorTerm):
+                ax1=fig1.add_subplot(rows, 3, i+1)  
                 ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
                 ##
-                x=np.sort(df[GAM_sel[i]].unique())
+                x=df[GAM_sel[i]].unique()#np.sort(df[GAM_sel[i]].unique())
                 y=[]
                 y1=[]
                 y2=[]
 
-                for j in np.sort(df[GAM_sel[i]].unique()):
-                    y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
-                    y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
-                    y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
-                ax1.plot(x,y,'o', c='blue')
+                for j in range(len(df[GAM_sel[i]].unique())):
+                    pdep_unq=np.unique(pdep)
+                    confi025_unq=np.unique(confi[:,0])
+                    confi095_unq=np.unique(confi[:,1])
+                    y.append(pdep_unq[j])
+                    y1.append(confi025_unq[j])
+                    y2.append(confi095_unq[j])
+                    #y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
+                    #y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+                    #y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
+
+                paired_xy = list(zip(x, y, y1, y2))
+                paired_vectors_sorted = sorted(paired_xy, key=lambda x: x[0])
+                x, y, y1, y2= zip(*paired_vectors_sorted)
+
                 ax1.plot(x,y1,'o', c='gray')
                 ax1.plot(x,y2,'o', c='gray')
+                ax1.plot(x,y,'o', c='blue')
                 ax1.set_xticks(np.sort(df[GAM_sel[i]].unique()), rotation=45)
                 ax1.set_xlabel(GAM_sel[i])
                 ax1.set_ylabel('Partial Effect')
@@ -411,6 +438,7 @@ class GAM_utils():
                 continue
 
             elif isinstance(gam.terms[i], terms.LinearTerm):
+                ax1=fig1.add_subplot(rows, 3, i+1)
                 ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
@@ -423,7 +451,7 @@ class GAM_utils():
                 continue
 
             elif isinstance(gam.terms[i], terms.TensorTerm):
-                fig2=plt.figure(figsize=(15,15))
+                fig3=plt.figure(figsize=(15,15))
                 #ax=fig.add_subplot(rows, 3, i+1)   
                 XX = gam.generate_X_grid(term=i,meshgrid=True)
                 Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
@@ -434,10 +462,12 @@ class GAM_utils():
                 ax3d.set_xlabel(GAM_sel[i])
                 ax3d.set_ylabel(GAM_sel[i+1])
                 ax3d.set_zlabel('Partial Effect')
-                fig2.savefig(fold+'/Model_covariates_interaction_scaled'+filename+'.pdf', bbox_inches='tight')
+                ax3d.view_init(elev=30, azim=60)
+                fig3.savefig(fold+'/Model_covariates_interaction_scaled'+filename+'.pdf', bbox_inches='tight')
                 continue
 
             elif isinstance(gam.terms[i], terms.SplineTerm):
+                ax1=fig1.add_subplot(rows, 3, i+1)  
                 ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)

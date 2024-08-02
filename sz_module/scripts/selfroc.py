@@ -275,7 +275,7 @@ class Functions():
 
         fig=plt.figure()
         lw = 2
-        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'AUC = %0.2f, f1 = %0.2f, ckappa = %0.2f' %(r, f1_tot,ck_tot))
+        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'AUC = %0.2f, F1 = %0.2f, K = %0.2f' %(r, f1_tot,ck_tot))
         plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
