@@ -21,6 +21,7 @@ import sys
 import platform
 from pathlib import Path
 from packaging import version
+import glob
 
 if platform.system() == "Windows":
     from subprocess import (
@@ -141,6 +142,28 @@ def add_venv(prefix_path,venv_path,plugin_venv,interpreter="python"):
             ],
             f"creating a dedicated virtual-environment",
         )
+
+def add_QGIS_env(prefix_path,plugin_venv):
+    if platform.system() == 'Windows':
+        site_packages_path = os.path.join(prefix_path,plugin_venv,"Lib", "site-packages")
+        bin_path = os.path.join(prefix_path,plugin_venv,"Scripts")
+    else:
+        search_pattern = os.path.join(prefix_path,plugin_venv, "lib", "python*", "site-packages")
+        site_packages_path = glob.glob(search_pattern)[0]
+        bin_path = os.path.join(prefix_path,plugin_venv,"bin")
+
+    if site_packages_path not in sys.path:
+        log(f"Adding {site_packages_path} to PYTHONPATH")
+        sys.path.insert(0, site_packages_path)
+        os.environ["PYTHONPATH"] = (
+            site_packages_path + ";" + os.environ.get("PYTHONPATH", "")
+        )
+    
+    if bin_path not in os.environ["PATH"]:
+        log(f"Adding {bin_path} to PATH")
+        os.environ["PATH"] = bin_path + ";" + os.environ["PATH"]  
+
+    return (site_packages_path, bin_path)
 
 def install_pip(reqs_to_install,interpreter="python"):
     """

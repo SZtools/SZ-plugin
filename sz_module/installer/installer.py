@@ -12,6 +12,7 @@ from qgis.core import Qgis, QgsMessageLog,QgsApplication
 import traceback
 import platform
 import shutil
+import glob
 from ..utils import log,warn
 from .utils import (
     locate_py,
@@ -19,6 +20,7 @@ from .utils import (
     install_pip,
     pip_install_reqs,
     get_package_version,
+    add_QGIS_env,
 )
 
 
@@ -36,20 +38,26 @@ class installer():
             "dependencies",
         )
         self.qgis_python_interpreter = locate_py()
-
         self.venv_path = os.path.join(self.prefix_path,self.plugin_venv)
-        self.site_packages_path = os.path.join(self.prefix_path,self.plugin_venv,"Lib", "site-packages")
-        self.bin_path = os.path.join(self.prefix_path,self.plugin_venv,"Scripts")
-        if self.site_packages_path not in sys.path:
-            log(f"Adding {self.site_packages_path} to PYTHONPATH")
-            sys.path.insert(0, self.site_packages_path)
-            os.environ["PYTHONPATH"] = (
-                self.site_packages_path + ";" + os.environ.get("PYTHONPATH", "")
-            )
 
-        if self.bin_path not in os.environ["PATH"]:
-            log(f"Adding {self.bin_path} to PATH")
-            os.environ["PATH"] = self.bin_path + ";" + os.environ["PATH"]    
+        # if platform.system() == 'Windows':
+        #     self.site_packages_path = os.path.join(self.prefix_path,self.plugin_venv,"Lib", "site-packages")
+        #     self.bin_path = os.path.join(self.prefix_path,self.plugin_venv,"Scripts")
+        # else:
+        #     search_pattern = os.path.join(self.prefix_path,self.plugin_venv, "lib", "python*", "site-packages")
+        #     self.site_packages_path = glob.glob(search_pattern)[0]
+        #     self.bin_path = os.path.join(self.prefix_path,self.plugin_venv,"bin")
+
+        # if self.site_packages_path not in sys.path:
+        #     log(f"Adding {self.site_packages_path} to PYTHONPATH")
+        #     sys.path.insert(0, self.site_packages_path)
+        #     os.environ["PYTHONPATH"] = (
+        #         self.site_packages_path + ";" + os.environ.get("PYTHONPATH", "")
+        #     )
+
+        # if self.bin_path not in os.environ["PATH"]:
+        #     log(f"Adding {self.bin_path} to PATH")
+        #     os.environ["PATH"] = self.bin_path + ";" + os.environ["PATH"]    
 
     def preliminay_req(self):
         try:
@@ -58,13 +66,20 @@ class installer():
             log(f"An error occurred: {e}")
             return False
         try:
+            self.site_packages_path, self.bin_path=add_QGIS_env(self.prefix_path,self.plugin_venv)
+        except Exception as e:
+            log(f"An error occurred: {e}")
+            return False
+        try:
             try:
                 #windows
                 #self.uninstall_pip(['pip'],os.path.join(self.venv_path,"Scripts","python"))
                 command=install_pip(['ensurepip'],os.path.join(self.venv_path,"Scripts","pythonw.exe"))
-            except Exception:
+            except Exception as e:
+                log(f"An error occurred: {e}")
                 #linux and macos
                 #self.uninstall_pip(['pip'],os.path.join(self.venv_path,"bin","python"))
+                print(self.venv_path)
                 command=install_pip(['ensurepip'],os.path.join(self.venv_path,"bin","python")) 
         except Exception as e:
             log(f"An error occurred: {e}")
@@ -110,7 +125,7 @@ class installer():
                             command=pip_install_reqs(self.prefix_path,self.plugin_venv,reqs_to_install,os.path.join(self.venv_path,"Scripts","pythonw.exe"))
                         except:
                             #linux and macos
-                            command=pip_install_reqs(self.prefix_path,self.plugin_venv,reqs_to_install,os.path.join(self.venv_path,"bin","pip"))
+                            command=pip_install_reqs(self.prefix_path,self.plugin_venv,reqs_to_install,os.path.join(self.venv_path,"bin","python"))
                         QMessageBox.information(None, "Packages successfully installed",
                                                 #"To make all parts of the plugin work it is recommended to restart your QGIS-session.")
                                                 "You can find the SZ-plugin in the Processing-toolbox")
@@ -120,7 +135,7 @@ class installer():
                                                 "SZ couldn't install Python packages!\n"
                                                 "See 'General' tab in 'Log Messages' panel for details.\n"
                                                 "Report any errors to https://github.com/SZtools/SZ/issues")
-                        log("An error occurred:", e)
+                        log(f"An error occurred:{e}")
                         return False
                 else:
                     QMessageBox.information(None,"Information", "Packages not installed. Some SZ tools will not be fully operational.")
