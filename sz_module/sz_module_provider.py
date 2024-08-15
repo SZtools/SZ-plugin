@@ -42,8 +42,7 @@ from qgis.PyQt.QtGui import QIcon
 from sz_module.images.cqp_resources_rc import qInitResources
 qInitResources()  # necessary to be able to access your images
 
-from .scripts.roc import rocAlgorithm
-from .scripts.selfroc import rocGenerator
+#from .scripts.selfroc import rocGenerator
 from .scripts.lsdanalysis import statistic
 from .scripts.cleaning import cleankernelAlgorithm
 from .scripts.graphs_lsdstats_kernel import statistickernel
@@ -54,7 +53,7 @@ from .scripts.classvectorw import classvAlgorithmW
 from .scripts.tptn import FPAlgorithm
 from .scripts.classcovtxt import classcovtxtAlgorithm
 from .scripts.classcovdeciles import classcovdecAlgorithm
-from .scripts.corrplot import CorrAlgorithm
+#from .scripts.corrplot import CorrAlgorithm
 from .scripts.sz_train_cv_ML import CoreAlgorithm_cv
 from .scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
 from .scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
@@ -165,19 +164,17 @@ class classeProvider(QgsProcessingProvider):
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
-      
-        #self.addAlgorithm(rocAlgorithm())
-     
-        dict_of_scripts={
-            'alg': 'rocGenerator',
-            'function': rocGenerator,
-            'name':'ROC',
-            'displayName':'04 ROC',
-            'group':'04 Classify SI',
-            'groupId':'04 Classify SI',
-            'shortHelpString':"ROC curve creator",
-        }
-        self.addAlgorithm(Instance(dict_of_scripts))
+         
+        # dict_of_scripts={
+        #     'alg': 'rocGenerator',
+        #     'function': rocGenerator,
+        #     'name':'ROC',
+        #     'displayName':'04 ROC',
+        #     'group':'04 Classify SI',
+        #     'groupId':'04 Classify SI',
+        #     'shortHelpString':"ROC curve creator",
+        # }
+        # self.addAlgorithm(Instance(dict_of_scripts))
 
         dict_of_scripts={
             'alg': 'cleankernel',
@@ -223,16 +220,16 @@ class classeProvider(QgsProcessingProvider):
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
-        dict_of_scripts={
-            'alg': 'Corr',
-            'function': CorrAlgorithm,
-            'name':'Correlation plot',
-            'displayName':'08 Correlation plot',
-            'group':'01 Data preparation',
-            'groupId':'01 Data preparation',
-            'shortHelpString':"This function calculate the correlation plot between continuous variables",
-        }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        # dict_of_scripts={
+        #     'alg': 'Corr',
+        #     'function': CorrAlgorithm,
+        #     'name':'Correlation plot',
+        #     'displayName':'08 Correlation plot',
+        #     'group':'01 Data preparation',
+        #     'groupId':'01 Data preparation',
+        #     'shortHelpString':"This function calculate the correlation plot between continuous variables",
+        # }
+        # self.addAlgorithm(Instance(dict_of_scripts))
 
         dict_of_scripts={
             'alg': 'classv',
@@ -346,12 +343,12 @@ class Instance(QgsProcessingAlgorithm):
             'classcovtxt':True,
             'classcovdeciles':True,
             'statistic':True,
-            'rocGenerator':True,
+            #'rocGenerator':True,
             'cleankernel':True,
             'statistickernel':True,
             'sampler':True,
             'rasterstatkernel':True,
-            'Corr':True,
+            #'Corr':True,
             'classv':True,
             'classvW':True,
             'FP':True,

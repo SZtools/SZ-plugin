@@ -60,6 +60,13 @@ class classePlugin(object):
         self.plugin_settings = QSettings("SZ", str(self.version))
 
     def initProcessing(self):
+        #import matplotlib
+        import numpy
+        #import pandas
+        #print(matplotlib.__file__,numpy.__file__,pandas.__file__,)
+        print(numpy.__file__)
+
+
         from .sz_module_provider import classeProvider
         """Init Processing provider for QGIS >= 3.8."""
         self.provider = classeProvider()

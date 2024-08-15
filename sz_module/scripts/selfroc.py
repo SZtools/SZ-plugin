@@ -59,7 +59,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterField,
                        QgsProcessingParameterVectorDestination)
-from sklearn.metrics import roc_curve, auc, f1_score, cohen_kappa_score, roc_auc_score
+from sklearn.metrics import roc_curve, f1_score, cohen_kappa_score, roc_auc_score
 from copy import copy
 import math
 import operator

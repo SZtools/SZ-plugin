@@ -39,6 +39,8 @@ class installer():
         self.qgis_python_interpreter = locate_py()
 
         self.venv_path = os.path.join(self.prefix_path,self.plugin_venv)
+        self.site_packages_path=''
+        self.bin_path=''
         # self.site_packages_path = os.path.join(self.prefix_path,self.plugin_venv,"Lib", "site-packages")
         # self.bin_path = os.path.join(self.prefix_path,self.plugin_venv,"Scripts")
         # if self.site_packages_path not in sys.path:
@@ -90,16 +92,16 @@ class installer():
                     except:
                         library=parts[0][:-1]
                         version=None
-                    installed_version=get_package_version(self.qgis_python_interpreter,library)
-                    if installed_version is None:
-                        list_libraries[library]=version
-                    else:
-                        if str(installed_version)==str(version) or version==None:
-                            iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed!',Qgis.Success)
-                            log(f'{library} is already installed!')
-                        else:
-                            log(f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!')
-                            iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!',Qgis.Warning)
+                    #installed_version=get_package_version(self.qgis_python_interpreter,library)
+                    #if installed_version is None:
+                    list_libraries[library]=version
+                    #else:
+                    #    if str(installed_version)==str(version) or version==None:
+                    #        iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed!',Qgis.Success)
+                    #        log(f'{library} is already installed!')
+                    #    else:
+                    #        log(f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!')
+                    #        iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!',Qgis.Warning)
         return self.install(list_libraries)
 
     def install(self,list_libraries):

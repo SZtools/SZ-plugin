@@ -87,12 +87,12 @@ from processing.algs.gdal.GdalUtils import GdalUtils
 #import chart_studio
 import plotly.offline
 import plotly.graph_objs as go
-import geopandas as gpd
+#import geopandas as gpd
 import pandas as pd
 import tempfile
 import os
 import processing
-import libpysal as lp
+#import libpysal as lp
 
 class segmentationAspectAlgorithm():
    

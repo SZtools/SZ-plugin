@@ -22,7 +22,7 @@ from shapely.wkt import loads
 
 from sklearn.tree import export_text
 
-from mpl_toolkits import mplot3d
+#from mpl_toolkits import mplot3d
 
 
 class Algorithms():
