@@ -184,8 +184,6 @@ class rocGenerator(QgsProcessingAlgorithm):
         }
         outputs['gdp'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
-        print(outputs['gdp'].head())
-
         #list_of_values=list(np.arange(10))
         self.list_of_values=outputs['gdp']['SI']
         QgsMessageLog.logMessage(str(len(self.list_of_values)), 'MyPlugin', level=Qgis.Info)

@@ -99,9 +99,10 @@ class CV_utils():
         df["SI"] = np.nan
         df["CI"] = np.nan
         coeff=None
-        if parameters['testN']>1:
+        if parameters['cv_method']=='temporal_TSS' or parameters['cv_method']=='temporal_LOO' or parameters['cv_method']=='spacetime_LOO':
             train_ind,test_ind,iters_count = CV_utils.cv_method(parameters,df_scaled,df,parameters['nomi'])
             for i in range(iters_count):
+                print('cv: ',i)
                 if algorithm==Algorithms.alg_GAMrun:
                     prob[i],CI[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
                     #df.loc[test,'CI']=CI[i]
@@ -109,18 +110,29 @@ class CV_utils():
                     prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i))
                     gam=None
                 df.loc[test_ind[i],'SI']=prob[i]
-        elif parameters['testN']==1:
-            train=np.arange(len(y))
-            test=np.arange(len(y))
-            if algorithm==Algorithms.alg_GAMrun:
-                prob[0],CI[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],family=parameters['family'])
-                #df.loc[test,'CI']=CI[0]
-            else:
-                prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi)
-                #predictors_weights=None
-            df.loc[test,'SI']=prob[0]
-            
-            test_ind[0]=test
+        else:
+            if parameters['testN']>1:
+                train_ind,test_ind,iters_count = CV_utils.cv_method(parameters,df_scaled,df,parameters['nomi'])
+                for i in range(iters_count):
+                    if algorithm==Algorithms.alg_GAMrun:
+                        prob[i],CI[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
+                        #df.loc[test,'CI']=CI[i]
+                    else:
+                        prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i))
+                        gam=None
+                    df.loc[test_ind[i],'SI']=prob[i]
+            elif parameters['testN']==1:
+                train=np.arange(len(y))
+                test=np.arange(len(y))
+                if algorithm==Algorithms.alg_GAMrun:
+                    prob[0],CI[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],family=parameters['family'])
+                    #df.loc[test,'CI']=CI[0]
+                else:
+                    prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi)
+                    #predictors_weights=None
+                df.loc[test,'SI']=prob[0]
+                
+                test_ind[0]=test
         return prob,test_ind,predictors_weights
     
     def cv_method(parameters,df_scaled,df,nomi):
@@ -142,8 +154,8 @@ class CV_utils():
             time_index=sorted(df[parameters['time']].unique())
             method=TimeSeriesSplit(n_splits=len(time_index)-1)
             for i, (train, test) in enumerate(method.split(time_index)):
-                X_train[i]=np.where(df[parameters['time']] != time_index[test[0]])[0]
-                X_test[i]=np.where(df[parameters['time']] == time_index[test[0]])[0]
+                X_train[i]=np.where(df[parameters['time']].isin([time_index[ii] for ii in train]))[0]
+                X_test[i]=np.where(df[parameters['time']].isin([time_index[ii] for ii in test]))[0]
         elif parameters['cv_method']=='temporal_LOO':
             time_index=sorted(df[parameters['time']].unique())
             method = LeaveOneOut()

@@ -11,6 +11,9 @@ from scipy.stats import pearsonr
 import csv
 from copy import copy
 
+from shapely import wkb
+from shapely.geometry import shape
+
 #from pygam import LogisticGAM, s, f, terms
 
 from qgis.core import (QgsVectorLayer,
@@ -21,13 +24,20 @@ from qgis.core import (QgsVectorLayer,
                        QgsWkbTypes,
                        QgsFeature,
                        QgsGeometry,
-                       QgsProcessingContext
+                       QgsProcessingContext,
+                       QgsVectorLayerExporter
 )
 import numpy as np
 import pandas as pd
 from qgis.PyQt.QtCore import QVariant
 import os
 from collections import OrderedDict
+import sqlite3
+
+from shapely.geometry import shape
+from shapely.wkt import dumps
+import fiona
+
 
 
 class SZ_utils():
@@ -75,28 +85,156 @@ class SZ_utils():
     #         per=int(np.ceil(df.shape[0]*parameters['testN']/100))
     #         train, test = train_test_split(df, test_size=per, random_state=42, shuffle=True)
     #     return train, test, nomi,crs,df
+
+    def generate_ghost_input(input,output,nomi):
+        input_shapefile_path = input
+
+        # Load the shapefile
+        layer = QgsVectorLayer(input_shapefile_path, 'Input Layer', 'ogr')
+        if not layer.isValid():
+            print("Layer failed to load!")
+        else:
+            print("Layer loaded successfully!")
+        
+        crs=layer.crs()
+
+
+
+
+        # Add a new field "id" to the layer
+        #layer.dataProvider().addAttributes([QgsField("ID", QVariant.Int)])
+        #layer.updateFields()
+
+        # Start an edit session to modify the layer
+        #layer.startEditing()
+
+        # Assign unique IDs to each feature
+        #for i, feature in enumerate(layer.getFeatures()):
+        #    feature["ID"] = i + 1  # Assigning IDs starting from 1
+        #    layer.updateFeature(feature)
+
+        # Commit the changes
+        #layer.commitChanges()
+
+        # Specify the path for the new shapefile
+        
+        transform_context = QgsProject.instance().transformContext()
+        save_options = QgsVectorFileWriter.SaveVectorOptions()
+        save_options.driverName = 'GPKG'
+        save_options.fileEncoding = 'UTF-8'
+
+        writer = QgsVectorFileWriter.writeAsVectorFormat(
+          layer,  
+          output,
+          #fields,
+          #layer.fields(),
+          #layer.wkbType(),
+          #layer.crs(),
+          #transform_context,
+          save_options
+        )
+
+        #if writer.hasError() != QgsVectorFileWriter.NoError:
+        #    print("Error when creating shapefile: ",  writer.errorMessage())
+        print(output)
+        # del writer
+        return crs
+
+    def load_geopackage(file_path, table_name='file'):
+        print('load')
+
+        # Path to your GeoPackage
+        input_gpkg = file_path
+
+        # Step 1: Open the GeoPackage using Fiona
+        with fiona.open(input_gpkg) as source:
+            # Step 2: Extract properties and convert geometries to WKT
+            records = []
+            for feature in source:
+                properties = feature['properties']
+                geom_wkt = dumps(shape(feature['geometry']))  # Convert geometry to WKT
+                properties['geom'] = geom_wkt  # Add the WKT geometry to the properties
+                records.append(properties)
+                
+        # Step 3: Load into a Pandas DataFrame
+        df = pd.DataFrame(records)
+
+        # Display the first few rows of the DataFrame
+
+        # # Connect to the GeoPackage
+        # conn = sqlite3.connect(file_path)
+        
+        # # Load the table data into a DataFrame
+        # df = pd.read_sql_query(f"SELECT * FROM {table_name};", conn)
+        
+        # # Extract the geometry column name
+        # geometry_columns = pd.read_sql_query(f"PRAGMA table_info({table_name});", conn)
+        # geometry_column_name = geometry_columns[geometry_columns['name'].str.contains('geom')]['name'].values[0]
+        
+        # # Extract the geometry metadata
+        # geometry_metadata = pd.read_sql_query(f"SELECT * FROM gpkg_geometry_columns WHERE table_name = '{table_name}';", conn)
+        
+        # # Close the connection
+        # conn.close()
+        return df
+
+        
+
+
+    def get_id_column(file_path, table_name='file'):
+
+        # Connect to the GeoPackage
+        conn = sqlite3.connect(file_path)
+        
+        # Query the table structure
+        columns_info = pd.read_sql_query(f"PRAGMA table_info({table_name});", conn)
+        
+        # Close the connection
+        conn.close()
+        
+        # Find the primary key column (ID column)
+        id_column = columns_info[columns_info['pk'] > 0]['name']
+
+        print(id_column.values[0])
+        
+        # If there is an ID column, return its name, otherwise return None
+        if not id_column.empty:
+            return id_column.values[0]
+        else:
+            return None
+
     
     def load_cv(directory,parameters):
-        layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
-        crs=layer.crs()
-        campi=[]
-        for field in layer.fields():
-            campi.append(field.name())
-        campi.append('geom')
-        gdp=pd.DataFrame(columns=campi,dtype=float)
-        features = layer.getFeatures()
-        count=0
-        feat=[]
-        for feature in features:
-            attr=feature.attributes()
-            geom = feature.geometry()
-            feat=attr+[geom.asWkt()]
-            gdp.loc[len(gdp)] = feat
-            count=+ 1
-        gdp.to_csv(directory+'/file.csv')
-        del gdp
-        gdp=pd.read_csv(directory+'/file.csv')
-        gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
+        crs=SZ_utils.generate_ghost_input(parameters['INPUT_VECTOR_LAYER'],directory+'/file.gpkg',parameters['field1'])
+        #layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], 'Input Layer', 'ogr')
+        #crs=layer.crs()
+        print('conn')
+        #conn = sqlite3.connect(parameters['INPUT_VECTOR_LAYER'])
+
+        primary_key=SZ_utils.get_id_column(directory+'/file.gpkg')
+
+        gdp=SZ_utils.load_geopackage(directory+'/file.gpkg')
+
+        #gdp=SZ_utils.convert_geometry_to_wkt(gdp,'geom')
+
+
+        #metadata=(geometry_column_name, geometry_metadata)
+        #print(gdp.head())
+        #print(geometry_column_name, geometry_metadata)
+        #print(ciao)
+
+
+        #conn = sqlite3.connect(directory+'/file.gpkg')
+        #tables = pd.read_sql_query("SELECT name FROM sqlite_master WHERE type='table';", conn)
+        #print(tables)
+        #gdp = pd.read_sql_query("SELECT * FROM file;", conn)
+        #geometry_metadata = pd.read_sql_query(f"SELECT * FROM gpkg_geometry_columns WHERE table_name = 'file';", conn)
+        #conn.close()
+        #print(gdp.head())
+        
+        print('time')
+        
+
         if 'time' in parameters:
             if parameters['time']==None:
                 df=pd.DataFrame(gdp[parameters['field1']].copy())
@@ -116,9 +254,11 @@ class SZ_utils():
             df['y']=lsd#.astype(int)
         except:
             print('no lsd required')
-        df['ID']=gdp['ID']
+        df['ID']=gdp.index
         df['geom']=gdp['geom']
         #df=df.dropna(how='any',axis=0)
+        print('input layer loaded')
+        del gdp
         return(df,crs)
     
 
@@ -155,7 +295,9 @@ class SZ_utils():
             fig.savefig(parameters['OUT']+'/fig_fit.png')
 
     def stamp_cv(parameters):
+        print('plotting....')
         df=parameters['df']
+        df=df.dropna(subset=['SI'])
         test_ind=parameters['test_ind']
         y_v=df['y']
         scores_v=df['SI']
@@ -224,6 +366,20 @@ class SZ_utils():
         except:
             os.mkdir(parameters['OUT'])
             fig.savefig(parameters['OUT']+'/fig.pdf')
+    
+    def save_geopackage(df, output_path, geometry_metadata, table_name='file'):
+
+        # Connect to the new GeoPackage (it will be created if it doesn't exist)
+        conn = sqlite3.connect(output_path)
+        
+        # Create a new table in the GeoPackage and insert the data
+        df.to_sql(table_name, conn, if_exists='replace', index=False)
+        
+        # Save the geometry metadata to the new GeoPackage
+        geometry_metadata.to_sql('gpkg_geometry_columns', conn, if_exists='append', index=False)
+        
+        # Close the connection
+        conn.close()
 
     def save(parameters):
 
