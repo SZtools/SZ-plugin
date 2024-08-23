@@ -1,5 +1,5 @@
-scikit-learn==1.5.1
+scikit-learn
 pygam
-pandas==1.5
+pandas
 shapely
 fiona

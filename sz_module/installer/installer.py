@@ -82,7 +82,11 @@ class installer():
     def requirements(self):
         dir=os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
         log(f"verify requirements")
-        with open(os.path.join(dir,"requirements.txt"), "r") as file:
+        if platform.system() == 'Windows':
+            req="requirements.txt"
+        else:
+            req="requirements_linux.txt"
+        with open(os.path.join(dir,req), "r") as file:
             list_libraries={}
             for line in file:
                     parts=line.split("==")
