@@ -357,7 +357,7 @@ class Instance(QgsProcessingAlgorithm):
             'GAM_cv':True,
             'GAM_trans':True,
             'ML_trans':True,
-            'SegAsp':True,
+            'SegAsp':False,
         }
 
         self.algorithms={

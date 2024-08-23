@@ -96,7 +96,7 @@ class SZ_utils():
         else:
             print("Layer loaded successfully!")
         
-        crs=layer.crs()
+        #crs=layer.crs()
 
 
 
@@ -137,11 +137,18 @@ class SZ_utils():
         #if writer.hasError() != QgsVectorFileWriter.NoError:
         #    print("Error when creating shapefile: ",  writer.errorMessage())
         print(output)
-        # del writer
-        return crs
+        del writer
 
     def load_geopackage(file_path, table_name='file'):
         print('load')
+                # Load the shapefile
+        layer = QgsVectorLayer(file_path, 'Input Layer', 'ogr')
+        if not layer.isValid():
+            print("Layer failed to load!")
+        else:
+            print("Layer loaded successfully!")
+        
+        crs=layer.crs()
 
         # Path to your GeoPackage
         input_gpkg = file_path
@@ -176,10 +183,7 @@ class SZ_utils():
         
         # # Close the connection
         # conn.close()
-        return df
-
-        
-
+        return df,crs
 
     def get_id_column(file_path, table_name='file'):
 
@@ -205,15 +209,14 @@ class SZ_utils():
 
     
     def load_cv(directory,parameters):
-        crs=SZ_utils.generate_ghost_input(parameters['INPUT_VECTOR_LAYER'],directory+'/file.gpkg',parameters['field1'])
+        SZ_utils.generate_ghost_input(parameters['INPUT_VECTOR_LAYER'],directory+'/file.gpkg',parameters['field1'])
         #layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], 'Input Layer', 'ogr')
         #crs=layer.crs()
         print('conn')
         #conn = sqlite3.connect(parameters['INPUT_VECTOR_LAYER'])
 
+        gdp,crs=SZ_utils.load_geopackage(directory+'/file.gpkg')
         primary_key=SZ_utils.get_id_column(directory+'/file.gpkg')
-
-        gdp=SZ_utils.load_geopackage(directory+'/file.gpkg')
 
         #gdp=SZ_utils.convert_geometry_to_wkt(gdp,'geom')
 
