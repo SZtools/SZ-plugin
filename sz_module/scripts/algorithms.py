@@ -133,6 +133,10 @@ class CV_utils():
                 df.loc[test,'SI']=prob[0]
                 
                 test_ind[0]=test
+        del df
+        del x
+        del y
+        del df_scaled
         return prob,test_ind,predictors_weights
     
     def cv_method(parameters,df_scaled,df,nomi):
@@ -257,7 +261,7 @@ class GAM_utils():
         return splines,dtypes
     
     def GAM_plot(gam,df,nomi,fold,filename,scaled_df):
-        print('plot')
+        print('plotting covariates.....')
 
         GAM_sel=nomi
         #sc=StandardScaler()
@@ -327,9 +331,6 @@ class GAM_utils():
                     y.append(pdep_unq[j])
                     y1.append(confi025_unq[j])
                     y2.append(confi095_unq[j])
-                    #y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
-                    #y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
-                    #y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
                 
                 paired_xy = list(zip(x, y, y1, y2))
                 paired_vectors_sorted = sorted(paired_xy, key=lambda x: x[0])
@@ -405,6 +406,8 @@ class GAM_utils():
 
         fig.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
 
+
+
         ########################################################################scaled
         fig1 = plt.figure(figsize=(15,15))
         for i, term in enumerate(gam.terms):
@@ -432,10 +435,6 @@ class GAM_utils():
                     y.append(pdep_unq[j])
                     y1.append(confi025_unq[j])
                     y2.append(confi095_unq[j])
-                    #y.append((pdep[np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)][0]))
-                    #y1.append(np.mean(confi[:,0][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
-                    #y2.append(np.mean(confi[:,1][np.where(np.sort(df[GAM_sel[i]].to_numpy())==j)]))
-
                 paired_xy = list(zip(x, y, y1, y2))
                 paired_vectors_sorted = sorted(paired_xy, key=lambda x: x[0])
                 x, y, y1, y2= zip(*paired_vectors_sorted)
@@ -492,13 +491,19 @@ class GAM_utils():
                 continue
 
         fig1.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
+
+        del gam
+        del df
+
         
     def GAM_save(gam,fold,filename=''):
+        print('saving gam.pkl.....')
         filename_pkl = fold+'/gam_coeff'+filename+'.pkl'
         #filename_txt = parameters['fold']+'/gam_coeff.txt'
 
         with open(filename_pkl, 'wb') as filez:
             pickle.dump(gam, filez)
+        del gam
 
 class ML_utils():
     def ML_save(classifier,fold,nomi, filename):
@@ -527,6 +532,8 @@ class ML_utils():
                 'Coefficient': coeff
             })
             coeff_df.to_csv(fold+'/coefficients'+filename+'.csv', index=False)
+        
+        del coeff_df
 
 
     

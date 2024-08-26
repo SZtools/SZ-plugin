@@ -65,7 +65,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 from pygam import LogisticGAM,LinearGAM
-from .utils import log
+from .utils import log,warn,clean_memory
 
 class classeProvider(QgsProcessingProvider):
 
@@ -419,5 +419,6 @@ class Instance(QgsProcessingAlgorithm):
                     result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
                 except Exception as e:
                     log(f"An error occurred: {e}")
+        
         return result
         

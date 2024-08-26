@@ -173,7 +173,7 @@ class CoreAlgorithmGAM_cv():
                 'tensor': tensor,
             }
             if SZ_utils.check_validity(alg_params) is False:
-                return ''
+                return {}
         else:
             tensor=[]
 
@@ -283,6 +283,7 @@ class CoreAlgorithmGAM_cv():
             return {}
     
         del outputs    
+        del subLayers
 
         return results
 
