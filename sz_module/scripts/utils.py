@@ -41,7 +41,7 @@ import fiona
 
 
 class SZ_utils():
-    def generate_ghost_input(input,output,nomi):
+    def generate_ghost_input(input,output):
         input_shapefile_path = input
         layer = QgsVectorLayer(input_shapefile_path, 'Input Layer', 'ogr')
         transform_context = QgsProject.instance().transformContext()
@@ -93,16 +93,16 @@ class SZ_utils():
             return None
 
     def load_cv(directory,parameters):
-        SZ_utils.generate_ghost_input(parameters['INPUT_VECTOR_LAYER'],directory+'/file.gpkg',parameters['field1'])
+        SZ_utils.generate_ghost_input(parameters['INPUT_VECTOR_LAYER'],directory+'/file.gpkg')
         gdp,crs=SZ_utils.load_geopackage(directory+'/file.gpkg')
         #primary_key=SZ_utils.get_id_column(directory+'/file.gpkg')
         if 'time' in parameters:
             if parameters['time']==None:
-                df=pd.DataFrame(gdp[parameters['field1']].copy())
+                df=pd.DataFrame(gdp[parameters['nomi']].copy())
             else:
-                df=pd.DataFrame(gdp[parameters['field1']+[parameters['time']]].copy())
+                df=pd.DataFrame(gdp[parameters['nomi']+[parameters['time']]].copy())
         else:
-            df=pd.DataFrame(gdp[parameters['field1']].copy())
+            df=pd.DataFrame(gdp[parameters['nomi']].copy())
         try:
             lsd=gdp[parameters['lsd']]
             try:
@@ -193,40 +193,40 @@ class SZ_utils():
             fig.savefig(parameters['OUT']+'/fig_cv.pdf')
 
     
-    def stamp_simple(parameters):
-        train=parameters['train']
-        y_t=train['y']
-        scores_t=train['SI']
+    # def stamp_simple(parameters):
+    #     train=parameters['train']
+    #     y_t=train['y']
+    #     scores_t=train['SI']
 
-        test=parameters['test']
-        y_v=test['y']
-        scores_v=test['SI']
-        lw = 2
+    #     test=parameters['test']
+    #     y_v=test['y']
+    #     scores_v=test['SI']
+    #     lw = 2
         
-        fprv, tprv, treshv = roc_curve(y_v,scores_v)
-        fprt, tprt, tresht = roc_curve(y_t,scores_t)
+    #     fprv, tprv, treshv = roc_curve(y_v,scores_v)
+    #     fprt, tprt, tresht = roc_curve(y_t,scores_t)
 
-        aucv=roc_auc_score(y_v, scores_v)
-        auct=roc_auc_score(y_t, scores_t)
-        normt=(scores_t-scores_t.min())/(scores_t.max()-scores_t.min())
-        normv=(scores_v-scores_v.min())/(scores_v.max()-scores_v.min())
+    #     aucv=roc_auc_score(y_v, scores_v)
+    #     auct=roc_auc_score(y_t, scores_t)
+    #     normt=(scores_t-scores_t.min())/(scores_t.max()-scores_t.min())
+    #     normv=(scores_v-scores_v.min())/(scores_v.max()-scores_v.min())
 
-        fig=plt.figure()
-        plt.plot(fprv, tprv, color='green',lw=lw, label= 'Prediction performance (AUC = %0.2f)' %aucv)
-        plt.plot(fprt, tprt, color='red',lw=lw, label= 'Success performance (AUC = %0.2f)' %auct)
-        plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title('ROC')
-        plt.legend(loc="lower right")
-        #plt.show()
-        try:
-            fig.savefig(parameters['OUT']+'/fig.pdf')
-        except:
-            os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/fig.pdf')
+    #     fig=plt.figure()
+    #     plt.plot(fprv, tprv, color='green',lw=lw, label= 'Prediction performance (AUC = %0.2f)' %aucv)
+    #     plt.plot(fprt, tprt, color='red',lw=lw, label= 'Success performance (AUC = %0.2f)' %auct)
+    #     plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
+    #     plt.xlim([0.0, 1.0])
+    #     plt.ylim([0.0, 1.05])
+    #     plt.xlabel('False Positive Rate')
+    #     plt.ylabel('True Positive Rate')
+    #     plt.title('ROC')
+    #     plt.legend(loc="lower right")
+    #     #plt.show()
+    #     try:
+    #         fig.savefig(parameters['OUT']+'/fig.pdf')
+    #     except:
+    #         os.mkdir(parameters['OUT'])
+    #         fig.savefig(parameters['OUT']+'/fig.pdf')
 
     def save(parameters):
         print('writing output geopackage.....')

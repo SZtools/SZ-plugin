@@ -42,7 +42,7 @@ from qgis.PyQt.QtGui import QIcon
 from sz_module.images.cqp_resources_rc import qInitResources
 qInitResources()  # necessary to be able to access your images
 
-#from .scripts.selfroc import rocGenerator
+from .scripts.selfroc import rocGenerator
 from .scripts.lsdanalysis import statistic
 from .scripts.cleaning import cleankernelAlgorithm
 from .scripts.graphs_lsdstats_kernel import statistickernel
@@ -166,16 +166,16 @@ class classeProvider(QgsProcessingProvider):
         self.addAlgorithm(Instance(dict_of_scripts))
 
          
-        # dict_of_scripts={
-        #     'alg': 'rocGenerator',
-        #     'function': rocGenerator,
-        #     'name':'ROC',
-        #     'displayName':'04 ROC',
-        #     'group':'04 Classify SI',
-        #     'groupId':'04 Classify SI',
-        #     'shortHelpString':"ROC curve creator",
-        # }
-        # self.addAlgorithm(Instance(dict_of_scripts))
+        dict_of_scripts={
+            'alg': 'rocGenerator',
+            'function': rocGenerator,
+            'name':'ROC',
+            'displayName':'04 ROC',
+            'group':'04 Classify SI',
+            'groupId':'04 Classify SI',
+            'shortHelpString':"ROC curve creator",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
 
         dict_of_scripts={
             'alg': 'cleankernel',
@@ -344,7 +344,7 @@ class Instance(QgsProcessingAlgorithm):
             'classcovtxt':True,
             'classcovdeciles':True,
             'statistic':True,
-            #'rocGenerator':True,
+            'rocGenerator':True,
             'cleankernel':True,
             'statistickernel':True,
             'sampler':True,

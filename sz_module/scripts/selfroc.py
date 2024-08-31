@@ -78,10 +78,10 @@ import csv
 from processing.algs.gdal.GdalUtils import GdalUtils
 #import plotly.express as px
 #import chart_studio
-import plotly.offline
+#import plotly.offline
 import plotly.graph_objs as go
 #import geopandas as gd
-import pandas as pd
+#import pandas as pd
 import tempfile
 import os
 from sz_module.scripts.utils import SZ_utils

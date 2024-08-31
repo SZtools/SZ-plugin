@@ -144,7 +144,6 @@ class CoreAlgorithmGAM_trans():
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
         
         SZ_utils.make_directory({'path':parameters['folder']})
-
         
         parameters['testN']=1
 
@@ -164,7 +163,7 @@ class CoreAlgorithmGAM_trans():
         
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
+            'nomi': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'lsd' : parameters['fieldlsd'],
             'family':family[parameters['family']],
             'gauss_scale':gauss_scale[parameters['gauss_scale']],
@@ -215,6 +214,7 @@ class CoreAlgorithmGAM_trans():
             'continuous':parameters['field1'],
             'tensor': tensor,
             'family':family[parameters['family']],
+            'cv_method':'',
         }
 
         outputs['prob'],outputs['test_ind'],outputs['predictors_weights']=CV_utils.cross_validation(alg_params,algorithm,classifier)
@@ -234,6 +234,8 @@ class CoreAlgorithmGAM_trans():
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
+        
+        print('4')
 
         alg_params = {
             'predictors_weights':outputs['predictors_weights'],
@@ -245,6 +247,8 @@ class CoreAlgorithmGAM_trans():
             'df':outputs['df_trans']
         }
         outputs['trans']=Algorithms.GAM_transfer(alg_params)
+
+        print('5')
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
@@ -283,16 +287,17 @@ class CoreAlgorithmGAM_trans():
             alg_params = {
                 'df': outputs['trans'],
                 'OUT':parameters['folder'],
-                'file':parameters['folder']+'errors_trans.csv'
+                'file':parameters['folder']+'/errors_trans.csv'
 
             }
             outputs['errors_trans']=SZ_utils.errors(alg_params)
 
             alg_params = {
-                'df': outputs['train'],
+                'df': outputs['df'],
                 'OUT':parameters['folder'],
-                'file':parameters['folder']+'errors_train.csv'
+                'file':parameters['folder']+'/errors_train.csv'
             }
+            print(parameters['folder']+'/errors_train.csv','daiiii')
             outputs['error_train']=SZ_utils.errors(alg_params)
 
         feedback.setCurrentStep(6)

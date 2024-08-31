@@ -183,7 +183,7 @@ class CoreAlgorithmGAM_cv():
         
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
+            'nomi': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'lsd' : parameters['fieldlsd'],
             'family':family[parameters['family']],
             'time':parameters['time'],
@@ -247,19 +247,27 @@ class CoreAlgorithmGAM_cv():
         if feedback.isCanceled():
             return {}
 
-        alg_params = {
-            'test_ind': outputs['test_ind'],
-            'df': outputs['df'],
-            'OUT':parameters['folder']
-        }
-        SZ_utils.stamp_cv(alg_params)
+        if family[parameters['family']]=='binomial':
+            alg_params = {
+                'test_ind': outputs['test_ind'],
+                'df': outputs['df'],
+                'OUT':parameters['folder']
+            }
+            SZ_utils.stamp_cv(alg_params)
+        
+        if family[parameters['family']]=='gaussian':
+            alg_params = {
+                'df': outputs['df'],
+                'OUT':parameters['folder'],
+                'file':parameters['folder']+'errors.csv'
+            }
+            outputs['error_train']=SZ_utils.errors(alg_params)
+
+        results['out'] = parameters['out']
 
         feedback.setCurrentStep(5)
         if feedback.isCanceled():
             return {}
-
-        results['out'] = parameters['out']
-
 
         fileName = parameters['out']
         layer1 = QgsVectorLayer(fileName,"test","ogr")

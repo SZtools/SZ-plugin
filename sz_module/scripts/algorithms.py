@@ -28,6 +28,7 @@ from sklearn.tree import export_text
 class Algorithms():
 
     def ML_transfer(parameters):
+        print('a')
         nomi=parameters['field1']
         df=parameters['df']
         df_scaled=CV_utils.scaler(df,nomi,'standard')
@@ -37,6 +38,7 @@ class Algorithms():
         return df
     
     def GAM_transfer(parameters):
+        print('1')
         nomi=parameters['nomi']
         df=parameters['df']
         #x=df[parameters['field1']]
@@ -74,6 +76,8 @@ class Algorithms():
         GAM_utils.GAM_plot(gam,df.loc[train,nomi],nomi,fold,filename,X.loc[train,nomi])
         #♂GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
         GAM_utils.GAM_save(gam,fold,filename)
+
+        print('2')
         
         #GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob,CI,fold, filename)
         CI=[]
@@ -133,10 +137,7 @@ class CV_utils():
                 df.loc[test,'SI']=prob[0]
                 
                 test_ind[0]=test
-        del df
-        del x
-        del y
-        del df_scaled
+        print('3')
         return prob,test_ind,predictors_weights
     
     def cv_method(parameters,df_scaled,df,nomi):
