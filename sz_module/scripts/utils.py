@@ -11,8 +11,11 @@ from scipy.stats import pearsonr
 import csv
 from copy import copy
 
+
 from shapely import wkb
 from shapely.geometry import shape
+
+from matplotlib.ticker import ScalarFormatter
 
 #from pygam import LogisticGAM, s, f, terms
 
@@ -108,7 +111,7 @@ class SZ_utils():
             try:
                 if parameters['family']=='binomial':
                     lsd[lsd>0]=1
-                elif parameters['family']=='binomial' and parameters['gauss_scale']=='log scale':
+                elif parameters['family']=='gaussian' and parameters['gauss_scale']=='log scale':
                     lsd[lsd>0]=np.log(lsd[lsd>0])
             except:
                 lsd[lsd>0]=1
@@ -227,6 +230,57 @@ class SZ_utils():
     #     except:
     #         os.mkdir(parameters['OUT'])
     #         fig.savefig(parameters['OUT']+'/fig.pdf')
+
+    def stamp_qq(parameters):
+        print('plotting....')
+        df=parameters['df_train']
+        df=df.dropna(subset=['SI'])
+        df_train=df['SI']
+
+        df=parameters['df_trans']
+        df=df.dropna(subset=['SI'])
+        df_trans=df['SI']
+
+        # Compute percentiles
+        percentiles_train = np.percentile(df_train, np.arange(0, 101, 1))
+        percentiles_trans = np.percentile(df_trans, np.arange(0, 101, 1))
+
+        #print(max(np.concatenate((percentiles_train, percentiles_trans))))
+
+        #ercentiles_train_norm = (percentiles_train - percentiles_train.min()) / (percentiles_train.max() - percentiles_train.min())
+        #percentiles_trans_norm = (percentiles_trans - percentiles_trans.min()) / (percentiles_trans.max() - percentiles_trans.min())
+        
+        max_val = max(np.max(percentiles_train), np.max(percentiles_trans))
+        min_val = min(np.min(percentiles_train), np.min(percentiles_trans))
+        x_buffer = (max_val - min_val) / 10
+
+
+        # Plot percentiles
+        fig=plt.figure(figsize=(8, 6))
+        plt.plot(percentiles_train,percentiles_trans, 'bo')
+        plt.plot([min_val-x_buffer, max_val+x_buffer], [min_val-x_buffer, max_val+x_buffer], 'k--')
+
+        # Labels and title
+
+        plt.xlim(min_val-x_buffer, max_val+x_buffer)
+        plt.ylim(min_val-x_buffer, max_val+x_buffer)
+        plt.xscale('log')
+        plt.yscale('log')
+
+        ax = plt.gca()
+        ax.xaxis.set_major_formatter(ScalarFormatter())
+        ax.yaxis.set_major_formatter(ScalarFormatter())
+        plt.xlabel('Observed (quantiles)')
+        plt.ylabel('Predicted (quantiles)')
+        #plt.grid(True)
+        #plt.legend()
+        
+        print('QQ figure = ',parameters['OUT']+'/fig_qq.pdf')
+        try:
+            fig.savefig(parameters['OUT']+'/fig_qq.pdf')
+        except:
+            os.mkdir(parameters['OUT'])
+            fig.savefig(parameters['OUT']+'/fig_qq.pdf')
 
     def save(parameters):
         print('writing output geopackage.....')

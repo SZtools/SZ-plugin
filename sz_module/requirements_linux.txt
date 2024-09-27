@@ -3,3 +3,4 @@ pygam
 pandas==1.5
 shapely
 fiona
+seaborn

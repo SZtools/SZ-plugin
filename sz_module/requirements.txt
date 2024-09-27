@@ -3,3 +3,4 @@ pygam
 pandas
 shapely
 fiona
+seaborn

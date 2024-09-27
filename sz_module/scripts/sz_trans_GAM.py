@@ -300,6 +300,13 @@ class CoreAlgorithmGAM_trans():
             print(parameters['folder']+'/errors_train.csv','daiiii')
             outputs['error_train']=SZ_utils.errors(alg_params)
 
+            alg_params = {
+                'df_train': outputs['df'],
+                'df_trans':outputs['trans'],
+                'OUT':parameters['folder'],
+            }
+            SZ_utils.stamp_qq(alg_params)
+
         feedback.setCurrentStep(6)
         if feedback.isCanceled():
             return {}
