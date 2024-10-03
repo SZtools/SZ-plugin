@@ -460,16 +460,23 @@ class GAM_utils():
                 continue
 
             elif isinstance(gam.terms[i], terms.TensorTerm):
-                fig2=plt.figure(figsize=(12,10))
+                fig3=plt.figure(figsize=(12,10))
                 XX = gam.generate_X_grid(term=i,meshgrid=True)
                 Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
-                ax3d=fig2.subplots()
+                ax3d=fig3.subplots()
+                print(len(XX[0]),len(XX[0]),len(Z))
                 x, y = np.meshgrid(XX[0], XX[1])  
-                mesh = ax3d.pcolormesh(x, y, Z, cmap='viridis', shading='auto')
-                plt.colorbar(mesh, ax=ax3d, label='Partial Effect')
-                ax3d.set_xlabel(GAM_sel[i])
-                ax3d.set_ylabel(GAM_sel[i+1])
-                fig2.savefig(fold+'/Model_covariates_interaction_scaled'+filename+'.pdf', bbox_inches='tight')
+                print(len(x),len(y),len(Z))
+                mesh = ax3d.pcolormesh(XX[0], XX[1], Z, cmap='viridis', shading='auto')
+                print('a')
+                cbar=plt.colorbar(mesh, ax=ax3d)
+                cbar.set_label('Partial Effect', fontsize=16)  # Increase colorbar label font size
+                cbar.ax.tick_params(labelsize=16)
+                print('b')
+                ax3d.set_xlabel(GAM_sel[i], fontsize=16)  # Increase x-axis label font size
+                ax3d.set_ylabel(GAM_sel[i+1], fontsize=16)
+                ax3d.tick_params(axis='both', which='major', labelsize=14)
+                fig3.savefig(fold+'/Model_covariates_interaction_scaled'+filename+'.pdf', bbox_inches='tight')
                 continue
 
             elif isinstance(gam.terms[i], terms.SplineTerm):
