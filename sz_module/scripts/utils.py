@@ -270,8 +270,8 @@ class SZ_utils():
         ax = plt.gca()
         ax.xaxis.set_major_formatter(ScalarFormatter())
         ax.yaxis.set_major_formatter(ScalarFormatter())
-        plt.xlabel('Observed (quantiles)')
-        plt.ylabel('Predicted (quantiles)')
+        plt.xlabel('log(Observed)')
+        plt.ylabel('log(Predicted)')
         #plt.grid(True)
         #plt.legend()
         
