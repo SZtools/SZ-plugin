@@ -283,8 +283,8 @@ class GAM_utils():
                 pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
             maX=maX+[np.max(confi0[:,1])]
             miN=miN+[np.min(confi0[:,0])]
-        MAX=max(maX)+1
-        MIN=min(miN)-1
+        MAX=max(maX)+0.2
+        MIN=min(miN)-0.2
 
         count=0
         countIns=0
@@ -468,11 +468,9 @@ class GAM_utils():
                 x, y = np.meshgrid(XX[0], XX[1])  
                 print(len(x),len(y),len(Z))
                 mesh = ax3d.pcolormesh(XX[0], XX[1], Z, cmap='viridis', shading='auto')
-                print('a')
                 cbar=plt.colorbar(mesh, ax=ax3d)
                 cbar.set_label('Partial Effect', fontsize=16)  # Increase colorbar label font size
                 cbar.ax.tick_params(labelsize=16)
-                print('b')
                 ax3d.set_xlabel(GAM_sel[i], fontsize=16)  # Increase x-axis label font size
                 ax3d.set_ylabel(GAM_sel[i+1], fontsize=16)
                 ax3d.tick_params(axis='both', which='major', labelsize=14)
