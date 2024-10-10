@@ -41,6 +41,7 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from sz_module.images.cqp_resources_rc import qInitResources
 qInitResources()  # necessary to be able to access your images
+import os
 
 from .scripts.selfroc import rocGenerator
 from .scripts.lsdanalysis import statistic
@@ -56,14 +57,17 @@ from .scripts.classcovdeciles import classcovdecAlgorithm
 #from .scripts.corrplot import CorrAlgorithm
 from .scripts.sz_train_cv_ML import CoreAlgorithm_cv
 from .scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
+from .scripts.sz_train_cv_NN import CoreAlgorithmNN_cv
 from .scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
 from .scripts.sz_trans_ML import CoreAlgorithmML_trans
+from .scripts.sz_trans_NN import CoreAlgorithmNN_trans
 from .scripts.algorithms import Algorithms
 from sz_module.scripts.segmentation_aspect import segmentationAspectAlgorithm
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
+from sklearn.neural_network import MLPClassifier,MLPRegressor
 from pygam import LogisticGAM,LinearGAM
 from .utils import log,warn,clean_memory
 
@@ -128,6 +132,28 @@ class classeProvider(QgsProcessingProvider):
              'group':'03 SI transfer',
             'groupId':'03 SI transfer',
             'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'NN_cv',
+            'function': CoreAlgorithmNN_cv,
+            'name':'Fit-CV_NNcv',
+            'displayName':'03 Neural Network tools',
+            'group':'02 Modelling',
+            'groupId':'02 Modelling',
+            'shortHelpString':"This function apply Neural Network algorithms to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts))
+
+        dict_of_scripts={
+            'alg': 'NN_trans',
+            'function': CoreAlgorithmNN_trans,
+            'name':'Transfer_NN',
+            'displayName':'03 Predict Neural Network',
+            'group':'03 SI transfer',
+            'groupId':'03 SI transfer',
+            'shortHelpString':"This function apply Neural Network algorithms to transfer susceptibility",
         }
         self.addAlgorithm(Instance(dict_of_scripts))
 
@@ -358,6 +384,9 @@ class Instance(QgsProcessingAlgorithm):
             'GAM_trans':True,
             'ML_trans':True,
             'SegAsp':False,
+            'NN_trans':True,
+            'NN_cv':True,
+
         }
 
         self.algorithms={
@@ -365,6 +394,10 @@ class Instance(QgsProcessingAlgorithm):
             'ML_trans':Algorithms.alg_MLrun,
             'GAM_cv':Algorithms.alg_GAMrun,
             'GAM_trans':Algorithms.alg_GAMrun,
+            'NN_trans':Algorithms.alg_NNrun,
+            'NN_cv':Algorithms.alg_NNrun,
+
+
         }
 
         self.classifier={
@@ -380,6 +413,14 @@ class Instance(QgsProcessingAlgorithm):
             },
             'GAM_cv':{'binomial':LogisticGAM,'gaussian':LinearGAM},
             'GAM_trans':{'binomial':LogisticGAM,'gaussian':LinearGAM},
+            'NN_trans':{
+                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+            },
+            'NN_cv':{
+                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+            },
         }
 
     def tr(self, string):
@@ -410,15 +451,21 @@ class Instance(QgsProcessingAlgorithm):
         result={}
         if self.active[self.dict_of_scripts['alg']]: 
             if self.dict_of_scripts['alg'] in self.algorithms:
-                try:
+                if os.environ.get('DEBUG')=='False':
+                    try:
+                        result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
+                    except Exception as e:
+                        log(f"An error occurred: {e}")
+                else:
                     result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
-                except Exception as e:
-                    log(f"An error occurred: {e}")
             else:
-                try:
+                if os.environ.get('DEBUG')=='False':
+                    try:
+                        result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
+                    except Exception as e:
+                        log(f"An error occurred: {e}")
+                else:
                     result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
-                except Exception as e:
-                    log(f"An error occurred: {e}")
         
         return result
         

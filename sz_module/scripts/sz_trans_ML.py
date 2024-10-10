@@ -145,7 +145,7 @@ class CoreAlgorithmML_trans():
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field1'],
+            'nomi': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
             #'time':parameters['time'],
         }
@@ -166,6 +166,7 @@ class CoreAlgorithmML_trans():
             'df':outputs['df'],
             #'cv_method':cv_method[parameters['cv_method']],
             #'time':parameters['time']
+            'cv_method':'',
         }
 
         outputs['prob'],outputs['test_ind'],outputs['predictors_weights']=CV_utils.cross_validation(alg_params,algorithm,classifier[ML[parameters['algorithm']]])
@@ -190,7 +191,7 @@ class CoreAlgorithmML_trans():
             'predictors_weights':outputs['predictors_weights'],
             'nomi': parameters['field1'],
             #'family':family[parameters['family']],
-            'field1':parameters['field1'],
+            #'field1':parameters['field1'],
             'df':outputs['df_trans']
         }
         outputs['trans']=Algorithms.ML_transfer(alg_params)
