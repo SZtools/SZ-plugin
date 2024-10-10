@@ -28,9 +28,17 @@ import plotly.graph_objects as go
 
 class Algorithms():
 
+    def NN_transfer(parameters):
+        nomi=parameters['nomi']
+        df=parameters['df']
+        df_scaled=CV_utils.scaler(df,nomi,'standard')
+        prob_predic=parameters['predictors_weights'].predict(df_scaled.loc[:,nomi].to_numpy())
+        #ML_utils.ML_save(classifier,fold,nomi,filename)
+        df['SI']=prob_predic
+        return df
+
     def ML_transfer(parameters):
-        print('a')
-        nomi=parameters['field1']
+        nomi=parameters['nomi']
         df=parameters['df']
         df_scaled=CV_utils.scaler(df,nomi,'standard')
         prob_predic=parameters['predictors_weights'].predict_proba(df_scaled.loc[:,nomi].to_numpy())[::,1]
@@ -39,7 +47,6 @@ class Algorithms():
         return df
     
     def GAM_transfer(parameters):
-        print('1')
         nomi=parameters['nomi']
         df=parameters['df']
         #x=df[parameters['field1']]
@@ -53,13 +60,18 @@ class Algorithms():
             #CI = parameters['gam'].prediction_intervals(X_trans, width=.95)
             df['SI']=prob_fit#np.exp(prob_fit)
         return(df)
+    
+    def alg_NNrun(classifier,X,y,train,test,df,fold,nomi,filename=''):
+        classifier.fit(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy())
+        prob_predic=classifier.predict(X.loc[test,nomi].to_numpy())
+        NN_utils.NN_plot(classifier,fold,filename)
+        return prob_predic,classifier
 
     def alg_MLrun(classifier,X,y,train,test,df,fold,nomi,filename=''):
         classifier.fit(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy())
         prob_predic=classifier.predict_proba(X.loc[test,nomi].to_numpy())[::,1]
         ML_utils.ML_save(classifier,fold,nomi,filename)
         return prob_predic,classifier
-    
 
     def alg_GAMrun(classifier,X,y,train,test,df,splines=None,dtypes=None,nomi=None,fold=None,filename='',family=None):
         lams = np.empty(len(nomi))
@@ -539,7 +551,15 @@ class ML_utils():
 
 
     
-
-    
+class NN_utils():
+    def NN_plot(NNclassifier,fold,filename):
+        plt.figure(figsize=(10, 6))
+        plt.plot(NNclassifier.loss_curve_)
+        plt.plot(NNclassifier.validation_scores_)
+        plt.xlabel('Iterations',fontsize=16)
+        plt.ylabel('Loss',fontsize=16)
+        plt.grid()
+        plt.legend(['Train','Test'],prop={'size': 16})
+        plt.savefig(fold+'/loss_curve'+filename+'.pdf', bbox_inches='tight')
 
     

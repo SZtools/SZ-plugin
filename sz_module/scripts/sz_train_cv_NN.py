@@ -58,13 +58,13 @@ from sz_module.utils import log
 
 
 
-class CoreAlgorithm_cv():
+class CoreAlgorithmNN_cv():
 
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
-        self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVC','DT','RF'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'NN algorithm', options=['MLP Classifier','MLP Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         self.addParameter(QgsProcessingParameterEnum(self.STRING3, 'CV method', options=['random CV','spatial CV','temporal CV (Time Series Split)','temporal CV (Leave One Out)', 'space-time CV (Leave One Out)'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         self.addParameter(QgsProcessingParameterField(self.STRING4, 'Time field (for temporal CV only)', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any, optional=True ))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV: K=1 to fit, k>1 to cross-validate for spatial CV only'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2,optional=True))
@@ -79,7 +79,7 @@ class CoreAlgorithm_cv():
         outputs = {}
 
         cv_method={'0':'random','1':'spatial','2':'temporal_TSS','3':'temporal_LOO','4':'spacetime_LOO'}
-        ML={'0':'SVC','1':'DT','2':'RF'}
+        NN={'0':'MLP_classifier','1':'MLP_regressor'}
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -156,7 +156,7 @@ class CoreAlgorithm_cv():
             'time':parameters['time']
         }
 
-        outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier[ML[parameters['algorithm']]])
+        outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier[NN[parameters['algorithm']]])
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
