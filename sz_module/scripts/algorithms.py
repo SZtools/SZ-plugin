@@ -32,7 +32,10 @@ class Algorithms():
         nomi=parameters['nomi']
         df=parameters['df']
         df_scaled=CV_utils.scaler(df,nomi,'standard')
-        prob_predic=parameters['predictors_weights'].predict(df_scaled.loc[:,nomi].to_numpy())
+        if parameters['family']=='MLP_classifier':
+            prob_predic=parameters['predictors_weights'].predict_proba(df_scaled.loc[:,nomi].to_numpy())[::,1]
+        else:
+            prob_predic=parameters['predictors_weights'].predict(df_scaled.loc[:,nomi].to_numpy())
         #ML_utils.ML_save(classifier,fold,nomi,filename)
         df['SI']=prob_predic
         return df
@@ -61,9 +64,12 @@ class Algorithms():
             df['SI']=prob_fit#np.exp(prob_fit)
         return(df)
     
-    def alg_NNrun(classifier,X,y,train,test,df,fold,nomi,filename=''):
+    def alg_NNrun(classifier,X,y,train,test,df,fold,nomi,filename='',family=None):
         classifier.fit(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy())
-        prob_predic=classifier.predict(X.loc[test,nomi].to_numpy())
+        if family=='MLP_classifier':
+            prob_predic=classifier.predict_proba(X.loc[test,nomi].to_numpy())[::,1]
+        elif family=='MLP_regressor':
+            prob_predic=classifier.predict(X.loc[test,nomi].to_numpy())
         NN_utils.NN_plot(classifier,fold,filename)
         return prob_predic,classifier
 
@@ -123,6 +129,8 @@ class CV_utils():
                 if algorithm==Algorithms.alg_GAMrun:
                     prob[i],CI[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
                     #df.loc[test,'CI']=CI[i]
+                elif algorithm==Algorithms.alg_NNrun:
+                    prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i),family=parameters['family'])
                 else:
                     prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i))
                     gam=None
@@ -134,6 +142,8 @@ class CV_utils():
                     if algorithm==Algorithms.alg_GAMrun:
                         prob[i],CI[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
                         #df.loc[test,'CI']=CI[i]
+                    elif algorithm==Algorithms.alg_NNrun:
+                        prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i),family=parameters['family'])
                     else:
                         prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i))
                         gam=None
@@ -144,6 +154,8 @@ class CV_utils():
                 if algorithm==Algorithms.alg_GAMrun:
                     prob[0],CI[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],family=parameters['family'])
                     #df.loc[test,'CI']=CI[0]
+                elif algorithm==Algorithms.alg_NNrun:
+                    prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi,family=parameters['family'])
                 else:
                     prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi)
                     #predictors_weights=None

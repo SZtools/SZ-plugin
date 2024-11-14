@@ -190,7 +190,7 @@ class CoreAlgorithmNN_trans():
         alg_params = {
             'predictors_weights':outputs['predictors_weights'],
             'nomi': parameters['field1'],
-            #'family':family[parameters['family']],
+            'family':NN[parameters['algorithm']],
             #'field1':parameters['field1'],
             'df':outputs['df_trans']
         }

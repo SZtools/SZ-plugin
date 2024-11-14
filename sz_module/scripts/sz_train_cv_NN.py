@@ -144,8 +144,6 @@ class CoreAlgorithmNN_cv():
         if feedback.isCanceled():
             return {}
         
-        print(cv_method[parameters['cv_method']])
-
         alg_params = {
             #'field1': parameters['field1'],
             'testN':parameters['testN'],
@@ -153,7 +151,8 @@ class CoreAlgorithmNN_cv():
             'nomi':parameters['field1'],
             'df':outputs['df'],
             'cv_method':cv_method[parameters['cv_method']],
-            'time':parameters['time']
+            'time':parameters['time'],
+            'family':NN[parameters['algorithm']],
         }
 
         outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier[NN[parameters['algorithm']]])

@@ -176,7 +176,7 @@ class rocGenerator(QgsProcessingAlgorithm):
             #'INPUT_RASTER_LAYER': parameters['Slope'],
             #'INPUT_EXTENT': parameters['Extension'],
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field1'],
+            'nomi': parameters['field1'],
             'lsd' : parameters['fieldlsd']
             #'W':parameters['w']
             #'INPUT_INT': parameters['BufferRadiousInPxl'],
@@ -263,7 +263,7 @@ class Functions():
         fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
         norm=(scores-scores.min())/(scores.max()-scores.min())
         r=roc_auc_score(y_true, scores)
-
+        print(r,'!!!!!!')
         idx = np.argmax(tpr1 - fpr1)  # x YOUDEN INDEX
         suscept01 = copy(scores)
         suscept01[scores > tresh1[idx]] = 1
