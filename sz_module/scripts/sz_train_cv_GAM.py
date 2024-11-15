@@ -259,7 +259,7 @@ class CoreAlgorithmGAM_cv():
             alg_params = {
                 'df': outputs['df'],
                 'OUT':parameters['folder'],
-                'file':parameters['folder']+'errors.csv'
+                'file':parameters['folder']+'/errors.csv'
             }
             outputs['error_train']=SZ_utils.errors(alg_params)
 
