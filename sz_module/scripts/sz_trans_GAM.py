@@ -283,29 +283,30 @@ class CoreAlgorithmGAM_trans():
             }
             SZ_utils.stampfit(alg_params)
 
-        if family[parameters['family']]=='gaussian':
-            alg_params = {
-                'df': outputs['trans'],
-                'OUT':parameters['folder'],
-                'file':parameters['folder']+'/errors_trans.csv'
+        # if family[parameters['family']]=='gaussian':
+        #     alg_params = {
+        #         'df': outputs['trans'],
+        #         'OUT':parameters['folder'],
+        #         'file':parameters['folder']+'/errors_trans.csv'
 
-            }
-            outputs['errors_trans']=SZ_utils.errors(alg_params)
+        #     }
+        #     outputs['errors_trans']=SZ_utils.errors(alg_params)
 
-            alg_params = {
-                'df': outputs['df'],
-                'OUT':parameters['folder'],
-                'file':parameters['folder']+'/errors_train.csv'
-            }
-            print(parameters['folder']+'/errors_train.csv','daiiii')
-            outputs['error_train']=SZ_utils.errors(alg_params)
+            # alg_params = {
+            #     'df': outputs['df'],
+            #     'OUT':parameters['folder'],
+            #     'file':parameters['folder']+'/errors_train.csv'
+            # }
+            # print(parameters['folder']+'/errors_train.csv','daiiii')
+            # outputs['error_train']=SZ_utils.errors(alg_params)
 
-            alg_params = {
-                'df_train': outputs['df'],
-                'df_trans':outputs['trans'],
-                'OUT':parameters['folder'],
-            }
-            SZ_utils.stamp_qq(alg_params)
+            # alg_params = {
+            #     'df_train': outputs['df'],
+            #     'df_trans':outputs['trans'],
+            #     'OUT':parameters['folder'],
+            # }
+            # SZ_utils.stamp_qq_fit(alg_params)
+
 
         feedback.setCurrentStep(6)
         if feedback.isCanceled():

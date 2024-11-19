@@ -106,6 +106,7 @@ class SZ_utils():
                 df=pd.DataFrame(gdp[parameters['nomi']+[parameters['time']]].copy())
         else:
             df=pd.DataFrame(gdp[parameters['nomi']].copy())
+        
         try:
             lsd=gdp[parameters['lsd']]
             try:
@@ -233,48 +234,38 @@ class SZ_utils():
 
     def stamp_qq(parameters):
         print('plotting....')
-        df=parameters['df_train']
+        df=parameters['df']
         df=df.dropna(subset=['SI'])
-        df_train=df['SI']
+        test_ind=parameters['test_ind']
+        y_v=df['y']
+        scores_v=df['SI']
 
-        df=parameters['df_trans']
-        df=df.dropna(subset=['SI'])
-        df_trans=df['SI']
-
-        # Compute percentiles
-        percentiles_train = np.percentile(df_train, np.arange(0, 101, 1))
-        percentiles_trans = np.percentile(df_trans, np.arange(0, 101, 1))
-
-        #print(max(np.concatenate((percentiles_train, percentiles_trans))))
-
-        #ercentiles_train_norm = (percentiles_train - percentiles_train.min()) / (percentiles_train.max() - percentiles_train.min())
-        #percentiles_trans_norm = (percentiles_trans - percentiles_trans.min()) / (percentiles_trans.max() - percentiles_trans.min())
-        
-        max_val = max(np.max(percentiles_train), np.max(percentiles_trans))
-        min_val = min(np.min(percentiles_train), np.min(percentiles_trans))
-        x_buffer = (max_val - min_val) / 10
-
-
-        # Plot percentiles
-        fig=plt.figure(figsize=(8, 6))
-        plt.plot(percentiles_train,percentiles_trans, 'bo')
-        plt.plot([min_val-x_buffer, max_val+x_buffer], [min_val-x_buffer, max_val+x_buffer], 'k--')
-
-        # Labels and title
-
-        plt.xlim(min_val-x_buffer, max_val+x_buffer)
-        plt.ylim(min_val-x_buffer, max_val+x_buffer)
-        plt.xscale('log')
-        plt.yscale('log')
-
-        ax = plt.gca()
-        ax.xaxis.set_major_formatter(ScalarFormatter())
-        ax.yaxis.set_major_formatter(ScalarFormatter())
-        plt.xlabel('log(Observed)')
-        plt.ylabel('log(Predicted)')
-        #plt.grid(True)
-        #plt.legend()
-        
+        fig, ax = plt.subplots(figsize=(11, 6))
+        M=[]
+        m=[]
+        #plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
+        print(len(test_ind))
+        for i in range(len(test_ind)):
+            df_train=y_v[test_ind[i]]
+            df_trans=scores_v[test_ind[i]]
+            errors=SZ_utils.errors(df_train,df_trans)
+            # Compute percentiles
+            percentiles_train = np.percentile(df_train, np.arange(0, 101, 1))
+            percentiles_trans = np.percentile(df_trans, np.arange(0, 101, 1))
+            plt.scatter(percentiles_train, percentiles_trans,marker='o',s=3, alpha=0.6, label='QQ '+str(i+1)+' MAE = %0.2f, RMSE = %0.2f, R2 = %0.2f, PCC = %0.2f' %(errors[0], errors[1],errors[2],errors[3]))
+            M.append(max(max(percentiles_train),max(percentiles_trans)))
+            m.append(min(min(percentiles_train),min(percentiles_trans)))
+        MM=max(M)
+        mm=min(m)
+        plt.plot([mm, MM], [mm, MM], color='black', lw=2, linestyle='--')
+        #plt.xlim([0.0, 1.0])
+        #plt.ylim([0.0, 1.05])
+        ax.set_aspect('equal','box')
+        plt.xlabel('Observed')
+        plt.ylabel('Predicted')
+        plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),fontsize='small')
+        plt.tight_layout()
+        #plt.show()
         print('QQ figure = ',parameters['OUT']+'/fig_qq.pdf')
         try:
             fig.savefig(parameters['OUT']+'/fig_qq.pdf')
@@ -282,10 +273,41 @@ class SZ_utils():
             os.mkdir(parameters['OUT'])
             fig.savefig(parameters['OUT']+'/fig_qq.pdf')
 
+
+    def stamp_qq_fit(parameters):
+        print('plotting....')
+        df=parameters['df'].dropna(how='any',axis=0)
+        print(df.head())
+        df_true=df['y']
+        df_predict=df['SI']
+        print(df_true,df_predict)
+        errors=SZ_utils.errors(df_true,df_predict)
+        percentiles_train = np.percentile(df_true, np.arange(0, 101, 1))
+        percentiles_trans = np.percentile(df_predict, np.arange(0, 101, 1))
+
+        fig, ax = plt.subplots()
+        plt.scatter(percentiles_train, percentiles_trans,marker='o',s=3, alpha=0.5, label='QQ MAE = %0.2f, RMSE = %0.2f, R2 = %0.2f, PearsCorr = %0.2f' %(errors[0], errors[1],errors[2],errors[3]))
+        MM=np.max([np.max(percentiles_train),np.max(percentiles_trans)])
+        mm=np.min([np.min(percentiles_train),np.min(percentiles_trans)])
+        plt.plot([mm, MM], [mm, MM], color='black', lw=2, linestyle='--')
+        ax.set_aspect('equal','box')
+        plt.xlabel('Observed')
+        plt.ylabel('Predicted')
+        plt.legend(bbox_to_anchor =(0.5,-0.3), loc='lower center',fontsize='small')
+        plt.tight_layout()
+        print('QQ figure = ',parameters['OUT']+'/fig_qq_fit.pdf')
+        try:
+            fig.savefig(parameters['OUT']+'/fig_qq_fit.pdf')
+        except:
+            os.mkdir(parameters['OUT'])
+            fig.savefig(parameters['OUT']+'/fig_qq_fit.pdf')
+
+
     def save(parameters):
         print('writing output geopackage.....')
         df=parameters['df']
         nomi=list(df.head())
+        print(nomi)
         fields = QgsFields()
 
         for field in nomi:
@@ -294,7 +316,7 @@ class SZ_utils():
             if field=='geom':
                 continue
             if field=='y':
-                fields.append(QgsField(field, QVariant.Int))
+                fields.append(QgsField(field, QVariant.Double))
             else:
                 fields.append(QgsField(field, QVariant.Double))
 
@@ -340,28 +362,22 @@ class SZ_utils():
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
 
 
-    def errors(parameters):
-        df=parameters['df']
-        nomi=list(df.head())
-        y=df['y']
-        predic=df['SI']
-        min_absolute_error = np.min(np.abs(y - predic))
-        rmse = np.sqrt(mean_squared_error(y, predic))
-        r_squared = r2_score(y, predic)
-        pearson_coefficient, _ = pearsonr(y, predic)
+    def errors(y_true,predict):
+        min_absolute_error = mean_absolute_error(y_true, predict)
+        rmse = np.sqrt(mean_squared_error(y_true, predict))
+        r_squared = r2_score(y_true, predict)
+        pearson_coefficient, _ = pearsonr(y_true, predict)
         errors=[min_absolute_error,rmse,r_squared,pearson_coefficient]
-
-        output_file = parameters['file']
-
-        with open(output_file, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            # Write header
-            writer.writerow(["Metric", "Value"])
-            # Write data
-            writer.writerow(["Minimum Absolute Error", min_absolute_error])
-            writer.writerow(["RMSE", rmse])
-            writer.writerow(["R-squared", r_squared])
-            writer.writerow(["Pearson Coefficient", pearson_coefficient])
+        # output_file = filename
+        # with open(output_file, mode='w', newline='') as file:
+        #     writer = csv.writer(file)
+        #     # Write header
+        #     writer.writerow(["Metric", "Value"])
+        #     # Write data
+        #     writer.writerow(["Minimum Absolute Error", min_absolute_error])
+        #     writer.writerow(["RMSE", rmse])
+        #     writer.writerow(["R-squared", r_squared])
+        #     writer.writerow(["Pearson Coefficient", pearson_coefficient])
         return(errors)
     
     def check_validity(parameters):

@@ -195,7 +195,7 @@ class CoreAlgorithmGAM_cv():
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
-        
+                
         alg_params = {
             'linear': parameters['field3'],
             'continuous': parameters['field1'],
@@ -212,7 +212,7 @@ class CoreAlgorithmGAM_cv():
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
-
+        
         alg_params = {
             'testN':parameters['testN'],
             'fold':parameters['folder'],
@@ -234,7 +234,7 @@ class CoreAlgorithmGAM_cv():
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
             return {}
-
+        
         if parameters['testN']>0:
             alg_params = {
                 'df': outputs['df'],
@@ -246,7 +246,7 @@ class CoreAlgorithmGAM_cv():
         feedback.setCurrentStep(4)
         if feedback.isCanceled():
             return {}
-
+        
         if family[parameters['family']]=='binomial':
             alg_params = {
                 'test_ind': outputs['test_ind'],
@@ -257,11 +257,17 @@ class CoreAlgorithmGAM_cv():
         
         if family[parameters['family']]=='gaussian':
             alg_params = {
+                'test_ind': outputs['test_ind'],
                 'df': outputs['df'],
-                'OUT':parameters['folder'],
-                'file':parameters['folder']+'/errors.csv'
+                'OUT':parameters['folder']
             }
-            outputs['error_train']=SZ_utils.errors(alg_params)
+            outputs['error_train']=SZ_utils.stamp_qq(alg_params)
+
+            alg_params = {
+                'df': outputs['df'],                
+                'OUT':parameters['folder']
+            }
+            outputs['error_train']=SZ_utils.stamp_qq_fit(alg_params)
 
         results['out'] = parameters['out']
 

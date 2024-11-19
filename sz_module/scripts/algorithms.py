@@ -3,7 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import StratifiedKFold,LeaveOneOut,TimeSeriesSplit
+from sklearn.model_selection import StratifiedKFold,LeaveOneOut,TimeSeriesSplit,KFold
 from sklearn.svm import SVC
 import pandas as pd
 import numpy as np
@@ -120,7 +120,7 @@ class CV_utils():
         CI={}
         cofl=[]
         df["SI"] = np.nan
-        df["CI"] = np.nan
+        #df["CI"] = np.nan
         coeff=None
         if parameters['cv_method']=='temporal_TSS' or parameters['cv_method']=='temporal_LOO' or parameters['cv_method']=='spacetime_LOO':
             train_ind,test_ind,iters_count = CV_utils.cv_method(parameters,df_scaled,df,parameters['nomi'])
@@ -139,6 +139,7 @@ class CV_utils():
             if parameters['testN']>1:
                 train_ind,test_ind,iters_count = CV_utils.cv_method(parameters,df_scaled,df,parameters['nomi'])
                 for i in range(iters_count):
+                    print('cv: ',i)
                     if algorithm==Algorithms.alg_GAMrun:
                         prob[i],CI[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
                         #df.loc[test,'CI']=CI[i]
@@ -176,10 +177,16 @@ class CV_utils():
                 X_train[i] = np.where(kmeans.labels_ != test[0])[0]
                 X_test[i] = np.where(kmeans.labels_ == test[0])[0]
         elif parameters['cv_method']=='random':
-            method=StratifiedKFold(n_splits=parameters['testN'])
-            for i, (train, test) in enumerate(method.split(df_scaled, y)):
-                X_train[i]=train
-                X_test[i]=test
+            if parameters['family']=='gaussian':
+                method=KFold(n_splits=parameters['testN'],shuffle=True)
+                for i, (train, test) in enumerate(method.split(df_scaled, y)):
+                    X_train[i]=train
+                    X_test[i]=test
+            else:
+                method=StratifiedKFold(n_splits=parameters['testN'])
+                for i, (train, test) in enumerate(method.split(df_scaled, y)):
+                    X_train[i]=train
+                    X_test[i]=test
         elif parameters['cv_method']=='temporal_TSS':
             time_index=sorted(df[parameters['time']].unique())
             method=TimeSeriesSplit(n_splits=len(time_index)-1)
