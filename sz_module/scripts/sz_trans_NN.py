@@ -65,6 +65,8 @@ class CoreAlgorithmNN_trans():
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'NN algorithm', options=['MLP Classifier','MLP Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Scale (for MLPRegressor only)', options=['linear scale','log scale'], allowMultiple=False, usesStaticStrings=False, defaultValue='linear scale',optional=True))
+
         #self.addParameter(QgsProcessingParameterEnum(self.STRING3, 'CV method', options=['random CV','spatial CV','temporal CV (Time Series Split)','temporal CV (Leave One Out)', 'space-time CV (Leave One Out)'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         #self.addParameter(QgsProcessingParameterField(self.STRING4, 'Time field (for temporal CV only)', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any, optional=True ))
         #self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV: K=1 to fit, k>1 to cross-validate for spatial CV only'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2,optional=True))
@@ -81,6 +83,8 @@ class CoreAlgorithmNN_trans():
 
         #cv_method={'0':'random','1':'spatial','2':'temporal_TSS','3':'temporal_LOO','4':'spacetime_LOO'}
         NN={'0':'MLP_classifier','1':'MLP_regressor'}
+        scale={'0':'linear_scale','1':'log_scale'}
+
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -101,6 +105,10 @@ class CoreAlgorithmNN_trans():
         parameters['family'] = self.parameterAsString(parameters, self.STRING5, context)
         if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING5))
+        
+        parameters['scale'] = self.parameterAsString(parameters, self.STRING7, context)
+        if parameters['scale'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING7))
         
         source1 = self.parameterAsVectorLayer(parameters, self.INPUT1, context)
         parameters['input1']=source1.source()
@@ -179,7 +187,9 @@ class CoreAlgorithmNN_trans():
             'INPUT_VECTOR_LAYER': parameters['input1'],
             'nomi': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
-            #'family':family[parameters['family']]
+            'family':NN[parameters['family']],
+            'time':parameters['time'],
+            'scale':scale[parameters['scale']],
         }
         outputs['df_trans'],outputs['crs_trans']=SZ_utils.load_cv(self.f,alg_params)
 

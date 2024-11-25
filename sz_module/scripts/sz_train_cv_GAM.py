@@ -84,7 +84,7 @@ class CoreAlgorithmGAM_cv():
 
         family={'0':'binomial','1':'gaussian'}
         cv_method={'0':'random','1':'spatial','2':'temporal_TSS','3':'temporal_LOO','4':'spacetime_LOO'}
-        gauss_scale={'0':'linear scale','1':'log scale'}
+        scale={'0':'linear_scale','1':'log_scale'}
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -114,8 +114,8 @@ class CoreAlgorithmGAM_cv():
         if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING4))
         
-        parameters['gauss_scale'] = self.parameterAsString(parameters, self.STRING7, context)
-        if parameters['gauss_scale'] is None:
+        parameters['scale'] = self.parameterAsString(parameters, self.STRING7, context)
+        if parameters['scale'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING7))
         
         parameters['var_interaction_A'] = self.parameterAsFields(parameters, self.STRING8, context)
@@ -187,7 +187,7 @@ class CoreAlgorithmGAM_cv():
             'lsd' : parameters['fieldlsd'],
             'family':family[parameters['family']],
             'time':parameters['time'],
-            'gauss_scale':gauss_scale[parameters['gauss_scale']],
+            'scale':scale[parameters['scale']],
         }
 
         outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)

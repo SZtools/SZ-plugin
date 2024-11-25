@@ -82,7 +82,7 @@ class CoreAlgorithmGAM_trans():
         outputs = {}
 
         family={'0':'binomial','1':'gaussian'}
-        gauss_scale={'0':'linear scale','1':'log scale'}
+        scale={'0':'linear_scale','1':'log_scale'}
 
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
@@ -108,8 +108,8 @@ class CoreAlgorithmGAM_trans():
         if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING4))
         
-        parameters['gauss_scale'] = self.parameterAsString(parameters, self.STRING7, context)
-        if parameters['gauss_scale'] is None:
+        parameters['scale'] = self.parameterAsString(parameters, self.STRING7, context)
+        if parameters['scale'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING7))
         
         parameters['var_interaction_A'] = self.parameterAsFields(parameters, self.STRING8, context)
@@ -166,7 +166,7 @@ class CoreAlgorithmGAM_trans():
             'nomi': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'lsd' : parameters['fieldlsd'],
             'family':family[parameters['family']],
-            'gauss_scale':gauss_scale[parameters['gauss_scale']],
+            'scale':scale[parameters['scale']],
 
         }
         outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)

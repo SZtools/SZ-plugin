@@ -95,9 +95,7 @@ class Algorithms():
         GAM_utils.GAM_plot(gam,df.loc[train,nomi],nomi,fold,filename,X.loc[train,nomi])
         #♂GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
         GAM_utils.GAM_save(gam,fold,filename)
-
-        print('2')
-        
+       
         #GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob,CI,fold, filename)
         CI=[]
         return prob,CI,gam
@@ -163,7 +161,6 @@ class CV_utils():
                 df.loc[test,'SI']=prob[0]
                 
                 test_ind[0]=test
-        print('3')
         return prob,test_ind,predictors_weights
     
     def cv_method(parameters,df_scaled,df,nomi):
@@ -495,9 +492,7 @@ class GAM_utils():
                 XX = gam.generate_X_grid(term=i,meshgrid=True)
                 Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
                 ax3d=fig3.subplots()
-                print(len(XX[0]),len(XX[0]),len(Z))
                 x, y = np.meshgrid(XX[0], XX[1])  
-                print(len(x),len(y),len(Z))
                 mesh = ax3d.pcolormesh(XX[0], XX[1], Z, cmap='viridis', shading='auto')
                 cbar=plt.colorbar(mesh, ax=ax3d)
                 cbar.set_label('Partial Effect', fontsize=16)  # Increase colorbar label font size

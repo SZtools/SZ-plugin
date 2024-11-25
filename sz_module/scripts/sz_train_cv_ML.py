@@ -144,8 +144,6 @@ class CoreAlgorithm_cv():
         if feedback.isCanceled():
             return {}
         
-        print(cv_method[parameters['cv_method']])
-
         alg_params = {
             #'field1': parameters['field1'],
             'testN':parameters['testN'],

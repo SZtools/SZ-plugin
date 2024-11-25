@@ -112,8 +112,14 @@ class SZ_utils():
             try:
                 if parameters['family']=='binomial':
                     lsd[lsd>0]=1
-                elif parameters['family']=='gaussian' and parameters['gauss_scale']=='log scale':
+                elif parameters['family']=='gaussian' and parameters['scale']=='log_scale':
                     lsd[lsd>0]=np.log(lsd[lsd>0])
+                elif parameters['family']=='gaussian' and parameters['scale']=='linear_scale':
+                    print('do nothing')
+                elif parameters['family']=='MLP_regressor' and parameters['scale']=='log_scale':
+                    lsd[lsd>0]=np.log(lsd[lsd>0])
+                elif parameters['family']=='MLP_regressor' and parameters['scale']=='linear_scale':
+                    print('do nothing')
             except:
                 lsd[lsd>0]=1
             df['y']=lsd#.astype(int)
@@ -244,7 +250,6 @@ class SZ_utils():
         M=[]
         m=[]
         #plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
-        print(len(test_ind))
         for i in range(len(test_ind)):
             df_train=y_v[test_ind[i]]
             df_trans=scores_v[test_ind[i]]
@@ -277,10 +282,8 @@ class SZ_utils():
     def stamp_qq_fit(parameters):
         print('plotting....')
         df=parameters['df'].dropna(how='any',axis=0)
-        print(df.head())
         df_true=df['y']
         df_predict=df['SI']
-        print(df_true,df_predict)
         errors=SZ_utils.errors(df_true,df_predict)
         percentiles_train = np.percentile(df_true, np.arange(0, 101, 1))
         percentiles_trans = np.percentile(df_predict, np.arange(0, 101, 1))
@@ -307,7 +310,6 @@ class SZ_utils():
         print('writing output geopackage.....')
         df=parameters['df']
         nomi=list(df.head())
-        print(nomi)
         fields = QgsFields()
 
         for field in nomi:
