@@ -98,8 +98,8 @@ class CoreAlgorithmNN_trans():
         if parameters['fieldlsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING2))
         
-        parameters['algorithm'] = self.parameterAsString(parameters, self.STRING5, context)
-        if parameters['algorithm'] is None:
+        parameters['family'] = self.parameterAsString(parameters, self.STRING5, context)
+        if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING5))
         
         source1 = self.parameterAsVectorLayer(parameters, self.INPUT1, context)
@@ -169,7 +169,7 @@ class CoreAlgorithmNN_trans():
             'cv_method':'',
         }
 
-        outputs['prob'],outputs['test_ind'],outputs['predictors_weights']=CV_utils.cross_validation(alg_params,algorithm,classifier[NN[parameters['algorithm']]])
+        outputs['prob'],outputs['test_ind'],outputs['predictors_weights']=CV_utils.cross_validation(alg_params,algorithm,classifier[NN[parameters['family']]])
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
@@ -190,7 +190,7 @@ class CoreAlgorithmNN_trans():
         alg_params = {
             'predictors_weights':outputs['predictors_weights'],
             'nomi': parameters['field1'],
-            'family':NN[parameters['algorithm']],
+            'family':NN[parameters['family']],
             #'field1':parameters['field1'],
             'df':outputs['df_trans']
         }

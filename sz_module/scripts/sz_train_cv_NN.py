@@ -97,8 +97,8 @@ class CoreAlgorithmNN_cv():
         if parameters['fieldlsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING2))
         
-        parameters['algorithm'] = self.parameterAsString(parameters, self.STRING5, context)
-        if parameters['algorithm'] is None:
+        parameters['family'] = self.parameterAsString(parameters, self.STRING5, context)
+        if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING5))
         
         parameters['cv_method'] = self.parameterAsString(parameters, self.STRING3, context)
@@ -152,10 +152,10 @@ class CoreAlgorithmNN_cv():
             'df':outputs['df'],
             'cv_method':cv_method[parameters['cv_method']],
             'time':parameters['time'],
-            'family':NN[parameters['algorithm']],
+            'family':NN[parameters['family']],
         }
 
-        outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier[NN[parameters['algorithm']]])
+        outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier[NN[parameters['family']]])
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
@@ -173,16 +173,27 @@ class CoreAlgorithmNN_cv():
         if feedback.isCanceled():
             return {}
 
-        alg_params = {
-            'test_ind': outputs['test_ind'],
-            'df': outputs['df'],
-            'OUT':parameters['folder']
-        }
-        SZ_utils.stamp_cv(alg_params)
+        if NN[parameters['family']]=='MLP_classifier':
+            alg_params = {
+                'test_ind': outputs['test_ind'],
+                'df': outputs['df'],
+                'OUT':parameters['folder']
+            }
+            SZ_utils.stamp_cv(alg_params)
+        
+        if NN[parameters['family']]=='MLP_regressor':
+            alg_params = {
+                'test_ind': outputs['test_ind'],
+                'df': outputs['df'],
+                'OUT':parameters['folder']
+            }
+            outputs['error_train']=SZ_utils.stamp_qq(alg_params)
 
-        feedback.setCurrentStep(4)
-        if feedback.isCanceled():
-            return {}
+            alg_params = {
+                'df': outputs['df'],                
+                'OUT':parameters['folder']
+            }
+            outputs['error_train']=SZ_utils.stamp_qq_fit(alg_params)
 
         results['out'] = parameters['out']
 
