@@ -155,7 +155,8 @@ class CoreAlgorithmNN_trans():
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'nomi': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
-            #'time':parameters['time'],
+            'family':NN[parameters['family']],
+            'scale':scale[parameters['scale']],
         }
 
         outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
@@ -172,8 +173,7 @@ class CoreAlgorithmNN_trans():
             'fold':parameters['folder'],
             'nomi':parameters['field1'],
             'df':outputs['df'],
-            #'cv_method':cv_method[parameters['cv_method']],
-            #'time':parameters['time']
+            'family':NN[parameters['family']],
             'cv_method':'',
         }
 
@@ -188,7 +188,7 @@ class CoreAlgorithmNN_trans():
             'nomi': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
             'family':NN[parameters['family']],
-            'time':parameters['time'],
+            #'time':parameters['time'],
             'scale':scale[parameters['scale']],
         }
         outputs['df_trans'],outputs['crs_trans']=SZ_utils.load_cv(self.f,alg_params)
@@ -232,11 +232,12 @@ class CoreAlgorithmNN_trans():
         if feedback.isCanceled():
             return {}
 
-        alg_params = {
-            'df': outputs['trans'],
-            'OUT':parameters['folder']
-        }
-        SZ_utils.stampfit(alg_params)
+        # if NN[parameters['family']]=='MLP_classifier':
+        #     alg_params = {
+        #         'df': outputs['trans'],
+        #         'OUT':parameters['folder']
+        #     }
+        #     SZ_utils.stampfit(alg_params)
 
         results['out'] = parameters['out']
 

@@ -276,12 +276,12 @@ class CoreAlgorithmGAM_trans():
         if feedback.isCanceled():
             return {}
 
-        if family[parameters['family']]=='binomial':
-            alg_params = {
-                'df': outputs['trans'],
-                'OUT':parameters['folder']
-            }
-            SZ_utils.stampfit(alg_params)
+        # if family[parameters['family']]=='binomial':
+        #     alg_params = {
+        #         'df': outputs['trans'],
+        #         'OUT':parameters['folder']
+        #     }
+        #     SZ_utils.stampfit(alg_params)
 
         # if family[parameters['family']]=='gaussian':
         #     alg_params = {

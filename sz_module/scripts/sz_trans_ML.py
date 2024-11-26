@@ -222,11 +222,11 @@ class CoreAlgorithmML_trans():
         if feedback.isCanceled():
             return {}
 
-        alg_params = {
-            'df': outputs['trans'],
-            'OUT':parameters['folder']
-        }
-        SZ_utils.stampfit(alg_params)
+        # alg_params = {
+        #     'df': outputs['trans'],
+        #     'OUT':parameters['folder']
+        # }
+        # SZ_utils.stampfit(alg_params)
 
         results['out'] = parameters['out']
 
