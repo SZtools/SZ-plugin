@@ -1,5 +1,6 @@
 # Susceptibility Zoning plugin (SZ)
 
+The latest version of docs is available on: https://sz-docs.readthedocs.io
 
 ## Introduction
 
