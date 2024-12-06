@@ -331,106 +331,117 @@ class GAM_utils():
         
         ########################################################################not scaled
 
-        # fig = plt.figure(figsize=(15,15))
-        # for i, term in enumerate(gam.terms):
-        #     if term.isintercept:
-        #         continue
-        #     X=np.array([min(df.iloc[:, i])])
-        #     m=np.min(df.iloc[:, i])
-        #     interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(len(df[GAM_sel[i]])-1)
-        #     for n in range(len(df[GAM_sel[i]])-1):
-        #         X=np.append(X,m+interval)
-        #         m=m+interval
+        fig = plt.figure(figsize=(15,15))
+        for i, term in enumerate(gam.terms):
+            if term.isintercept:
+                continue
+            X=np.array([min(df.iloc[:, i])])
+            m=np.min(df.iloc[:, i])
+            interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(len(df[GAM_sel[i]])-1)
+            for n in range(len(df[GAM_sel[i]])-1):
+                X=np.append(X,m+interval)
+                m=m+interval
 
-        #     ##         
-        #     if isinstance(gam.terms[i], terms.FactorTerm):
-        #         ax=fig.add_subplot(rows, 3, i+1)   
-        #         ##
-        #         XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
-        #         pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-        #         ##
-        #         x=df[GAM_sel[i]].unique()
-        #         y=[]
-        #         y1=[]
-        #         y2=[]
+            ##         
+            if isinstance(gam.terms[i], terms.FactorTerm):
+                ax=fig.add_subplot(rows, 3, i+1)   
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                x=df[GAM_sel[i]].unique()
+                y=[]
+                y1=[]
+                y2=[]
                 
-        #         for j in range(len(df[GAM_sel[i]].unique())):
-        #             pdep_unq=np.unique(pdep)
-        #             confi025_unq=np.unique(confi[:,0])
-        #             confi095_unq=np.unique(confi[:,1])
-        #             y.append(pdep_unq[j])
-        #             y1.append(confi025_unq[j])
-        #             y2.append(confi095_unq[j])
+                for j in range(len(df[GAM_sel[i]].unique())):
+                    pdep_unq=np.unique(pdep)
+                    confi025_unq=np.unique(confi[:,0])
+                    confi095_unq=np.unique(confi[:,1])
+                    y.append(pdep_unq[j])
+                    y1.append(confi025_unq[j])
+                    y2.append(confi095_unq[j])
                 
-        #         paired_xy = list(zip(x, y, y1, y2))
-        #         paired_vectors_sorted = sorted(paired_xy, key=lambda x: x[0])
-        #         x, y, y1, y2= zip(*paired_vectors_sorted)
+                paired_xy = list(zip(x, y, y1, y2))
+                paired_vectors_sorted = sorted(paired_xy, key=lambda x: x[0])
+                x, y, y1, y2= zip(*paired_vectors_sorted)
 
-        #         ax.plot(x,y1,'o', c='gray')
-        #         ax.plot(x,y2,'o', c='gray')
-        #         ax.plot(x,y,'o', c='blue')
-        #         ax.set_xticks(np.sort(df[GAM_sel[i]].unique()))#, rotation=45)
-        #         ax.set_xlabel(GAM_sel[i])
-        #         ax.set_ylabel('Partial Effect')
-        #         ax.set_ylim(MIN,MAX)
-        #         continue
+                ax.plot(x,y1,'o', c='gray')
+                ax.plot(x,y2,'o', c='gray')
+                ax.plot(x,y,'o', c='blue')
+                ax.set_xticks(np.sort(df[GAM_sel[i]].unique()))#, rotation=45)
+                ax.set_xlabel(GAM_sel[i])
+                ax.set_ylabel('Partial Effect')
+                ax.set_ylim(MIN,MAX)
+                continue
             
-        #     elif isinstance(gam.terms[i], terms.LinearTerm):
-        #         ax=fig.add_subplot(rows, 3, i+1)   
-        #         ##
-        #         XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
-        #         pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-        #         ##
-        #         ax.plot(X, pdep, c='blue')                
-        #         ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
-        #         ax.set_xlabel(GAM_sel[i])
-        #         ax.set_ylabel('Partial Effect')
-        #         ax.set_ylim(MIN,MAX)
-        #         continue
+            elif isinstance(gam.terms[i], terms.LinearTerm):
+                ax=fig.add_subplot(rows, 3, i+1)   
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                ax.plot(X, pdep, c='blue')                
+                ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+                ax.set_xlabel(GAM_sel[i])
+                ax.set_ylabel('Partial Effect')
+                ax.set_ylim(MIN,MAX)
+                continue
             
-        #     elif isinstance(gam.terms[i], terms.TensorTerm):
+            elif isinstance(gam.terms[i], terms.TensorTerm):
 
-        #         X0=np.array([min(df.iloc[:, i])])
-        #         m=np.min(df.iloc[:, i])
-        #         interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(100-1)
-        #         for n in range(100-1):
-        #             X0=np.append(X0,m+interval)
-        #             m=m+interval
+                X0=np.array([min(df.iloc[:, i])])
+                m=np.min(df.iloc[:, i])
+                interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(100-1)
+                for n in range(100-1):
+                    X0=np.append(X0,m+interval)
+                    m=m+interval
                 
-        #         X1=np.array([min(df.iloc[:, i+1])])
-        #         m=np.min(df.iloc[:, i+1])
-        #         interval=(np.max(df.iloc[:, i+1])-np.min(df.iloc[:, i+1]))/(100-1)
-        #         for n in range(100-1):
-        #             X1=np.append(X1,m+interval)
-        #             m=m+interval
+                X1=np.array([min(df.iloc[:, i+1])])
+                m=np.min(df.iloc[:, i+1])
+                interval=(np.max(df.iloc[:, i+1])-np.min(df.iloc[:, i+1]))/(100-1)
+                for n in range(100-1):
+                    X1=np.append(X1,m+interval)
+                    m=m+interval
 
-        #         fig2=plt.figure(figsize=(12,10))
-        #         XX = gam.generate_X_grid(term=i,meshgrid=True)
-        #         Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
-        #         ax3d=fig2.subplots()
-        #         x, y = np.meshgrid(X0, X1)  
-        #         mesh = ax3d.pcolormesh(x, y, Z, cmap='viridis', shading='auto')
-        #         plt.colorbar(mesh, ax=ax3d, label='Partial Effect')
-        #         ax3d.set_xlabel(GAM_sel[i])
-        #         ax3d.set_ylabel(GAM_sel[i+1])
-        #         fig2.savefig(fold+'/Model_covariates_interaction'+filename+'.pdf', bbox_inches='tight')
- 
-        #         continue
+                fig2 = plt.figure(figsize=(8, 8))
+                XX = gam.generate_X_grid(term=i, meshgrid=True)
+                Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
+                ax3d = fig2.subplots()
+                mesh = ax3d.pcolormesh(X0, X1, np.transpose(Z), cmap='viridis', shading='auto')
+                ax3d.set_aspect('equal', adjustable='datalim')
 
-        #     elif isinstance(gam.terms[i], terms.SplineTerm):
-        #         ax=fig.add_subplot(rows, 3, i+1)   
-        #         ##
-        #         XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
-        #         pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-        #         ##
-        #         ax.plot(X, pdep, c='blue')
-        #         ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
-        #         ax.set_xlabel(GAM_sel[i])
-        #         ax.set_ylabel('Partial Effect')
-        #         ax.set_ylim(MIN,MAX)
-        #         continue
+                # Colorbar
+                bbox = ax3d.get_position()
+                x0, y0, x1, y1 = bbox.x0, bbox.y0, bbox.x1, bbox.y1
+                width = x1 - x0
+                height = y1 - y0
+                cbar_ax = fig2.add_axes([x1+0.03, y0, 0.03, height])
+                cbar = plt.colorbar(mesh, cax=cbar_ax)
+                cbar.set_label('Partial Effect', fontsize=16)
+                cbar.ax.tick_params(labelsize=16)
 
-        # fig.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
+                # Axis labels
+                ax3d.set_xlabel(GAM_sel[i], fontsize=16)
+                ax3d.set_ylabel(GAM_sel[i + 1], fontsize=16)
+                ax3d.tick_params(labelsize=14)
+                fig2.savefig(fold+'/Model_covariates_interaction'+filename+'.pdf', bbox_inches='tight') 
+                continue
+
+            elif isinstance(gam.terms[i], terms.SplineTerm):
+                ax=fig.add_subplot(rows, 3, i+1)   
+                ##
+                XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
+                pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
+                ##
+                ax.plot(X, pdep, c='blue')
+                ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
+                ax.set_xlabel(GAM_sel[i])
+                ax.set_ylabel('Partial Effect')
+                ax.set_ylim(MIN,MAX)
+                continue
+
+        fig.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
 
 
 
@@ -439,9 +450,6 @@ class GAM_utils():
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
-
-            
-            #ax1=fig1.add_subplot(rows, 3, i+1)
 
             if isinstance(gam.terms[i], terms.FactorTerm):
                 ax1=fig1.add_subplot(rows, 3, i+1)  
@@ -488,19 +496,31 @@ class GAM_utils():
                 continue
 
             elif isinstance(gam.terms[i], terms.TensorTerm):
-                fig3=plt.figure(figsize=(12,10))
-                XX = gam.generate_X_grid(term=i,meshgrid=True)
+                fig3 = plt.figure(figsize=(8, 8))
+                XX = gam.generate_X_grid(term=i, meshgrid=True)
                 Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
-                ax3d=fig3.subplots()
-                x, y = np.meshgrid(XX[0], XX[1])  
+                ax3d = fig3.subplots()
                 mesh = ax3d.pcolormesh(XX[0], XX[1], Z, cmap='viridis', shading='auto')
-                cbar=plt.colorbar(mesh, ax=ax3d)
-                cbar.set_label('Partial Effect', fontsize=16)  # Increase colorbar label font size
+                ax3d.set_aspect('equal', adjustable='datalim')  # Ensure square graph area
+
+                # Colorbar
+                bbox = ax3d.get_position()
+                x0, y0, x1, y1 = bbox.x0, bbox.y0, bbox.x1, bbox.y1
+                width = x1 - x0
+                height = y1 - y0
+                cbar_ax = fig3.add_axes([x1+0.03, y0, 0.03, height])
+                cbar = plt.colorbar(mesh, cax=cbar_ax)
+                cbar.set_label('Partial Effect', fontsize=16)
                 cbar.ax.tick_params(labelsize=16)
-                ax3d.set_xlabel(GAM_sel[i], fontsize=16)  # Increase x-axis label font size
-                ax3d.set_ylabel(GAM_sel[i+1], fontsize=16)
-                ax3d.tick_params(axis='both', which='major', labelsize=14)
-                fig3.savefig(fold+'/Model_covariates_interaction_scaled'+filename+'.pdf', bbox_inches='tight')
+
+                # Axis labels
+                ax3d.set_xlabel(GAM_sel[i], fontsize=16)
+                ax3d.set_ylabel(GAM_sel[i + 1], fontsize=16)
+                ax3d.tick_params(labelsize=14)
+
+                # Save the figure
+                fig3.savefig(fold + '/Model_covariates_interaction_scaled' + filename + '.pdf', bbox_inches='tight')
+
                 continue
 
             elif isinstance(gam.terms[i], terms.SplineTerm):
