@@ -13,17 +13,17 @@ The plugin has been developed with a main focus and application towards landslid
 The plugin uses several type of statistical, machine learning models for susceptibility evaluation, such as:
 
 * Generalized Additive Model with two distributions: Binomial, Gaussian (see [pygam](https://pygam.readthedocs.io))
-* Decision Tree (see [scikit-learn](https://scikit-learn.org/))
-* Support Vector Machine (see [scikit-learn](https://scikit-learn.org/))
-* Random Forest (see [scikit-learn](https://scikit-learn.org/))
-* Multi-layer Perceptron as classifier and regressor (see [scikit-learn](https://scikit-learn.org/))
+* Decision Tree (see [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html))
+* Support Vector Machine (see [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html))
+* Random Forest (see [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html#sklearn.ensemble.RandomForestClassifier))
+* Multi-layer Perceptron as classifier (see [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html#sklearn.neural_network.MLPClassifier)) and regressor (see [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor))
 
 The plugin allows the user to perform spatial and temporal analysis implementing space-time cross-validation (CV) methods: 
 
-* Kfold CV (see [scikit-learn](https://scikit-learn.org/))
+* Kfold CV (see [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.KFold.html))
 * Spatial CV (see [Elia et al., 2023](https://doi.org/10.1016/j.scitotenv.2023.165289))
-* Time Series Split temporal-CV (see [scikit-learn](https://scikit-learn.org/))
-* Leave One Out temporal-CV (see [scikit-learn](https://scikit-learn.org/))
+* Time Series Split temporal-CV (see [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TimeSeriesSplit.html))
+* Leave One Out temporal-CV (see [scikit-learn](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.LeaveOneOut.html))
 * Space-time CV (Leave One Out/Spatial CV)
 
 Moreover the plugin allows the user to run space-time transferability with all the models implemented.
@@ -92,6 +92,23 @@ The functions are grouped into 4 cathegories:
 All the functions run vector analysis
 
 <img src="./images/use.png" width="500">
+
+### Usage
+
+#### Modelling - Statistical Tools
+
+<img src="./images/statistical.png" width="500">
+
+* 1 select the vecor layer to be used as parent layer in the variable selection
+* 2 select the independent variabled from the fields of the input layer. Possible format: linear, ordinal (spline fitted), tensors, cathegorical (integer and continuous from 1 to n)
+* 3 select the distribution: gaussian or binomial
+* 4 if the distribution selected is binomial, all the variables are scaled with a standard scaler. The scale selection is necessary only for gaussian distribution linear (standard scaler) or logaritmic
+* 5 select the independent variable. In case of bionomial selection the variable is 0/1, otherwise an ordinal 0/1....n
+* 6 select one of the possible CV method
+* 7 in case of TSS or LOO or space-time CV selection the Time field is necessary 
+* 8 K value selection in case of random, spatial and space-time CV. If k is equal to 1 then a fitting analysis will be conducted
+* 9 set the vector file destination
+* 10 set the folder destination for the weights, partial effects, plots and metrics outputs 
  
 ### Test
 
