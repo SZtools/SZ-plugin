@@ -130,7 +130,6 @@ class SZ_utils():
         #df=df.dropna(how='any',axis=0)
         print('input layer loaded')
         del gdp
-        del lsd
         return(df,crs)
 
     def stampfit(parameters):
