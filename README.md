@@ -95,6 +95,20 @@ All the functions run vector analysis
 
 ### Usage
 
+#### Modelling - Machine Learning tools
+
+<img src="./images/ML.png" width="500">
+
+* 1 select the vecor layer to be used as parent layer in the variable selection
+* 2 select the independent variabled from the fields of the input layer. Possible format: linear, ordinal (spline fitted), tensors, cathegorical (integer and continuous from 1 to n)
+* 3 select the dependent variable. In case of bionomial selection the variable is 0/1, otherwise an ordinal n_1...n_m
+* 4 select the algorithm: SVC, DT, RF
+* 5 select one of the possible CV method
+* 6 in case of TSS or LOO or space-time CV selection the Time field is necessary 
+* 7 K value selection in case of random, spatial and space-time CV. If k is equal to 1 then a fitting analysis will be conducted
+* 8 set the vector file destination
+* 9 set the folder destination for the weights, partial effects, plots and metrics outputs 
+
 #### Modelling - Statistical Tools
 
 <img src="./images/statistical.png" width="500">
@@ -102,13 +116,29 @@ All the functions run vector analysis
 * 1 select the vecor layer to be used as parent layer in the variable selection
 * 2 select the independent variabled from the fields of the input layer. Possible format: linear, ordinal (spline fitted), tensors, cathegorical (integer and continuous from 1 to n)
 * 3 select the distribution: gaussian or binomial
-* 4 if the distribution selected is binomial, all the variables are scaled with a standard scaler. The scale selection is necessary only for gaussian distribution linear (standard scaler) or logaritmic
-* 5 select the independent variable. In case of bionomial selection the variable is 0/1, otherwise an ordinal 0/1....n
+* 4 if the distribution selected is binomial, all the variables are scaled with a standard scaler. The scale selection is necessary only for gaussian distribution: linear (standard scaler) or logaritmic
+* 5 select the dependent variable. In case of bionomial selection the variable is 0/1, otherwise an ordinal n_1...n_m
+* 6 select one of the possible CV method
+* 7 in case of TSS or LOO or space-time CV selection the Time field is necessary 
+* 8 K value selection in case of random, spatial and space-time CV. If k is equal to 1 then a fitting analysis will be conducted
+* 9 set the vector file destination
+* 10 set the folder destination for the weights, partial effects, plots and metrics outputs* 
+
+#### Modelling - Neural Network Tools
+
+<img src="./images/NN.png" width="500">
+
+* 1 select the vecor layer to be used as parent layer in the variable selection
+* 2 select the independent variabled from the fields of the input layer. Possible format: linear, ordinal (spline fitted), tensors, cathegorical (integer and continuous from 1 to n)
+* 3 select the dependent variable. In case of bionomial selection the variable is 0/1, otherwise an ordinal n_1...n_m
+* 4 select the algorithm: MLP classifier or MLP regressor
+* 5 if the distribution selected is MLP classifier, all the variables are scaled with a standard scaler. The scale selection is necessary only for MLP regressor: linear ([standard scaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)) or logaritmic
 * 6 select one of the possible CV method
 * 7 in case of TSS or LOO or space-time CV selection the Time field is necessary 
 * 8 K value selection in case of random, spatial and space-time CV. If k is equal to 1 then a fitting analysis will be conducted
 * 9 set the vector file destination
 * 10 set the folder destination for the weights, partial effects, plots and metrics outputs 
+
  
 ### Test
 
