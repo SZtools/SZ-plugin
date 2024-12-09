@@ -32,7 +32,7 @@ if platform.system() == "Windows":
     )
 
 
-def run_cmd(args, description="Installing...."):
+def run_cmd(args, description="sz-plugin load...."):
     log(f'command:{args}')
 
     # progress_dlg = QProgressDialog(

@@ -57,40 +57,37 @@ class classePlugin(object):
             for line in file:
                 if line.startswith('version='):
                     self.version = line.strip().split('version=')[1].strip()
-        self.plugin_settings = QSettings("SZ", str(self.version))
+        self.plugin_settings = QSettings().value("SZ",False)
 
     def initProcessing(self):
-        #import matplotlib
-        import numpy
-        #import pandas
-        #print(matplotlib.__file__,numpy.__file__,pandas.__file__,)
-        print(numpy.__file__)
-
-
         from .sz_module_provider import classeProvider
         """Init Processing provider for QGIS >= 3.8."""
         self.provider = classeProvider()
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
-        self.installer=installer(self.version)
-        print('Plugin already installed? ',self.plugin_settings.value("installed"))
+        self.installer=installer(self.version,self.plugin_settings)
+        print('Plugin already installed? ',self.plugin_settings)
         print('0')
         if os.environ.get('DEBUG')=='False':
-            if self.installer.preliminay_req() is False:##rimuovere il commentooooo!!!!!!!!!!
+            if self.installer.preliminay_req() is False:
                 self.installer.unload()
                 log(f"An error occured during the installation")
                 raise RuntimeError("An error occured during the installation")
             else:
                 print('1')
-                if self.installer.requirements() is False:
-                    self.installer.unload()
-                    log(f"An error occured during the installation")
-                    raise RuntimeError("An error occured during the installation")
-                else:
-                    print('2')
-                    self.plugin_settings.setValue("installed", True)
-                    self.initProcessing()     
+                if self.installer.is_already_installed() is False:
+                    print('ciao')
+                    if self.installer.requirements() is False:
+                        self.installer.unload()
+                        log(f"An error occured during the installation")
+                        raise RuntimeError("An error occured during the installation")
+                    else:
+                        print('2')
+                        QSettings().setValue("SZ", str(self.version))
+                        self.initProcessing() 
+                else:  
+                    self.initProcessing()  
         else:
             self.initProcessing()  
 

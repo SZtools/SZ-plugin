@@ -21,10 +21,13 @@ from .utils import (
     get_package_version,
     add_QGIS_env,
 )
+from qgis.PyQt.QtCore import QSettings
+
 
 
 class installer():
-    def __init__(self,version):
+    def __init__(self,version,plugin_settings):
+        self.plugin_settings=plugin_settings
         self.plugin_module = os.path.basename(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)))
         self.plugin_venv = "."+self.plugin_module+version.replace('.', '')
         self._defered_packages = []
@@ -54,6 +57,14 @@ class installer():
         #     log(f"Adding {self.bin_path} to PATH")
         #     os.environ["PATH"] = self.bin_path + ";" + os.environ["PATH"]    
 
+    def is_already_installed(self):
+        if self.plugin_settings is False:
+            return False
+        # elif self.plugin_settings==str(self.version):
+        #     return True
+        # elif self.plugin_settings!=str(self.version):
+        #     return False
+        
     def preliminay_req(self):
         try:
             add_venv(self.prefix_path,self.venv_path,self.plugin_venv,self.qgis_python_interpreter)
@@ -200,6 +211,8 @@ class installer():
                 except Exception as e:
                     print(f"Error deleting folder '{self.venv_path}': {e}")
                     log(f"Error deleting folder '{self.venv_path}': {e}")
+            QSettings().remove("SZ")
+            print('unloaded')
 
         
         
