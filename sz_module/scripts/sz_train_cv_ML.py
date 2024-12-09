@@ -97,8 +97,8 @@ class CoreAlgorithm_cv():
         if parameters['fieldlsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING2))
         
-        parameters['algorithm'] = self.parameterAsString(parameters, self.STRING5, context)
-        if parameters['algorithm'] is None:
+        parameters['family'] = self.parameterAsString(parameters, self.STRING5, context)
+        if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING5))
         
         parameters['cv_method'] = self.parameterAsString(parameters, self.STRING3, context)
@@ -136,6 +136,7 @@ class CoreAlgorithm_cv():
             'nomi': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
             'time':parameters['time'],
+            'family':ML[parameters['family']],
         }
 
         outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
@@ -151,10 +152,11 @@ class CoreAlgorithm_cv():
             'nomi':parameters['field1'],
             'df':outputs['df'],
             'cv_method':cv_method[parameters['cv_method']],
-            'time':parameters['time']
+            'time':parameters['time'],
+            'family':ML[parameters['family']],
         }
 
-        outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier[ML[parameters['algorithm']]])
+        outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier[ML[parameters['family']]])
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():

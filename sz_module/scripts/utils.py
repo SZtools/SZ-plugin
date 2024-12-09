@@ -120,6 +120,8 @@ class SZ_utils():
                     lsd[lsd>0]=np.log(lsd[lsd>0])
                 elif parameters['family']=='MLP_regressor' and parameters['scale']=='linear_scale':
                     print('do nothing')
+                else:
+                    lsd[lsd>0]=1
             except:
                 lsd[lsd>0]=1
             df['y']=lsd#.astype(int)

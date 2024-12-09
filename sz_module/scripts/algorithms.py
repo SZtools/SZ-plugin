@@ -578,8 +578,6 @@ class ML_utils():
                 'Coefficient': coeff
             })
             coeff_df.to_csv(fold+'/coefficients'+filename+'.csv', index=False)
-        
-        del coeff_df
 
 
     
