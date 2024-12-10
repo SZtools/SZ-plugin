@@ -30,88 +30,32 @@ __copyright__ = '(C) 2021 by Giacomo Titti'
 
 __revision__ = '$Format:%H$'
 
-from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (QgsProcessing,
-                       QgsFeatureSink,
                        QgsProcessingException,
                        QgsProcessingAlgorithm,
-                       QgsProcessingParameterFeatureSource,
-                       QgsProcessingParameterFeatureSink,
-                       QgsProcessingParameterRasterLayer,
                        QgsMessageLog,
                        Qgis,
                        QgsProcessingMultiStepFeedback,
-                       QgsProcessingParameterNumber,
-                       QgsProcessingParameterFileDestination,
                        QgsProcessingParameterVectorLayer,
-                       QgsVectorLayer,
-                       QgsRasterLayer,
-                       QgsProject,
-                       QgsField,
-                       QgsFields,
-                       QgsVectorFileWriter,
-                       QgsWkbTypes,
-                       QgsFeature,
-                       QgsGeometry,
-                       QgsPointXY,
                        QgsProcessingParameterField,
-                       QgsProcessingParameterString,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterField,
-                       QgsProcessingParameterVectorDestination)
+)
 from sklearn.metrics import roc_curve, f1_score, cohen_kappa_score, roc_auc_score
 from copy import copy
-import math
-import operator
 import matplotlib.pyplot as plt
-
-from qgis import processing
-from osgeo import gdal,ogr,osr
 import numpy as np
 import math
 import operator
-import random
 from qgis import *
 # ##############################
 import matplotlib.pyplot as plt
-import csv
 from processing.algs.gdal.GdalUtils import GdalUtils
-#import plotly.express as px
-#import chart_studio
-#import plotly.offline
-import plotly.graph_objs as go
-#import geopandas as gd
-#import pandas as pd
 import tempfile
 import os
 from sz_module.scripts.utils import SZ_utils
 
 class rocGenerator(QgsProcessingAlgorithm):
-    # INPUT = 'INPUT'
-    # STRING = 'STRING'
-    # STRING2 = 'STRING2'
-    # OUTPUT3 = 'OUTPUT3'
-
-    # def tr(self, string):
-    #     return QCoreApplication.translate('Processing', string)
-
-    # def createInstance(self):
-    #     return rocGenerator()
-
-    # def name(self):
-    #     return 'ROC'
-
-    # def displayName(self):
-    #     return self.tr('04 ROC')
-
-    # def group(self):
-    #     return self.tr('04 Classify SI')
-
-    # def groupId(self):
-    #     return '04 Classify SI'
-
-    # def shortHelpString(self):
-    #     return self.tr("ROC curve creator")
 
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
@@ -121,9 +65,6 @@ class rocGenerator(QgsProcessingAlgorithm):
 
     def process(self, parameters, context, model_feedback):
         self.f=tempfile.gettempdir()
-        #parameters['classes']=5
-        # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
-        # overall progress through the model
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}
         outputs = {}
@@ -146,53 +87,21 @@ class rocGenerator(QgsProcessingAlgorithm):
         if parameters['fieldlsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING2))
 
-        #parameters['w'] = self.parameterAsString(parameters, self.STRING3, context)
-        #if parameters['w'] is None:
-        #    raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING3))
-
-        # parameters['edgesJenks'] = self.parameterAsFileOutput(parameters, self.OUTPUT1, context)
-        # if parameters['edgesJenks'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT1))
-        #
-        # parameters['edgesEqual'] = self.parameterAsFileOutput(parameters, self.OUTPUT2, context)
-        # if parameters['edgesEqual'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT2))
-
-        # parameters['edgesGA'] = self.parameterAsFileOutput(parameters, self.OUTPUT3, context)
-        # if parameters['edgesGA'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
-
         parameters['fold'] = self.parameterAsString(parameters, self.OUTPUT3, context)
         if parameters['fold'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
 
-
-        #QgsMessageLog.logMessage(parameters['lsi'], 'MyPlugin', level=Qgis.Info)
-        #QgsMessageLog.logMessage(parameters['lsi'], 'MyPlugin', level=Qgis.Info)
         SZ_utils.make_directory({'path':parameters['fold']})
 
-
         alg_params = {
-            #'INPUT_RASTER_LAYER': parameters['Slope'],
-            #'INPUT_EXTENT': parameters['Extension'],
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'nomi': parameters['field1'],
             'lsd' : parameters['fieldlsd']
-            #'W':parameters['w']
-            #'INPUT_INT': parameters['BufferRadiousInPxl'],
-            #'INPUT_INT_1': parameters['minSlopeAcceptable'],
         }
         outputs['gdp'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
-        #list_of_values=list(np.arange(10))
         self.list_of_values=outputs['gdp']['SI']
         QgsMessageLog.logMessage(str(len(self.list_of_values)), 'MyPlugin', level=Qgis.Info)
-
-        # alg_params = {
-        #     'OUTPUT': parameters['edgesEqual'],
-        #     'NUMBER': parameters['classes']
-        # }
-        # #outputs['equal']=self.equal(alg_params)
 
         alg_params = {
             'df': outputs['gdp'],
@@ -200,59 +109,10 @@ class rocGenerator(QgsProcessingAlgorithm):
         }
         Functions.roc(alg_params)
 
-        # alg_params = {
-        #     'OUTPUT': parameters['edgesJenks'],
-        #     'NUMBER': parameters['classes']
-        # }
-        # #outputs['jenk']=self.jenk(alg_params)
-
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
         return results
-
-
-
-    # def load(self,parameters):
-    #     layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
-    #     crs=layer.crs()
-    #     campi=[]
-    #     for field in layer.fields():
-    #         campi.append(field.name())
-    #     campi.append('geom')
-    #     gdp=pd.DataFrame(columns=campi,dtype=float)
-    #     df=pd.DataFrame(dtype=float)
-    #     features = layer.getFeatures()
-    #     count=0
-    #     feat=[]
-    #     for feature in features:
-    #         attr=feature.attributes()
-    #         #print(attr)
-    #         geom = feature.geometry()
-    #         #print(type(geom.asWkt()))
-    #         feat=attr+[geom.asWkt()]
-    #         #print(feat)
-    #         gdp.loc[len(gdp)] = feat
-    #         #gdp = gdp.append(feat, ignore_index=True)
-    #         count=+ 1
-    #     gdp.to_csv(self.f+'/file.csv')
-    #     del gdp
-    #     gdp=pd.read_csv(self.f+'/file.csv')
-    #     #print(feat)
-    #     #print(gdp['S'].dtypes)
-    #     gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-    #     df['SI']=gdp.loc[:,parameters['field1']]
-    #     #df['w']=gdp.loc[:,parameters['W']]
-    #     nomi=list(df.head())
-    #     #print(list(df['Sf']),'1')
-    #     lsd=gdp[parameters['lsd']]
-    #     lsd[lsd>0]=1
-    #     df['y']=lsd#.astype(int)
-    #     df['ID']=gdp['ID']
-    #     df['geom']=gdp['geom']
-    #     df=df.dropna(how='any',axis=0)
-    #     #df['ID']=df['ID'].astype('Int32')
-    #     return df,crs
 
 class Functions():
     def roc(parameters):
