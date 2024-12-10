@@ -63,7 +63,7 @@ from sz_module.scripts.utils import SZ_utils
 class classvAlgorithm(QgsProcessingAlgorithm):
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
-        self.addParameter(QgsProcessingParameterField(self.STRING, 'SI field', parentLayerParameterName=self.INPUT, defaultValue=None))
+        self.addParameter(QgsProcessingParameterField(self.STRING, 'Index', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Number of classes'), type=QgsProcessingParameterNumber.Integer, defaultValue = None,  minValue=1))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Folder destination', defaultValue=None, createByDefault = True))
