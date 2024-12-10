@@ -77,7 +77,6 @@ class classePlugin(object):
             else:
                 print('1')
                 if self.installer.is_already_installed() is False:
-                    print('ciao')
                     if self.installer.requirements() is False:
                         self.installer.unload()
                         log(f"An error occured during the installation")
