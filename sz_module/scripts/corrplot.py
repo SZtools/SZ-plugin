@@ -33,13 +33,11 @@ __date__ = '2021-11-01'
 __copyright__ = '(C) 2021 by Giacomo Titti'
 import sys
 sys.setrecursionlimit(10000)
-from qgis.PyQt.QtCore import QCoreApplication
 from qgis.core import (QgsProcessing,
                        QgsProcessingException,
                        QgsProcessingAlgorithm,
                        QgsProcessingMultiStepFeedback,
                        QgsProcessingParameterVectorLayer,
-                       QgsVectorLayer,
                        QgsProcessingParameterField,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterField,
@@ -57,30 +55,6 @@ import seaborn as sns
 from .utils import SZ_utils
 
 class CorrAlgorithm(QgsProcessingAlgorithm):
-    # INPUT = 'covariates'
-    # STRING = 'field1'
-    # OUTPUT3 = 'OUTPUT3'
-
-    # def tr(self, string):
-    #     return QCoreApplication.translate('Processing', string)
-
-    # def createInstance(self):
-    #     return CorrAlgorithm()
-
-    # def name(self):
-    #     return 'Correlation plot'
-
-    # def displayName(self):
-    #     return self.tr('08 Correlation plot')
-
-    # def group(self):
-    #     return self.tr('01 Data preparation')
-
-    # def groupId(self):
-    #     return '01 Data preparation'
-
-    # def shortHelpString(self):
-    #     return self.tr("This function calculate the correlation plot between continuous variables")
 
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
@@ -113,7 +87,7 @@ class CorrAlgorithm(QgsProcessingAlgorithm):
         
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field1'],
+            'nomi': parameters['field1'],
         }
 
         outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
@@ -124,7 +98,6 @@ class CorrAlgorithm(QgsProcessingAlgorithm):
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            #'field1': parameters['field1'],
             'df':outputs['df'],
             'nomi': parameters['field1'],
             'OUT':parameters['folder']
@@ -137,35 +110,6 @@ class CorrAlgorithm(QgsProcessingAlgorithm):
 
         return results
     
-
-    # def load(self,parameters):
-    #     layer = QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
-    #     crs=layer.crs()
-    #     campi=[]
-    #     for field in layer.fields():
-    #         campi.append(field.name())
-    #     campi.append('geom')
-    #     gdp=pd.DataFrame(columns=campi,dtype=float)
-    #     features = layer.getFeatures()
-    #     count=0
-    #     feat=[]
-    #     for feature in features:
-    #         attr=feature.attributes()
-    #         geom = feature.geometry()
-    #         feat=attr+[geom.asWkt()]
-    #         gdp.loc[len(gdp)] = feat
-    #         count=+ 1
-    #     gdp.to_csv(self.f+'/file.csv')
-    #     del gdp
-    #     gdp=pd.read_csv(self.f+'/file.csv')
-    #     gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
-    #     df=gdp[parameters['field1']]
-    #     nomi=list(df.head())
-    #     df['ID']=gdp['ID']
-    #     df['geom']=gdp['geom']
-    #     df=df.dropna(how='any',axis=0)
-    #     return(df,nomi,crs)
-
 class Functions():
     def corr(parameters):
         df=parameters['df']

@@ -82,7 +82,7 @@ class CoreAlgorithmGAM_trans():
         outputs = {}
 
         family={'0':'binomial','1':'gaussian'}
-        gauss_scale={'0':'linear scale','1':'log scale'}
+        scale={'0':'linear_scale','1':'log_scale'}
 
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
@@ -108,8 +108,8 @@ class CoreAlgorithmGAM_trans():
         if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING4))
         
-        parameters['gauss_scale'] = self.parameterAsString(parameters, self.STRING7, context)
-        if parameters['gauss_scale'] is None:
+        parameters['scale'] = self.parameterAsString(parameters, self.STRING7, context)
+        if parameters['scale'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING7))
         
         parameters['var_interaction_A'] = self.parameterAsFields(parameters, self.STRING8, context)
@@ -144,7 +144,6 @@ class CoreAlgorithmGAM_trans():
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
         
         SZ_utils.make_directory({'path':parameters['folder']})
-
         
         parameters['testN']=1
 
@@ -164,10 +163,10 @@ class CoreAlgorithmGAM_trans():
         
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'field1': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
+            'nomi': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'lsd' : parameters['fieldlsd'],
             'family':family[parameters['family']],
-            'gauss_scale':gauss_scale[parameters['gauss_scale']],
+            'scale':scale[parameters['scale']],
 
         }
         outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
@@ -215,6 +214,7 @@ class CoreAlgorithmGAM_trans():
             'continuous':parameters['field1'],
             'tensor': tensor,
             'family':family[parameters['family']],
+            'cv_method':'',
         }
 
         outputs['prob'],outputs['test_ind'],outputs['predictors_weights']=CV_utils.cross_validation(alg_params,algorithm,classifier)
@@ -234,6 +234,8 @@ class CoreAlgorithmGAM_trans():
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
+        
+        print('4')
 
         alg_params = {
             'predictors_weights':outputs['predictors_weights'],
@@ -245,6 +247,8 @@ class CoreAlgorithmGAM_trans():
             'df':outputs['df_trans']
         }
         outputs['trans']=Algorithms.GAM_transfer(alg_params)
+
+        print('5')
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
@@ -272,28 +276,37 @@ class CoreAlgorithmGAM_trans():
         if feedback.isCanceled():
             return {}
 
-        if family[parameters['family']]=='binomial':
-            alg_params = {
-                'df': outputs['trans'],
-                'OUT':parameters['folder']
-            }
-            SZ_utils.stampfit(alg_params)
+        # if family[parameters['family']]=='binomial':
+        #     alg_params = {
+        #         'df': outputs['trans'],
+        #         'OUT':parameters['folder']
+        #     }
+        #     SZ_utils.stampfit(alg_params)
 
-        if family[parameters['family']]=='gaussian':
-            alg_params = {
-                'df': outputs['trans'],
-                'OUT':parameters['folder'],
-                'file':parameters['folder']+'errors_trans.csv'
+        # if family[parameters['family']]=='gaussian':
+        #     alg_params = {
+        #         'df': outputs['trans'],
+        #         'OUT':parameters['folder'],
+        #         'file':parameters['folder']+'/errors_trans.csv'
 
-            }
-            outputs['errors_trans']=SZ_utils.errors(alg_params)
+        #     }
+        #     outputs['errors_trans']=SZ_utils.errors(alg_params)
 
-            alg_params = {
-                'df': outputs['train'],
-                'OUT':parameters['folder'],
-                'file':parameters['folder']+'errors_train.csv'
-            }
-            outputs['error_train']=SZ_utils.errors(alg_params)
+            # alg_params = {
+            #     'df': outputs['df'],
+            #     'OUT':parameters['folder'],
+            #     'file':parameters['folder']+'/errors_train.csv'
+            # }
+            # print(parameters['folder']+'/errors_train.csv','daiiii')
+            # outputs['error_train']=SZ_utils.errors(alg_params)
+
+            # alg_params = {
+            #     'df_train': outputs['df'],
+            #     'df_trans':outputs['trans'],
+            #     'OUT':parameters['folder'],
+            # }
+            # SZ_utils.stamp_qq_fit(alg_params)
+
 
         feedback.setCurrentStep(6)
         if feedback.isCanceled():

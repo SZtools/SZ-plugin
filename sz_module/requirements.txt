@@ -1,4 +1,6 @@
 scikit-learn
 pygam
+pandas
+shapely
+fiona
 seaborn
-libpysal

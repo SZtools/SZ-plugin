@@ -41,8 +41,8 @@ from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from sz_module.images.cqp_resources_rc import qInitResources
 qInitResources()  # necessary to be able to access your images
+import os
 
-from .scripts.roc import rocAlgorithm
 from .scripts.selfroc import rocGenerator
 from .scripts.lsdanalysis import statistic
 from .scripts.cleaning import cleankernelAlgorithm
@@ -57,16 +57,20 @@ from .scripts.classcovdeciles import classcovdecAlgorithm
 from .scripts.corrplot import CorrAlgorithm
 from .scripts.sz_train_cv_ML import CoreAlgorithm_cv
 from .scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
+from .scripts.sz_train_cv_NN import CoreAlgorithmNN_cv
 from .scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
 from .scripts.sz_trans_ML import CoreAlgorithmML_trans
+from .scripts.sz_trans_NN import CoreAlgorithmNN_trans
 from .scripts.algorithms import Algorithms
 from sz_module.scripts.segmentation_aspect import segmentationAspectAlgorithm
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
+from sklearn.neural_network import MLPClassifier,MLPRegressor
 from pygam import LogisticGAM,LinearGAM
-from .utils import log
+from .utils import log,warn,clean_memory
+
 
 class classeProvider(QgsProcessingProvider):
 
@@ -88,6 +92,28 @@ class classeProvider(QgsProcessingProvider):
         Loads all algorithms belonging to this provider.
         """
 
+        self.active={
+            'classcovtxt':True,
+            'classcovdeciles':True,
+            'statistic':True,
+            'rocGenerator':True,
+            'cleankernel':True,
+            'statistickernel':True,
+            'sampler':True,
+            'rasterstatkernel':True,
+            'Corr':True,
+            'classv':True,
+            'classvW':True,
+            'FP':True,
+            'ML_cv':True,
+            'GAM_cv':True,
+            'GAM_trans':True,
+            'ML_trans':True,
+            'SegAsp':False,
+            'NN_trans':True,
+            'NN_cv':True,
+        }
+
         dict_of_scripts={
             'alg': 'ML_cv',
             'function': CoreAlgorithm_cv,
@@ -97,7 +123,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'02 Modelling',
             'shortHelpString':"This function apply Support Vector Machine to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'GAM_cv',
@@ -108,7 +134,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'02 Modelling',
             'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'GAM_trans',
@@ -119,7 +145,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'03 SI transfer',
             'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'ML_trans',
@@ -130,7 +156,29 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'03 SI transfer',
             'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
+
+        dict_of_scripts={
+            'alg': 'NN_cv',
+            'function': CoreAlgorithmNN_cv,
+            'name':'Fit-CV_NNcv',
+            'displayName':'03 Neural Network tools',
+            'group':'02 Modelling',
+            'groupId':'02 Modelling',
+            'shortHelpString':"This function apply Neural Network algorithms to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
+
+        dict_of_scripts={
+            'alg': 'NN_trans',
+            'function': CoreAlgorithmNN_trans,
+            'name':'Transfer_NN',
+            'displayName':'03 Predict Neural Network',
+            'group':'03 SI transfer',
+            'groupId':'03 SI transfer',
+            'shortHelpString':"This function apply Neural Network algorithms to transfer susceptibility",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         ##############
         dict_of_scripts={
@@ -142,7 +190,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'01 Data preparation',
             'shortHelpString':"Apply classification to field from file.txt i.e value_1 value_2 class_1",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'classcovdeciles',
@@ -153,7 +201,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'01 Data preparation',
             'shortHelpString':"Apply classification to field in quantiles",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
     
         dict_of_scripts={
             'alg': 'statistic',
@@ -164,11 +212,9 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'01 Data preparation',
             'shortHelpString':"analysis of the points density distribution by attribute fields",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
-      
-        #self.addAlgorithm(rocAlgorithm())
-     
+         
         dict_of_scripts={
             'alg': 'rocGenerator',
             'function': rocGenerator,
@@ -178,7 +224,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'04 Classify SI',
             'shortHelpString':"ROC curve creator",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'cleankernel',
@@ -189,7 +235,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'01 Data preparation',
             'shortHelpString':"It selects and remove features from point vector by a kernel raster condition",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'statistickernel',
@@ -200,7 +246,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'01 Data preparation',
             'shortHelpString':"It creates graphs of '03 Points Kernel Statistics' output",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'sampler',
@@ -211,7 +257,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'01 Data preparation',
             'shortHelpString':"Sample randomly training and validating datasets with the contraint to have only training or validating points per pixel",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'rasterstatkernel',
@@ -222,7 +268,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'01 Data preparation',
             'shortHelpString':"It calculates kernel statistic from raster around points: real, max, min, std, sum, average, range",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'Corr',
@@ -233,7 +279,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'01 Data preparation',
             'shortHelpString':"This function calculate the correlation plot between continuous variables",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'classv',
@@ -244,7 +290,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'04 Classify SI',
             'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative ROC curve",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'classvW',
@@ -255,7 +301,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'04 Classify SI',
             'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative weighted ROC curve",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'FP',
@@ -266,7 +312,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'04 Classify SI',
             'shortHelpString':"This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         dict_of_scripts={
             'alg': 'SegAsp',
@@ -277,7 +323,7 @@ class classeProvider(QgsProcessingProvider):
             'groupId':'01 Data preparation',
             'shortHelpString':"Segmentation aspect metric proposed for SU by Alvioli et al (2016). For more details, please refer to the paper.",
         }
-        self.addAlgorithm(Instance(dict_of_scripts))
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
         # add additional algorithms here
         # self.addAlgorithm(MyOtherAlgorithm())
@@ -343,31 +389,14 @@ class Instance(QgsProcessingAlgorithm):
     def __init__(self, dict_of_scripts):
         super().__init__()
         self.dict_of_scripts = dict_of_scripts
-        self.active={
-            'classcovtxt':True,
-            'classcovdeciles':True,
-            'statistic':True,
-            'rocGenerator':True,
-            'cleankernel':True,
-            'statistickernel':True,
-            'sampler':True,
-            'rasterstatkernel':True,
-            'Corr':True,
-            'classv':True,
-            'classvW':True,
-            'FP':True,
-            'ML_cv':True,
-            'GAM_cv':True,
-            'GAM_trans':True,
-            'ML_trans':True,
-            'SegAsp':True,
-        }
 
         self.algorithms={
             'ML_cv':Algorithms.alg_MLrun,
             'ML_trans':Algorithms.alg_MLrun,
             'GAM_cv':Algorithms.alg_GAMrun,
             'GAM_trans':Algorithms.alg_GAMrun,
+            'NN_trans':Algorithms.alg_NNrun,
+            'NN_cv':Algorithms.alg_NNrun,
         }
 
         self.classifier={
@@ -383,6 +412,14 @@ class Instance(QgsProcessingAlgorithm):
             },
             'GAM_cv':{'binomial':LogisticGAM,'gaussian':LinearGAM},
             'GAM_trans':{'binomial':LogisticGAM,'gaussian':LinearGAM},
+            'NN_trans':{
+                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+            },
+            'NN_cv':{
+                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+            },
         }
 
     def tr(self, string):
@@ -411,13 +448,23 @@ class Instance(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         result={}
-        try:
-            if self.active[self.dict_of_scripts['alg']]: 
-                if self.dict_of_scripts['alg'] in self.algorithms:
+
+        if self.dict_of_scripts['alg'] in self.algorithms:
+            if os.environ.get('DEBUG')=='False':
+                try:
                     result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
-                else: 
+                except Exception as e:
+                    log(f"An error occurred: {e}")
+            else:
+                result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
+        else:
+            if os.environ.get('DEBUG')=='False':
+                try:
                     result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
-        except Exception as e:
-            log(f"An error occurred: {e}")
+                except Exception as e:
+                    log(f"An error occurred: {e}")
+            else:
+                result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
+        
         return result
         

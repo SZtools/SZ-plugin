@@ -57,7 +57,7 @@ class classePlugin(object):
             for line in file:
                 if line.startswith('version='):
                     self.version = line.strip().split('version=')[1].strip()
-        self.plugin_settings = QSettings("SZ", str(self.version))
+        self.plugin_settings = QSettings().value("SZ",False)
 
     def initProcessing(self):
         from .sz_module_provider import classeProvider
@@ -66,24 +66,27 @@ class classePlugin(object):
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def initGui(self):
-        self.installer=installer(self.version)
-        print('Plugin already installed? ',self.plugin_settings.value("installed"))
+        self.installer=installer(self.version,self.plugin_settings)
+        print('Plugin already installed? ',self.plugin_settings)
         print('0')
         if os.environ.get('DEBUG')=='False':
-            if self.installer.preliminay_req() is False:##rimuovere il commentooooo!!!!!!!!!!
+            if self.installer.preliminay_req() is False:
                 self.installer.unload()
                 log(f"An error occured during the installation")
                 raise RuntimeError("An error occured during the installation")
             else:
                 print('1')
-                if self.installer.requirements() is False:
-                    self.installer.unload()
-                    log(f"An error occured during the installation")
-                    raise RuntimeError("An error occured during the installation")
-                else:
-                    print('2')
-                    self.plugin_settings.setValue("installed", True)
-                    self.initProcessing()     
+                if self.installer.is_already_installed() is False:
+                    if self.installer.requirements() is False:
+                        self.installer.unload()
+                        log(f"An error occured during the installation")
+                        raise RuntimeError("An error occured during the installation")
+                    else:
+                        print('2')
+                        QSettings().setValue("SZ", str(self.version))
+                        self.initProcessing() 
+                else:  
+                    self.initProcessing()  
         else:
             self.initProcessing()  
 

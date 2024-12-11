@@ -21,10 +21,13 @@ from .utils import (
     get_package_version,
     add_QGIS_env,
 )
+from qgis.PyQt.QtCore import QSettings
+
 
 
 class installer():
-    def __init__(self,version):
+    def __init__(self,version,plugin_settings):
+        self.plugin_settings=plugin_settings
         self.plugin_module = os.path.basename(os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)))
         self.plugin_venv = "."+self.plugin_module+version.replace('.', '')
         self._defered_packages = []
@@ -39,6 +42,8 @@ class installer():
         self.qgis_python_interpreter = locate_py()
 
         self.venv_path = os.path.join(self.prefix_path,self.plugin_venv)
+        self.site_packages_path=''
+        self.bin_path=''
         # self.site_packages_path = os.path.join(self.prefix_path,self.plugin_venv,"Lib", "site-packages")
         # self.bin_path = os.path.join(self.prefix_path,self.plugin_venv,"Scripts")
         # if self.site_packages_path not in sys.path:
@@ -52,6 +57,14 @@ class installer():
         #     log(f"Adding {self.bin_path} to PATH")
         #     os.environ["PATH"] = self.bin_path + ";" + os.environ["PATH"]    
 
+    def is_already_installed(self):
+        if self.plugin_settings is False:
+            return False
+        # elif self.plugin_settings==str(self.version):
+        #     return True
+        # elif self.plugin_settings!=str(self.version):
+        #     return False
+        
     def preliminay_req(self):
         try:
             add_venv(self.prefix_path,self.venv_path,self.plugin_venv,self.qgis_python_interpreter)
@@ -80,7 +93,11 @@ class installer():
     def requirements(self):
         dir=os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
         log(f"verify requirements")
-        with open(os.path.join(dir,"requirements.txt"), "r") as file:
+        if platform.system() == 'Windows':
+            req="requirements.txt"
+        else:
+            req="requirements_linux.txt"
+        with open(os.path.join(dir,req), "r") as file:
             list_libraries={}
             for line in file:
                     parts=line.split("==")
@@ -90,16 +107,16 @@ class installer():
                     except:
                         library=parts[0][:-1]
                         version=None
-                    installed_version=get_package_version(self.qgis_python_interpreter,library)
-                    if installed_version is None:
-                        list_libraries[library]=version
-                    else:
-                        if str(installed_version)==str(version) or version==None:
-                            iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed!',Qgis.Success)
-                            log(f'{library} is already installed!')
-                        else:
-                            log(f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!')
-                            iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!',Qgis.Warning)
+                    #installed_version=get_package_version(self.qgis_python_interpreter,library)
+                    #if installed_version is None:
+                    list_libraries[library]=version
+                    #else:
+                    #    if str(installed_version)==str(version) or version==None:
+                    #        iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed!',Qgis.Success)
+                    #        log(f'{library} is already installed!')
+                    #    else:
+                    #        log(f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!')
+                    #        iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!',Qgis.Warning)
         return self.install(list_libraries)
 
     def install(self,list_libraries):
@@ -194,6 +211,8 @@ class installer():
                 except Exception as e:
                     print(f"Error deleting folder '{self.venv_path}': {e}")
                     log(f"Error deleting folder '{self.venv_path}': {e}")
+            QSettings().remove("SZ")
+            print('unloaded')
 
         
         

@@ -26,9 +26,9 @@ def load_env_file(file_path):
                 # Split key-value pairs
                 key, value = line.strip().split('=', 1)
                 os.environ[key] = value
-
-    
-
-
-    
+  
+def clean_memory():        
+    for name in list(globals().keys()):
+        if not name.startswith('__'):
+            del globals()[name]
     

@@ -10,7 +10,7 @@ version=2.0.0
 author=Giacomo Titti
 email=giacomotitti@gmail.com
 
-about=SZ-plugin allows the evaluation of the spatial susceptibility from the pre-processing of the data to the cross-validation of the susceptibility map.
+about=SZ-plugin allows the evaluation of the space-time susceptibility from the pre-processing of the data to the cross-validation of the susceptibility map.
 
 tracker=https://github.com/SZtools/SZ-plugin/issues
 repository=https://github.com/SZtools/SZ-plugin
@@ -26,7 +26,7 @@ hasProcessingProvider=yes
 tags=susceptibility, cross-validation, pre-processing, statistical methods, hazard
 
 homepage=https://github.com/SZtools/SZ-plugin
-category=Spatial analysis
+category=Space-time analysis
 # plugin_dependencies= scikit-learn, libpysal
 icon=images/icon.png
 # experimental flag

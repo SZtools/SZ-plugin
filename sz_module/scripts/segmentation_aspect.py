@@ -87,12 +87,13 @@ from processing.algs.gdal.GdalUtils import GdalUtils
 #import chart_studio
 import plotly.offline
 import plotly.graph_objs as go
-import geopandas as gpd
+#import geopandas as gpd
 import pandas as pd
 import tempfile
 import os
 import processing
-import libpysal as lp
+#import libpysal as lp
+from sz_module.scripts.utils import SZ_utils
 
 class segmentationAspectAlgorithm():
    
@@ -242,7 +243,7 @@ class segmentationAspectAlgorithm():
                 'INPUT_RASTER': outputs['CosRasterCalculator']['OUTPUT'],
                 'RASTER_BAND': 1,
                 'STATISTICS': [1,0],  # Sum,Count
-                'OUTPUT': self.f+'/zonalstat.shp'
+                'OUTPUT': self.f+'/zonalstat.gpkg'
             }
             outputs['CosZonalStatistics'] = processing.run('native:zonalstatisticsfb', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -253,9 +254,10 @@ class segmentationAspectAlgorithm():
                 return {}
 
             alg_params = {
-                'INPUT':self.f+'/zonalstat.shp',
+                'INPUT':self.f+'/zonalstat.gpkg',
             }
-            outputs['gdp'],outputs['crs']= self.load(alg_params)
+            #outputs['gdp'],outputs['crs']= self.load(alg_params)
+            outputs['gdp'],outputs['crs']=SZ_utils.load_geopackage
 
             feedback.setCurrentStep(7)
             if feedback.isCanceled():
