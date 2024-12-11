@@ -71,6 +71,7 @@ from sklearn.neural_network import MLPClassifier,MLPRegressor
 from pygam import LogisticGAM,LinearGAM
 from .utils import log,warn,clean_memory
 
+
 class classeProvider(QgsProcessingProvider):
 
     def __init__(self):
@@ -447,6 +448,7 @@ class Instance(QgsProcessingAlgorithm):
 
     def processAlgorithm(self, parameters, context, feedback):
         result={}
+
         if self.dict_of_scripts['alg'] in self.algorithms:
             if os.environ.get('DEBUG')=='False':
                 try:
