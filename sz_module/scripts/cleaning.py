@@ -2,16 +2,13 @@
 #coding=utf-8
 """
 /***************************************************************************
-    cleankernelAlgorithm
         begin                : 2021-11
-        copyright            : (C) 2021 by Giacomo Titti,
-                               Padova, November 2021
+        copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
         email                : giacomotitti@gmail.com
  ***************************************************************************/
 
 /***************************************************************************
-    cleankernelAlgorithm
-    Copyright (C) 2021 by Giacomo Titti, Padova, November 2021
+    Copyright (C) 2024 by Giacomo Titti, Bologna, November 2024
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,10 +26,9 @@
 """
 
 __author__ = 'Giacomo Titti'
-__date__ = '2021-11-01'
-__copyright__ = '(C) 2021 by Giacomo Titti'
+__date__ = '2024-11-01'
+__copyright__ = '(C) 2024 by Giacomo Titti'
 
-from PyQt5.QtCore import QCoreApplication
 from qgis.core import (QgsProcessing,
                        QgsProcessingException,
                        QgsProcessingAlgorithm,
@@ -47,74 +43,47 @@ import processing
 import numpy as np
 from osgeo import gdal,osr,ogr
 import sys
-from qgis.core import QgsMessageLog
 import os
 from scipy.ndimage import generic_filter
-from qgis.core import Qgis
 from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
 
-
 class cleankernelAlgorithm(QgsProcessingAlgorithm):
-    # INPUT = 'Inventory'
-    # INPUT1 = 'Slope'
-    # EXTENT = 'Extension'
-    # NUMBER = 'BufferRadiousInPxl'
-    # NUMBER1 = 'minSlopeAcceptable'
-    # OUTPUT = 'OUTPUT'
-
-    # def tr(self, string):
-    #     return QCoreApplication.translate('Processing', string)
 
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Points'), types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
-
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT1, self.tr('Raster'), defaultValue=None))
-
         self.addParameter(QgsProcessingParameterVectorDestination(self.OUTPUT, self.tr('Output layer'), type=QgsProcessing.TypeVectorPoint, createByDefault=True, defaultValue=None))
-
         self.addParameter(QgsProcessingParameterExtent(self.EXTENT, self.tr('Extension'), defaultValue=None))
-
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Buffer radius in pixels'), type=QgsProcessingParameterNumber.Integer))
-
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Min value acceptable'), type=QgsProcessingParameterNumber.Integer))
 
     def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
-
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
         outputs = {}
-
         parameters['Slope'] = self.parameterAsRasterLayer(parameters, self.INPUT1, context).source()
         if parameters['Slope'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT1))
-
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['Inventory']=source.source()
         if parameters['Inventory'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-
         parameters['poly'] = self.parameterAsExtent(parameters, self.EXTENT, context)
         if parameters['poly'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.EXTENT))
-
         parameters['BufferRadiousInPxl'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['BufferRadiousInPxl'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
-
         parameters['minSlopeAcceptable'] = self.parameterAsInt(parameters, self.NUMBER1, context)
         if parameters['minSlopeAcceptable'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER1))
-
         outFile = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
-
         parameters['out'], outputFormat = GdalUtils.ogrConnectionStringAndFormat(outFile, context)
-
         if parameters['out'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
 
-        # Intersectionpoly
         alg_params = {
             'INPUT_RASTER_LAYER': parameters['Slope'],
             'INPUT_EXTENT': parameters['Extension'],
@@ -137,7 +106,6 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
             'ymin':outputs['ymin'],
             'ymax':outputs['ymax'],
             'fold':self.f
-
         }
         outputs['raster'],outputs['ds1'],outputs['XY']=Functions.importingandcounting(alg_params)
 
@@ -203,8 +171,8 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
-
         return results
+    
 class Functions():
     def extent(parameters):
         limits=np.fromstring(parameters['INPUT_EXTENT'], dtype=float, sep=',')
@@ -226,7 +194,7 @@ class Functions():
         try:
             os.system('gdal_translate -of GTiff -ot Float32 -strict -outsize ' + str(newXNumPxl) +' '+ str(newYNumPxl) +' -projwin ' +str(parameters['xmin'])+' '+str(parameters['ymax'])+' '+ str(parameters['xmax']) + ' ' + str(parameters['ymin']) +' -co COMPRESS=DEFLATE -co PREDICTOR=1 -co ZLEVEL=6 ' + parameters['INPUT_RASTER_LAYER'] +' '+ f+'/sizedslopexxx.tif')
         except:
-            raise ValueError  # Failure to save sized cause, see 'WoE' Log Messages Panel
+            raise ValueError
         del ds
         ds1=gdal.Open(f+'/sizedslopexxx.tif')
         if ds1 is None:
@@ -236,7 +204,6 @@ class Functions():
         raster[0][raster[0]==nodata]=-9999
         x = ds1.RasterXSize
         y = ds1.RasterYSize
-
         gtdem= ds1.GetGeoTransform()
         size=np.array([abs(gtdem[1]),abs(gtdem[5])])
         OS=np.array([gtdem[0],gtdem[3]])
@@ -314,7 +281,6 @@ class Functions():
         if os.path.exists(parameters['OUTPUT']):
             driver.DeleteDataSource(parameters['OUTPUT'])
         ds=driver.CreateDataSource(parameters['OUTPUT'])
-
         srs=osr.SpatialReference(wkt = s1.GetProjection())
         layer = ds.CreateLayer("inventory_cleaned", srs, ogr.wkbPoint)
         field_name = ogr.FieldDefn("id", ogr.OFTInteger)
@@ -338,21 +304,3 @@ class Functions():
         # Save and close the data source
         ds = None
         return parameters['OUTPUT']
-
-    # def createInstance(self):
-    #     return cleankernelAlgorithm()
-
-    # def name(self):
-    #     return 'clean points'
-
-    # def displayName(self):
-    #     return self.tr('01 Clean Points By Raster Kernel Value')
-
-    # def group(self):
-    #     return self.tr('01 Data preparation')
-
-    # def groupId(self):
-    #     return '01 Data preparation'
-
-    # def shortHelpString(self):
-    #     return self.tr("It selects and remove features from point vector by a kernel raster condition")

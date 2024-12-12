@@ -25,9 +25,10 @@ hasProcessingProvider=yes
 # Tags are comma separated with spaces allowed
 tags=susceptibility, cross-validation, pre-processing, statistical methods, hazard
 
-homepage=https://github.com/SZtools/SZ-plugin
+homepage=https://sz-docs.readthedocs.io/en/latest/
 category=Space-time analysis
-# plugin_dependencies= scikit-learn, libpysal
+plugin_dependencies= scikit-learn, pygam, pandas, shapely, fiona, seaborn
+
 icon=images/icon.png
 # experimental flag
 experimental=False

@@ -2,16 +2,13 @@
 #coding=utf-8
 """
 /***************************************************************************
-    LRcvAlgorithm
         begin                : 2021-11
-        copyright            : (C) 2021 by Giacomo Titti,
-                               Padova, November 2021
+        copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
         email                : giacomotitti@gmail.com
  ***************************************************************************/
 
 /***************************************************************************
-    LRcvAlgorithm
-    Copyright (C) 2021 by Giacomo Titti, Padova, November 2021
+    Copyright (C) 2024 by Giacomo Titti, Bologna, November 2024
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,8 +26,9 @@
 """
 
 __author__ = 'Giacomo Titti'
-__date__ = '2021-11-01'
-__copyright__ = '(C) 2021 by Giacomo Titti'
+__date__ = '2024-11-01'
+__copyright__ = '(C) 2024 by Giacomo Titti'
+
 import sys
 sys.setrecursionlimit(10000)
 from qgis.core import (QgsProcessing,
@@ -47,16 +45,11 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterEnum
                        )
 from qgis.core import *
-from qgis.utils import iface
 from qgis import *
-from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
 from sz_module.scripts.utils import SZ_utils
 from sz_module.scripts.algorithms import CV_utils
-import os
 from sz_module.utils import log
-
-
 
 class CoreAlgorithmNN_cv():
 
@@ -82,7 +75,6 @@ class CoreAlgorithmNN_cv():
         cv_method={'0':'random','1':'spatial','2':'temporal_TSS','3':'temporal_LOO','4':'spacetime_LOO'}
         NN={'0':'MLP_classifier','1':'MLP_regressor'}
         scale={'0':'linear_scale','1':'log_scale'}
-
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -130,7 +122,6 @@ class CoreAlgorithmNN_cv():
         
         SZ_utils.make_directory({'path':parameters['folder']})
 
-
         if cv_method[parameters['cv_method']]=='random' or cv_method[parameters['cv_method']]=='spatial':
             parameters['time']=None
         else:
@@ -154,7 +145,6 @@ class CoreAlgorithmNN_cv():
             return {}
         
         alg_params = {
-            #'field1': parameters['field1'],
             'testN':parameters['testN'],
             'fold':parameters['folder'],
             'nomi':parameters['field1'],

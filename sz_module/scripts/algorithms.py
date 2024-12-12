@@ -1,30 +1,46 @@
+#!/usr/bin/python
+#coding=utf-8
+"""
+/***************************************************************************
+        begin                : 2021-11
+        copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
+        email                : giacomotitti@gmail.com
+ ***************************************************************************/
+
+/***************************************************************************
+    Copyright (C) 2024 by Giacomo Titti, Bologna, November 2024
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ ***************************************************************************/
+"""
+
+__author__ = 'Giacomo Titti'
+__date__ = '2024-11-01'
+__copyright__ = '(C) 2024 by Giacomo Titti'
+
 from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold,LeaveOneOut,TimeSeriesSplit,KFold
-from sklearn.svm import SVC
 import pandas as pd
 import numpy as np
-import math
-#from pygam import LinearGAM,LogisticGAM
 import pickle
-import os
 from collections import OrderedDict
 from pygam import terms
-import csv
 import matplotlib.pyplot as plt
-import json
 from sklearn.cluster import KMeans
-from shapely.geometry import MultiPolygon, Polygon
 from shapely.wkt import loads
-
 from sklearn.tree import export_text
-import plotly.graph_objects as go
-
-#from mpl_toolkits import mplot3d
-
 
 class Algorithms():
 
@@ -36,7 +52,6 @@ class Algorithms():
             prob_predic=parameters['predictors_weights'].predict_proba(df_scaled.loc[:,nomi].to_numpy())[::,1]
         else:
             prob_predic=parameters['predictors_weights'].predict(df_scaled.loc[:,nomi].to_numpy())
-        #ML_utils.ML_save(classifier,fold,nomi,filename)
         df['SI']=prob_predic
         return df
 
@@ -45,23 +60,19 @@ class Algorithms():
         df=parameters['df']
         df_scaled=CV_utils.scaler(df,nomi,'standard')
         prob_predic=parameters['predictors_weights'].predict_proba(df_scaled.loc[:,nomi].to_numpy())[::,1]
-        #ML_utils.ML_save(classifier,fold,nomi,filename)
         df['SI']=prob_predic
         return df
     
     def GAM_transfer(parameters):
         nomi=parameters['nomi']
         df=parameters['df']
-        #x=df[parameters['field1']]
         df_scaled=CV_utils.scaler(df,parameters['linear']+parameters['continuous'],'custom')
-
         if parameters['family']=='binomial':
-            prob_fit=parameters['predictors_weights'].predict_proba(df_scaled[nomi])#[::,1]
+            prob_fit=parameters['predictors_weights'].predict_proba(df_scaled[nomi])
             df['SI']=prob_fit
         else:
-            prob_fit=parameters['predictors_weights'].predict(df_scaled[nomi])#[::,1]
-            #CI = parameters['gam'].prediction_intervals(X_trans, width=.95)
-            df['SI']=prob_fit#np.exp(prob_fit)
+            prob_fit=parameters['predictors_weights'].predict(df_scaled[nomi])
+            df['SI']=prob_fit
         return(df)
     
     def alg_NNrun(classifier,X,y,train,test,df,fold,nomi,filename='',family=None):
@@ -86,17 +97,11 @@ class Algorithms():
         gam = classifier_selected(splines, dtype=dtypes)
         gam.gridsearch(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy(), lam=lams,progress=False)
         if family=='binomial':
-            prob=gam.predict_proba(X.loc[test,nomi].to_numpy())#[::,1]
-            #CI=gam.confidence_intervals(X.iloc[test,:].to_numpy(),width=0.95)
+            prob=gam.predict_proba(X.loc[test,nomi].to_numpy())
         else:
-            prob=gam.predict(X.loc[test,nomi].to_numpy())#[::,1]
-            #CI=gam.prediction_intervals(X.iloc[test,:].to_numpy())
-
+            prob=gam.predict(X.loc[test,nomi].to_numpy())
         GAM_utils.GAM_plot(gam,df.loc[train,nomi],nomi,fold,filename,X.loc[train,nomi])
-        #♂GAM_utils.GAM_save(gam,prob,fold,nomi,filename)
         GAM_utils.GAM_save(gam,fold,filename)
-       
-        #GAM_utils.plot_predict(X.iloc[test,:].to_numpy(),prob,CI,fold, filename)
         CI=[]
         return prob,CI,gam
     
@@ -109,7 +114,6 @@ class CV_utils():
         y=df['y']
         if algorithm==Algorithms.alg_GAMrun:
             df_scaled=CV_utils.scaler(x,parameters['linear']+parameters['continuous']+parameters['tensor'],'custom')
-            #X[parameters['categorical']]=df[parameters['categorical']]
         else:
             df_scaled=CV_utils.scaler(df,nomi,'standard')
         train_ind={}
@@ -118,7 +122,6 @@ class CV_utils():
         CI={}
         cofl=[]
         df["SI"] = np.nan
-        #df["CI"] = np.nan
         coeff=None
         if parameters['cv_method']=='temporal_TSS' or parameters['cv_method']=='temporal_LOO' or parameters['cv_method']=='spacetime_LOO':
             train_ind,test_ind,iters_count = CV_utils.cv_method(parameters,df_scaled,df,parameters['nomi'])
@@ -126,7 +129,6 @@ class CV_utils():
                 print('cv: ',i)
                 if algorithm==Algorithms.alg_GAMrun:
                     prob[i],CI[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
-                    #df.loc[test,'CI']=CI[i]
                 elif algorithm==Algorithms.alg_NNrun:
                     prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i),family=parameters['family'])
                 else:
@@ -140,7 +142,6 @@ class CV_utils():
                     print('cv: ',i)
                     if algorithm==Algorithms.alg_GAMrun:
                         prob[i],CI[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
-                        #df.loc[test,'CI']=CI[i]
                     elif algorithm==Algorithms.alg_NNrun:
                         prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i),family=parameters['family'])
                     else:
@@ -152,12 +153,10 @@ class CV_utils():
                 test=np.arange(len(y))
                 if algorithm==Algorithms.alg_GAMrun:
                     prob[0],CI[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],family=parameters['family'])
-                    #df.loc[test,'CI']=CI[0]
                 elif algorithm==Algorithms.alg_NNrun:
                     prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi,family=parameters['family'])
                 else:
                     prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi)
-                    #predictors_weights=None
                 df.loc[test,'SI']=prob[0]
                 
                 test_ind[0]=test
@@ -202,16 +201,13 @@ class CV_utils():
             method = LeaveOneOut()
             count=0
             for ii, (train_time, test_time) in enumerate(method.split(time_index)):
-                #X_train_time=np.where(df[parameters['time']] != time_index[test_time[0]])[0]
                 X_test_time_index=np.where(df[parameters['time']] == time_index[test_time[0]])[0]
                 for i, (train, test) in enumerate(method.split(np.arange(parameters['testN']))):
-                    #X_train[i] = np.where(kmeans.labels_ != test[0])[0]
                     X_test_space_index = np.where(kmeans.labels_ == test[0])[0]
                     X_test[count]=np.intersect1d(X_test_time_index, X_test_space_index)
                     mask = ~np.isin(np.arange(len(df)), X_test[count])
                     X_train[count] = np.arange(len(df))[mask]
                     count+=1
-
         return X_train,X_test,len(X_test)
     
     def scaler(df,nomes,scale_method='standard'):
@@ -253,7 +249,6 @@ class GAM_utils():
         splines = []
         dtypes = []
         vars_dict = OrderedDict({})
-
         for i in range(len(GAM_sel)):
             if GAM_sel[i] in parameters['continuous']:
                 dtypes = dtypes + ['numerical']
@@ -266,12 +261,7 @@ class GAM_utils():
                 vars_dict[GAM_sel[i]]={'term':'l'}
             elif GAM_sel[i] in parameters['tensor']:
                 dtypes = dtypes + ['numerical']
-                vars_dict[i]={'term':'te'}
-
-        # for i in tensor:
-        #     dtypes = dtypes + ['numerical']
-        #     vars_dict[i]={'term':'te'}
-                
+                vars_dict[i]={'term':'te'}       
         tensor_id=[]
         splines = terms.TermList()
         for i,v in enumerate(vars_dict .keys()):
@@ -286,24 +276,17 @@ class GAM_utils():
                 if len(tensor_id)==2:
                     term=terms.TensorTerm(tensor_id[0],tensor_id[1]) 
             splines += term
-        #splines += terms.TensorTerm(tensor_id[0],tensor_id[1]) 
-
         return splines,dtypes
     
     def GAM_plot(gam,df,nomi,fold,filename,scaled_df):
         print('plotting covariates.....')
-
         GAM_sel=nomi
-        #sc=StandardScaler()
-        #fig = plt.figure(figsize=(20, 25))
-
         maX=[]
         miN=[]
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
             elif isinstance(gam.terms[i], terms.FactorTerm):
-                #pdep0, confi0 = gam.partial_dependence(term=i, X=gam.generate_X_grid(term=i), width=0.95)
                 continue
             elif isinstance(gam.terms[i], terms.TensorTerm):
                 continue
@@ -313,7 +296,6 @@ class GAM_utils():
             miN=miN+[np.min(confi0[:,0])]
         MAX=max(maX)+0.2
         MIN=min(miN)-0.2
-
         count=0
         countIns=0
         for i, term in enumerate(gam.terms):
@@ -323,13 +305,12 @@ class GAM_utils():
                 continue
             count+=1
         count=count+countIns
-
         if int(np.ceil(count/3.))<4:
             rows=4
         else:
             rows=int(np.ceil(count/3.))
         
-        ########################################################################not scaled
+        ########################################################################not scaled plot
 
         fig = plt.figure(figsize=(15,15))
         for i, term in enumerate(gam.terms):
@@ -341,19 +322,14 @@ class GAM_utils():
             for n in range(len(df[GAM_sel[i]])-1):
                 X=np.append(X,m+interval)
                 m=m+interval
-
-            ##         
             if isinstance(gam.terms[i], terms.FactorTerm):
                 ax=fig.add_subplot(rows, 3, i+1)   
-                ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-                ##
                 x=df[GAM_sel[i]].unique()
                 y=[]
                 y1=[]
                 y2=[]
-                
                 for j in range(len(df[GAM_sel[i]].unique())):
                     pdep_unq=np.unique(pdep)
                     confi025_unq=np.unique(confi[:,0])
@@ -361,15 +337,13 @@ class GAM_utils():
                     y.append(pdep_unq[j])
                     y1.append(confi025_unq[j])
                     y2.append(confi095_unq[j])
-                
                 paired_xy = list(zip(x, y, y1, y2))
                 paired_vectors_sorted = sorted(paired_xy, key=lambda x: x[0])
                 x, y, y1, y2= zip(*paired_vectors_sorted)
-
                 ax.plot(x,y1,'o', c='gray')
                 ax.plot(x,y2,'o', c='gray')
                 ax.plot(x,y,'o', c='blue')
-                ax.set_xticks(np.sort(df[GAM_sel[i]].unique()))#, rotation=45)
+                ax.set_xticks(np.sort(df[GAM_sel[i]].unique()))
                 ax.set_xlabel(GAM_sel[i])
                 ax.set_ylabel('Partial Effect')
                 ax.set_ylim(MIN,MAX)
@@ -377,41 +351,33 @@ class GAM_utils():
             
             elif isinstance(gam.terms[i], terms.LinearTerm):
                 ax=fig.add_subplot(rows, 3, i+1)   
-                ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-                ##
                 ax.plot(X, pdep, c='blue')                
                 ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
                 ax.set_xlabel(GAM_sel[i])
                 ax.set_ylabel('Partial Effect')
                 ax.set_ylim(MIN,MAX)
                 continue
-            
             elif isinstance(gam.terms[i], terms.TensorTerm):
-
                 X0=np.array([min(df.iloc[:, i])])
                 m=np.min(df.iloc[:, i])
                 interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(100-1)
                 for n in range(100-1):
                     X0=np.append(X0,m+interval)
                     m=m+interval
-                
                 X1=np.array([min(df.iloc[:, i+1])])
                 m=np.min(df.iloc[:, i+1])
                 interval=(np.max(df.iloc[:, i+1])-np.min(df.iloc[:, i+1]))/(100-1)
                 for n in range(100-1):
                     X1=np.append(X1,m+interval)
                     m=m+interval
-
                 fig2 = plt.figure(figsize=(8, 8))
                 XX = gam.generate_X_grid(term=i, meshgrid=True)
                 Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
                 ax3d = fig2.subplots()
                 mesh = ax3d.pcolormesh(X0, X1, np.transpose(Z), cmap='viridis', shading='auto')
                 ax3d.set_aspect('equal', adjustable='datalim')
-
-                # Colorbar
                 bbox = ax3d.get_position()
                 x0, y0, x1, y1 = bbox.x0, bbox.y0, bbox.x1, bbox.y1
                 width = x1 - x0
@@ -420,8 +386,6 @@ class GAM_utils():
                 cbar = plt.colorbar(mesh, cax=cbar_ax)
                 cbar.set_label('Partial Effect', fontsize=16)
                 cbar.ax.tick_params(labelsize=16)
-
-                # Axis labels
                 ax3d.set_xlabel(GAM_sel[i], fontsize=16)
                 ax3d.set_ylabel(GAM_sel[i + 1], fontsize=16)
                 ax3d.tick_params(labelsize=14)
@@ -430,38 +394,29 @@ class GAM_utils():
 
             elif isinstance(gam.terms[i], terms.SplineTerm):
                 ax=fig.add_subplot(rows, 3, i+1)   
-                ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-                ##
                 ax.plot(X, pdep, c='blue')
                 ax.fill_between(X.ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
                 ax.set_xlabel(GAM_sel[i])
                 ax.set_ylabel('Partial Effect')
                 ax.set_ylim(MIN,MAX)
                 continue
-
         fig.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
 
-
-
-        ########################################################################scaled
+        ########################################################################scaled plot
         fig1 = plt.figure(figsize=(15,15))
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
-
             if isinstance(gam.terms[i], terms.FactorTerm):
                 ax1=fig1.add_subplot(rows, 3, i+1)  
-                ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-                ##
-                x=df[GAM_sel[i]].unique()#np.sort(df[GAM_sel[i]].unique())
+                x=df[GAM_sel[i]].unique()
                 y=[]
                 y1=[]
                 y2=[]
-
                 for j in range(len(df[GAM_sel[i]].unique())):
                     pdep_unq=np.unique(pdep)
                     confi025_unq=np.unique(confi[:,0])
@@ -472,38 +427,31 @@ class GAM_utils():
                 paired_xy = list(zip(x, y, y1, y2))
                 paired_vectors_sorted = sorted(paired_xy, key=lambda x: x[0])
                 x, y, y1, y2= zip(*paired_vectors_sorted)
-
                 ax1.plot(x,y1,'o', c='gray')
                 ax1.plot(x,y2,'o', c='gray')
                 ax1.plot(x,y,'o', c='blue')
-                ax1.set_xticks(np.sort(df[GAM_sel[i]].unique()))#, rotation=45)
+                ax1.set_xticks(np.sort(df[GAM_sel[i]].unique()))
                 ax1.set_xlabel(GAM_sel[i])
                 ax1.set_ylabel('Partial Effect')
                 ax1.set_ylim(MIN,MAX)
                 continue
-
             elif isinstance(gam.terms[i], terms.LinearTerm):
                 ax1=fig1.add_subplot(rows, 3, i+1)
-                ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-                ##
                 ax1.plot(XX[:, term.feature], pdep, c='blue')
                 ax1.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
                 ax1.set_xlabel(GAM_sel[i])
                 ax1.set_ylabel('Partial Effect')
                 ax1.set_ylim(MIN,MAX)
                 continue
-
             elif isinstance(gam.terms[i], terms.TensorTerm):
                 fig3 = plt.figure(figsize=(8, 8))
                 XX = gam.generate_X_grid(term=i, meshgrid=True)
                 Z = gam.partial_dependence(term=i, X=XX, meshgrid=True)
                 ax3d = fig3.subplots()
                 mesh = ax3d.pcolormesh(XX[0], XX[1], Z, cmap='viridis', shading='auto')
-                ax3d.set_aspect('equal', adjustable='datalim')  # Ensure square graph area
-
-                # Colorbar
+                ax3d.set_aspect('equal', adjustable='datalim')
                 bbox = ax3d.get_position()
                 x0, y0, x1, y1 = bbox.x0, bbox.y0, bbox.x1, bbox.y1
                 width = x1 - x0
@@ -512,41 +460,28 @@ class GAM_utils():
                 cbar = plt.colorbar(mesh, cax=cbar_ax)
                 cbar.set_label('Partial Effect', fontsize=16)
                 cbar.ax.tick_params(labelsize=16)
-
-                # Axis labels
                 ax3d.set_xlabel(GAM_sel[i], fontsize=16)
                 ax3d.set_ylabel(GAM_sel[i + 1], fontsize=16)
                 ax3d.tick_params(labelsize=14)
-
-                # Save the figure
                 fig3.savefig(fold + '/Model_covariates_interaction_scaled' + filename + '.pdf', bbox_inches='tight')
-
                 continue
-
             elif isinstance(gam.terms[i], terms.SplineTerm):
                 ax1=fig1.add_subplot(rows, 3, i+1)  
-                ##
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
-                ##
                 ax1.plot(XX[:, term.feature], pdep, c='blue')
                 ax1.fill_between(XX[:, term.feature].ravel(), y1=confi[:,0], y2=confi[:,1], color='gray', alpha=0.2)
                 ax1.set_xlabel(GAM_sel[i])
                 ax1.set_ylabel('Partial Effect')
                 ax1.set_ylim(MIN,MAX)
                 continue
-
         fig1.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
-
         del gam
         del df
 
-        
     def GAM_save(gam,fold,filename=''):
         print('saving gam.pkl.....')
         filename_pkl = fold+'/gam_coeff'+filename+'.pkl'
-        #filename_txt = parameters['fold']+'/gam_coeff.txt'
-
         with open(filename_pkl, 'wb') as filez:
             pickle.dump(gam, filez)
         del gam
@@ -579,8 +514,6 @@ class ML_utils():
             })
             coeff_df.to_csv(fold+'/coefficients'+filename+'.csv', index=False)
 
-
-    
 class NN_utils():
     def NN_plot(NNclassifier,fold,filename):
         plt.figure(figsize=(10, 6))
@@ -591,5 +524,3 @@ class NN_utils():
         plt.grid()
         plt.legend(['Train','Test'],prop={'size': 16})
         plt.savefig(fold+'/loss_curve'+filename+'.pdf', bbox_inches='tight')
-
-    

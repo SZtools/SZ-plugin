@@ -1,3 +1,34 @@
+#!/usr/bin/python
+#coding=utf-8
+"""
+/***************************************************************************
+        begin                : 2021-11
+        copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
+        email                : giacomotitti@gmail.com
+ ***************************************************************************/
+
+/***************************************************************************
+    Copyright (C) 2024 by Giacomo Titti, Bologna, November 2024
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ ***************************************************************************/
+"""
+
+__author__ = 'Giacomo Titti'
+__date__ = '2024-11-01'
+__copyright__ = '(C) 2024 by Giacomo Titti'
+
 import os
 import subprocess
 from subprocess import (
@@ -6,14 +37,10 @@ from subprocess import (
     Popen,
 )
 from typing import List, Union
-
 from pkg_resources import ResolutionError
 from qgis.core import Qgis, QgsApplication
-from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtWidgets import QProgressDialog
 from qgis.utils import iface
 from ..utils import log,warn
-
 import os
 import platform
 import subprocess
@@ -31,26 +58,14 @@ if platform.system() == "Windows":
         SW_HIDE,
     )
 
-
 def run_cmd(args, description="sz-plugin load...."):
     log(f'command:{args}')
-
-    # progress_dlg = QProgressDialog(
-    #     description, "Abort", 0, 0, parent=iface.mainWindow()
-    # )
-    # progress_dlg.setWindowModality(Qt.WindowModal)
-
-    
-    #progress_dlg.show()
-
     startupinfo = None
     if os.name == "nt":
         startupinfo = STARTUPINFO()
         startupinfo.dwFlags |= STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW
         startupinfo.wShowWindow = SW_HIDE
-
     process = Popen(args, stdout=PIPE, stderr=STDOUT, startupinfo=startupinfo)
-
     full_output = ""
     while True:
         QgsApplication.processEvents()
@@ -60,28 +75,14 @@ def run_cmd(args, description="sz-plugin load...."):
             output = out.decode(errors="replace").strip()
             full_output += output
             if output:
-                #progress_dlg.setLabelText(output)
                 log(output)
         except subprocess.TimeoutExpired:
             pass
-
-        #if progress_dlg.wasCanceled():
-        #    process.kill()
         if process.poll() is not None:
             break
 
-    #progress_dlg.close()
-
     if process.returncode != 0:
         warn(f"Command failed.")
-        # message = QMessageBox(
-        #     QMessageBox.Warning,
-        #     "Command failed",
-        #     f"Encountered an error while {description} !",
-        #     parent=iface.mainWindow(),
-        # )
-        # message.setDetailedText(full_output)
-        # message.exec_()
     else:
         log("Command succeeded.")
         iface.messageBar().pushMessage(
@@ -179,26 +180,21 @@ def add_QGIS_env(prefix_path,plugin_venv):
     if bin_path not in os.environ["PATH"]:
         log(f"Adding {bin_path} to PATH")
         os.environ["PATH"] = bin_path + ";" + os.environ["PATH"]  
-
     return (site_packages_path, bin_path)
 
 def install_pip(reqs_to_install,interpreter="python"):
-    """
-    Installs given reqs with pip
-    """
+    #Installs given reqs with pip
     log(f"Will install {reqs_to_install} with {interpreter}")
     cmd=[
             interpreter,
             "-m",
             *reqs_to_install
         ]
-    run_cmd(cmd)#,f"installing {len(reqs_to_install)} requirements: {reqs_to_install}")
+    run_cmd(cmd)
     return(cmd)
 
 def pip_uninstall_reqs(reqs_to_uninstall, extra_args=[],interpreter="python pip -m"):
-    """
-    Unnstalls given deps with pip
-    """
+    #Unnstalls given deps with pip
     log(f"Will pip uninstall {reqs_to_uninstall}")
     cmd=[
             interpreter,
@@ -212,9 +208,7 @@ def pip_uninstall_reqs(reqs_to_uninstall, extra_args=[],interpreter="python pip 
     return(cmd)
 
 def pip_install_reqs(prefix_path,plugin_venv,reqs_to_install,interpreter="python pip -m"):
-    """
-    Installs given reqs with pip
-    """
+    #Installs given reqs with pip
     log(f"Will pip install {reqs_to_install} in {os.path.join(prefix_path, plugin_venv)} with {interpreter}")
     cmd=[
             interpreter,
@@ -222,11 +216,6 @@ def pip_install_reqs(prefix_path,plugin_venv,reqs_to_install,interpreter="python
             "pip",
             "install",
             *reqs_to_install,
-            #"-U",
-            #"--prefer-binary",
-            #"--user"
-            #"--prefix",
-            #prefix_path,
         ]
     run_cmd(cmd,f"installing {len(reqs_to_install)} requirements: {reqs_to_install}")
     return(cmd)
@@ -235,7 +224,6 @@ def get_package_version(qgis_python_interpreter,package_name):
         try:
             # Use pip to get package information
             result = subprocess.check_output([qgis_python_interpreter,'-m','pip', 'show', package_name], universal_newlines=True)
-            
             # Split the output into lines and find the line containing "Version"
             lines = result.strip().split('\n')
             for line in lines:
@@ -244,6 +232,4 @@ def get_package_version(qgis_python_interpreter,package_name):
                     return line[len("Version: "):].strip()
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
-
         return None
-    

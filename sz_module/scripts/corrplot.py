@@ -2,16 +2,13 @@
 #coding=utf-8
 """
 /***************************************************************************
-    LRAlgorithm
         begin                : 2021-11
-        copyright            : (C) 2021 by Giacomo Titti,
-                               Padova, November 2021
+        copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
         email                : giacomotitti@gmail.com
  ***************************************************************************/
 
 /***************************************************************************
-    LRAlgorithm
-    Copyright (C) 2021 by Giacomo Titti, Padova, November 2021
+    Copyright (C) 2024 by Giacomo Titti, Bologna, November 2024
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,8 +26,9 @@
 """
 
 __author__ = 'Giacomo Titti'
-__date__ = '2021-11-01'
-__copyright__ = '(C) 2021 by Giacomo Titti'
+__date__ = '2024-11-01'
+__copyright__ = '(C) 2024 by Giacomo Titti'
+
 import sys
 sys.setrecursionlimit(10000)
 from qgis.core import (QgsProcessing,
@@ -43,12 +41,10 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterField,
                        )
 from qgis.core import *
-from qgis.utils import iface
 import numpy as np
 from qgis import *
 # ##############################
 import matplotlib.pyplot as plt
-from processing.algs.gdal.GdalUtils import GdalUtils
 import pandas as pd
 import tempfile
 import seaborn as sns
@@ -66,19 +62,15 @@ class CorrAlgorithm(QgsProcessingAlgorithm):
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
         outputs = {}
-
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
         if parameters['covariates'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-
         parameters['field1'] = self.parameterAsFields(parameters, self.STRING, context)
         if parameters['field1'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING))
-
         parameters['folder'] = self.parameterAsString(parameters, self.OUTPUT3, context)
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))

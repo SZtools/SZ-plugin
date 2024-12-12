@@ -1,3 +1,34 @@
+#!/usr/bin/python
+#coding=utf-8
+"""
+/***************************************************************************
+        begin                : 2021-11
+        copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
+        email                : giacomotitti@gmail.com
+ ***************************************************************************/
+
+/***************************************************************************
+    Copyright (C) 2024 by Giacomo Titti, Bologna, November 2024
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ ***************************************************************************/
+"""
+
+__author__ = 'Giacomo Titti'
+__date__ = '2024-11-01'
+__copyright__ = '(C) 2024 by Giacomo Titti'
+
 import os
 import sys
 import os
@@ -12,18 +43,15 @@ from qgis.core import Qgis, QgsMessageLog,QgsApplication
 import traceback
 import platform
 import shutil
-from ..utils import log,warn
+from ..utils import log
 from .utils import (
     locate_py,
     add_venv,
     install_pip,
     pip_install_reqs,
-    get_package_version,
     add_QGIS_env,
 )
 from qgis.PyQt.QtCore import QSettings
-
-
 
 class installer():
     def __init__(self,version,plugin_settings):
@@ -40,30 +68,17 @@ class installer():
             "dependencies",
         )
         self.qgis_python_interpreter = locate_py()
-
         self.venv_path = os.path.join(self.prefix_path,self.plugin_venv)
         self.site_packages_path=''
-        self.bin_path=''
-        # self.site_packages_path = os.path.join(self.prefix_path,self.plugin_venv,"Lib", "site-packages")
-        # self.bin_path = os.path.join(self.prefix_path,self.plugin_venv,"Scripts")
-        # if self.site_packages_path not in sys.path:
-        #     log(f"Adding {self.site_packages_path} to PYTHONPATH")
-        #     sys.path.insert(0, self.site_packages_path)
-        #     os.environ["PYTHONPATH"] = (
-        #         self.site_packages_path + ";" + os.environ.get("PYTHONPATH", "")
-        #     )
-
-        # if self.bin_path not in os.environ["PATH"]:
-        #     log(f"Adding {self.bin_path} to PATH")
-        #     os.environ["PATH"] = self.bin_path + ";" + os.environ["PATH"]    
+        self.bin_path='' 
 
     def is_already_installed(self):
         if self.plugin_settings is False:
             return False
-        # elif self.plugin_settings==str(self.version):
-        #     return True
-        # elif self.plugin_settings!=str(self.version):
-        #     return False
+        elif self.plugin_settings==str(self.version):
+            return True
+        elif self.plugin_settings!=str(self.version):
+            return False
         
     def preliminay_req(self):
         try:
@@ -79,17 +94,14 @@ class installer():
         try:
             try:
                 #windows
-                #self.uninstall_pip(['pip'],os.path.join(self.venv_path,"Scripts","python"))
                 command=install_pip(['ensurepip'],os.path.join(self.venv_path,"Scripts","pythonw.exe"))
             except Exception:
                 #linux and macos
-                #self.uninstall_pip(['pip'],os.path.join(self.venv_path,"bin","python"))
                 command=install_pip(['ensurepip'],os.path.join(self.venv_path,"bin","python")) 
         except Exception as e:
             log(f"An error occurred: {e}")
             return False
            
-
     def requirements(self):
         dir=os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir))
         log(f"verify requirements")
@@ -107,16 +119,7 @@ class installer():
                     except:
                         library=parts[0][:-1]
                         version=None
-                    #installed_version=get_package_version(self.qgis_python_interpreter,library)
-                    #if installed_version is None:
                     list_libraries[library]=version
-                    #else:
-                    #    if str(installed_version)==str(version) or version==None:
-                    #        iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed!',Qgis.Success)
-                    #        log(f'{library} is already installed!')
-                    #    else:
-                    #        log(f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!')
-                    #        iface.messageBar().pushMessage(f"{os.getenv('PLUGIN_NAME')}:",f'{library} is already installed but the actual version '+f'({installed_version}) is different than the required ({version}). It may cause errors!',Qgis.Warning)
         return self.install(list_libraries)
 
     def install(self,list_libraries):
@@ -152,39 +155,6 @@ class installer():
                     return False
                 
                 sys.path_importer_cache.clear()
-                # log_file = os.path.join(tempfile.gettempdir(), "SZ-logs.txt")
-                # # Add the current date and time to the log file
-                # current_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                # log_entry = f"\nLog created on: {current_datetime}\n"
-
-                # if os.path.exists(log_file):
-                #     # If the log file already exists, open it in append mode
-                #     with open(log_file, 'a') as log:
-                #         log.write(log_entry)
-                # else:
-                #     # If the log file doesn't exist, create it and write the log entry
-                #     with open(log_file, 'w') as log:
-                #         log.write(log_entry)
-                # try:
-                #     with open(log_file, 'a') as log:
-                #         # Create a temporary log file
-                #         subprocess.check_call(command, stderr=log, stdout=log)    
-                #         iface.messageBar().pushMessage("SZ:", 'Dependencies installed successfully!', Qgis.Success)
-                # except subprocess.CalledProcessError:
-                #     # Read the error message from the temporary log file
-                #     with open(log_file, 'r') as log:
-                #         error_message = log.read()
-
-                #     log_link = f'{log_file}'
-
-                #     # Construct the error message with the log file link
-                #     error_message = f'Error occurred while installing dependencies. \n{error_message} \nread {log_link} for details.'
-                #     iface.messageBar().pushMessage("SZ Log:", error_message, Qgis.Critical)
-                #     #sys.exit('Error occurred while installing dependencies. Check the log for details.')
-                #     sys.exit(error_message)
-
-                # # Remove the temporary log file
-                # os.remove(log_file)
 
     def unload(self):
             # Remove path alterations
@@ -213,8 +183,3 @@ class installer():
                     log(f"Error deleting folder '{self.venv_path}': {e}")
             QSettings().remove("SZ")
             print('unloaded')
-
-        
-        
-    
-

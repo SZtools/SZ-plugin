@@ -2,16 +2,13 @@
 #coding=utf-8
 """
 /***************************************************************************
-    LRcvAlgorithm
         begin                : 2021-11
-        copyright            : (C) 2021 by Giacomo Titti,
-                               Padova, November 2021
+        copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
         email                : giacomotitti@gmail.com
  ***************************************************************************/
 
 /***************************************************************************
-    LRcvAlgorithm
-    Copyright (C) 2021 by Giacomo Titti, Padova, November 2021
+    Copyright (C) 2024 by Giacomo Titti, Bologna, November 2024
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,8 +26,9 @@
 """
 
 __author__ = 'Giacomo Titti'
-__date__ = '2021-11-01'
-__copyright__ = '(C) 2021 by Giacomo Titti'
+__date__ = '2024-11-01'
+__copyright__ = '(C) 2024 by Giacomo Titti'
+
 import sys
 sys.setrecursionlimit(10000)
 from qgis.core import (QgsProcessing,
@@ -47,13 +45,10 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterEnum
                        )
 from qgis.core import *
-from qgis.utils import iface
 from qgis import *
-from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
 from sz_module.scripts.utils import SZ_utils
 from sz_module.scripts.algorithms import CV_utils,GAM_utils
-import os
 from sz_module.utils import log
 
 class CoreAlgorithmGAM_cv():
@@ -203,8 +198,6 @@ class CoreAlgorithmGAM_cv():
             'tensor': tensor,
             'nomi': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'spline': parameters['num1'],
-            #'var_interaction_A':parameters['var_interaction_A'],
-            #'var_interaction_B':parameters['var_interaction_B'],
         }
 
         outputs['splines'],outputs['dtypes']=GAM_utils.GAM_formula(alg_params)
@@ -300,7 +293,3 @@ class CoreAlgorithmGAM_cv():
         del subLayers
 
         return results
-
-
-
-

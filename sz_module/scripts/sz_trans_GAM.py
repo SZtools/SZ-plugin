@@ -2,16 +2,13 @@
 #coding=utf-8
 """
 /***************************************************************************
-    LRAlgorithm
         begin                : 2021-11
-        copyright            : (C) 2021 by Giacomo Titti,
-                               Padova, November 2021
+        copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
         email                : giacomotitti@gmail.com
  ***************************************************************************/
 
 /***************************************************************************
-    LRAlgorithm
-    Copyright (C) 2021 by Giacomo Titti, Padova, November 2021
+    Copyright (C) 2024 by Giacomo Titti, Bologna, November 2024
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,8 +26,9 @@
 """
 
 __author__ = 'Giacomo Titti'
-__date__ = '2021-11-01'
-__copyright__ = '(C) 2021 by Giacomo Titti'
+__date__ = '2024-11-01'
+__copyright__ = '(C) 2024 by Giacomo Titti'
+
 import sys
 sys.setrecursionlimit(10000)
 from qgis.core import (QgsProcessing,
@@ -47,16 +45,10 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterEnum
                        )
 from qgis.core import *
-from qgis.utils import iface
 from qgis import *
-from processing.algs.gdal.GdalUtils import GdalUtils
-import plotly.graph_objs as go
-import pandas as pd
 import tempfile
 from sz_module.scripts.utils import SZ_utils
 from sz_module.scripts.algorithms import Algorithms,GAM_utils,CV_utils
-import os
-
 
 class CoreAlgorithmGAM_trans():
    
@@ -83,7 +75,6 @@ class CoreAlgorithmGAM_trans():
 
         family={'0':'binomial','1':'gaussian'}
         scale={'0':'linear_scale','1':'log_scale'}
-
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -181,28 +172,7 @@ class CoreAlgorithmGAM_trans():
         }
         outputs['splines'],outputs['dtypes']=GAM_utils.GAM_formula(alg_params)    
 
-
-        # alg_params = {
-        #     'train': outputs['train'],
-        #     'testy': outputs['testy'],
-        #     'nomi':outputs['nomes'],
-        #     'testN':parameters['testN'],
-        #     'fold':parameters['folder'],
-        #     'splines':outputs['splines'],
-        #     'dtypes':outputs['dtypes'],
-        #     'df':outputs['df'],
-        #     'categorical':parameters['field2'],
-        #     'linear':parameters['field3'],
-        #     'continuous':parameters['field1'],
-        #     'family':family[parameters['family']]
-
-            
-        # }
-        # outputs['trainsi'],outputs['testsi'],outputs['gam']=algorithm(alg_params)
-
-
         alg_params = {
-            #'field1': parameters['field3']+parameters['field1']+parameters['field2'],
             'testN':parameters['testN'],
             'fold':parameters['folder'],
             'nomi':parameters['field3']+parameters['field1']+parameters['field2']+tensor,
@@ -235,8 +205,6 @@ class CoreAlgorithmGAM_trans():
         if feedback.isCanceled():
             return {}
         
-        print('4')
-
         alg_params = {
             'predictors_weights':outputs['predictors_weights'],
             'nomi':parameters['field3']+parameters['field1']+parameters['field2']+tensor,
@@ -247,8 +215,6 @@ class CoreAlgorithmGAM_trans():
             'df':outputs['df_trans']
         }
         outputs['trans']=Algorithms.GAM_transfer(alg_params)
-
-        print('5')
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
@@ -275,38 +241,6 @@ class CoreAlgorithmGAM_trans():
         feedback.setCurrentStep(5)
         if feedback.isCanceled():
             return {}
-
-        # if family[parameters['family']]=='binomial':
-        #     alg_params = {
-        #         'df': outputs['trans'],
-        #         'OUT':parameters['folder']
-        #     }
-        #     SZ_utils.stampfit(alg_params)
-
-        # if family[parameters['family']]=='gaussian':
-        #     alg_params = {
-        #         'df': outputs['trans'],
-        #         'OUT':parameters['folder'],
-        #         'file':parameters['folder']+'/errors_trans.csv'
-
-        #     }
-        #     outputs['errors_trans']=SZ_utils.errors(alg_params)
-
-            # alg_params = {
-            #     'df': outputs['df'],
-            #     'OUT':parameters['folder'],
-            #     'file':parameters['folder']+'/errors_train.csv'
-            # }
-            # print(parameters['folder']+'/errors_train.csv','daiiii')
-            # outputs['error_train']=SZ_utils.errors(alg_params)
-
-            # alg_params = {
-            #     'df_train': outputs['df'],
-            #     'df_trans':outputs['trans'],
-            #     'OUT':parameters['folder'],
-            # }
-            # SZ_utils.stamp_qq_fit(alg_params)
-
 
         feedback.setCurrentStep(6)
         if feedback.isCanceled():

@@ -1,24 +1,42 @@
+#!/usr/bin/python
+#coding=utf-8
+"""
+/***************************************************************************
+        begin                : 2021-11
+        copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
+        email                : giacomotitti@gmail.com
+ ***************************************************************************/
+
+/***************************************************************************
+    Copyright (C) 2024 by Giacomo Titti, Bologna, November 2024
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ ***************************************************************************/
+"""
+
+__author__ = 'Giacomo Titti'
+__date__ = '2024-11-01'
+__copyright__ = '(C) 2024 by Giacomo Titti'
+
 import matplotlib.pyplot as plt
-from processing.algs.gdal.GdalUtils import GdalUtils
-import plotly.graph_objs as go
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, f1_score, cohen_kappa_score
 from scipy.stats import pearsonr
-import csv
 from copy import copy
-
-
-from shapely import wkb
 from shapely.geometry import shape
-
-from matplotlib.ticker import ScalarFormatter
-
-#from pygam import LogisticGAM, s, f, terms
-
 from qgis.core import (QgsVectorLayer,
                        QgsFields,
                        QgsField,
@@ -28,20 +46,15 @@ from qgis.core import (QgsVectorLayer,
                        QgsFeature,
                        QgsGeometry,
                        QgsProcessingContext,
-                       QgsVectorLayerExporter
 )
 import numpy as np
 import pandas as pd
 from qgis.PyQt.QtCore import QVariant
 import os
-from collections import OrderedDict
 import sqlite3
-
 from shapely.geometry import shape
 from shapely.wkt import dumps
 import fiona
-
-
 
 class SZ_utils():
     def generate_ghost_input(input,output):
@@ -51,15 +64,9 @@ class SZ_utils():
         save_options = QgsVectorFileWriter.SaveVectorOptions()
         save_options.driverName = 'GPKG'
         save_options.fileEncoding = 'UTF-8'
-
         writer = QgsVectorFileWriter.writeAsVectorFormat(
           layer,  
           output,
-          #fields,
-          #layer.fields(),
-          #layer.wkbType(),
-          #layer.crs(),
-          #transform_context,
           save_options
         )
         print(output)
@@ -78,7 +85,6 @@ class SZ_utils():
                 geom_wkt = dumps(shape(feature['geometry']))
                 properties['geom'] = geom_wkt  
                 records.append(properties)
-                
         df = pd.DataFrame(records)
         del layer
         del source
@@ -98,7 +104,6 @@ class SZ_utils():
     def load_cv(directory,parameters):
         SZ_utils.generate_ghost_input(parameters['INPUT_VECTOR_LAYER'],directory+'/file.gpkg')
         gdp,crs=SZ_utils.load_geopackage(directory+'/file.gpkg')
-        #primary_key=SZ_utils.get_id_column(directory+'/file.gpkg')
         if 'time' in parameters:
             if parameters['time']==None:
                 df=pd.DataFrame(gdp[parameters['nomi']].copy())
@@ -106,7 +111,6 @@ class SZ_utils():
                 df=pd.DataFrame(gdp[parameters['nomi']+[parameters['time']]].copy())
         else:
             df=pd.DataFrame(gdp[parameters['nomi']].copy())
-        
         try:
             lsd=gdp[parameters['lsd']]
             try:
@@ -129,7 +133,6 @@ class SZ_utils():
             print('no lsd required')
         df['ID']=gdp.index
         df['geom']=gdp['geom']
-        #df=df.dropna(how='any',axis=0)
         print('input layer loaded')
         del gdp
         return(df,crs)
@@ -142,14 +145,12 @@ class SZ_utils():
         fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
         norm=(scores-scores.min())/(scores.max()-scores.min())
         r=roc_auc_score(y_true, scores)
-
         idx = np.argmax(tpr1 - fpr1)  # x YOUDEN INDEX
         suscept01 = copy(scores)
         suscept01[scores > tresh1[idx]] = 1
         suscept01[scores <= tresh1[idx]] = 0
         f1_tot = f1_score(y_true, suscept01)
         ck_tot = cohen_kappa_score(y_true, suscept01)
-
         fig=plt.figure()
         lw = 2
         plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f, F1 = %0.2f, K = %0.2f)' %(r, f1_tot,ck_tot))
@@ -181,63 +182,24 @@ class SZ_utils():
             fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
             aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
             print('ROC '+ str(i) +' AUC=',aucv)
-
             idx = np.argmax(tprv - fprv)  # x YOUDEN INDEX
             suscept01 = copy(scores_v)
             suscept01[scores_v > treshv[idx]] = 1
             suscept01[scores_v <= treshv[idx]] = 0
             f1_tot = f1_score(y_v, suscept01)
             ck_tot = cohen_kappa_score(y_v, suscept01)
-
             plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' AUC = %0.2f, F1 = %0.2f, K = %0.2f' %(aucv, f1_tot,ck_tot))
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
         plt.legend(loc="lower right")
-        #plt.show()
         print('ROC curve figure = ',parameters['OUT']+'/fig_cv.pdf')
         try:
             fig.savefig(parameters['OUT']+'/fig_cv.pdf')
         except:
             os.mkdir(parameters['OUT'])
             fig.savefig(parameters['OUT']+'/fig_cv.pdf')
-
-    
-    # def stamp_simple(parameters):
-    #     train=parameters['train']
-    #     y_t=train['y']
-    #     scores_t=train['SI']
-
-    #     test=parameters['test']
-    #     y_v=test['y']
-    #     scores_v=test['SI']
-    #     lw = 2
-        
-    #     fprv, tprv, treshv = roc_curve(y_v,scores_v)
-    #     fprt, tprt, tresht = roc_curve(y_t,scores_t)
-
-    #     aucv=roc_auc_score(y_v, scores_v)
-    #     auct=roc_auc_score(y_t, scores_t)
-    #     normt=(scores_t-scores_t.min())/(scores_t.max()-scores_t.min())
-    #     normv=(scores_v-scores_v.min())/(scores_v.max()-scores_v.min())
-
-    #     fig=plt.figure()
-    #     plt.plot(fprv, tprv, color='green',lw=lw, label= 'Prediction performance (AUC = %0.2f)' %aucv)
-    #     plt.plot(fprt, tprt, color='red',lw=lw, label= 'Success performance (AUC = %0.2f)' %auct)
-    #     plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
-    #     plt.xlim([0.0, 1.0])
-    #     plt.ylim([0.0, 1.05])
-    #     plt.xlabel('False Positive Rate')
-    #     plt.ylabel('True Positive Rate')
-    #     plt.title('ROC')
-    #     plt.legend(loc="lower right")
-    #     #plt.show()
-    #     try:
-    #         fig.savefig(parameters['OUT']+'/fig.pdf')
-    #     except:
-    #         os.mkdir(parameters['OUT'])
-    #         fig.savefig(parameters['OUT']+'/fig.pdf')
 
     def stamp_qq(parameters):
         print('plotting....')
@@ -250,7 +212,6 @@ class SZ_utils():
         fig, ax = plt.subplots(figsize=(11, 6))
         M=[]
         m=[]
-        #plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
         for i in range(len(test_ind)):
             df_train=y_v[test_ind[i]]
             df_trans=scores_v[test_ind[i]]
@@ -264,21 +225,17 @@ class SZ_utils():
         MM=max(M)
         mm=min(m)
         plt.plot([mm, MM], [mm, MM], color='black', lw=2, linestyle='--')
-        #plt.xlim([0.0, 1.0])
-        #plt.ylim([0.0, 1.05])
         ax.set_aspect('equal','box')
         plt.xlabel('Observed')
         plt.ylabel('Predicted')
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),fontsize='small')
         plt.tight_layout()
-        #plt.show()
         print('QQ figure = ',parameters['OUT']+'/fig_qq.pdf')
         try:
             fig.savefig(parameters['OUT']+'/fig_qq.pdf')
         except:
             os.mkdir(parameters['OUT'])
             fig.savefig(parameters['OUT']+'/fig_qq.pdf')
-
 
     def stamp_qq_fit(parameters):
         print('plotting....')
@@ -288,7 +245,6 @@ class SZ_utils():
         errors=SZ_utils.errors(df_true,df_predict)
         percentiles_train = np.percentile(df_true, np.arange(0, 101, 1))
         percentiles_trans = np.percentile(df_predict, np.arange(0, 101, 1))
-
         fig, ax = plt.subplots()
         plt.scatter(percentiles_train, percentiles_trans,marker='o',s=3, alpha=0.5, label='QQ MAE = %0.2f, RMSE = %0.2f, R2 = %0.2f, PearsCorr = %0.2f' %(errors[0], errors[1],errors[2],errors[3]))
         MM=np.max([np.max(percentiles_train),np.max(percentiles_trans)])
@@ -306,7 +262,6 @@ class SZ_utils():
             os.mkdir(parameters['OUT'])
             fig.savefig(parameters['OUT']+'/fig_qq_fit.pdf')
 
-
     def save(parameters):
         print('writing output geopackage.....')
         df=parameters['df']
@@ -322,12 +277,10 @@ class SZ_utils():
                 fields.append(QgsField(field, QVariant.Double))
             else:
                 fields.append(QgsField(field, QVariant.Double))
-
         transform_context = QgsProject.instance().transformContext()
         save_options = QgsVectorFileWriter.SaveVectorOptions()
         save_options.driverName = 'GPKG'
         save_options.fileEncoding = 'UTF-8'
-
         writer = QgsVectorFileWriter.create(
           parameters['OUT'],
           fields,
@@ -336,7 +289,6 @@ class SZ_utils():
           transform_context,
           save_options
         )
-
         if writer.hasError() != QgsVectorFileWriter.NoError:
             print("Error when creating shapefile: ",  writer.errorMessage())
         for i, row in df.iterrows():
@@ -344,7 +296,6 @@ class SZ_utils():
             fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
             fet.setAttributes(list(map(float,list(df.loc[ i, df.columns != 'geom']))))
             writer.addFeature(fet)
-
         del writer
 
     def addmap(parameters):
@@ -364,23 +315,12 @@ class SZ_utils():
             context.temporaryLayerStore().addMapLayer(sub_vlayer)
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
 
-
     def errors(y_true,predict):
         min_absolute_error = mean_absolute_error(y_true, predict)
         rmse = np.sqrt(mean_squared_error(y_true, predict))
         r_squared = r2_score(y_true, predict)
         pearson_coefficient, _ = pearsonr(y_true, predict)
         errors=[min_absolute_error,rmse,r_squared,pearson_coefficient]
-        # output_file = filename
-        # with open(output_file, mode='w', newline='') as file:
-        #     writer = csv.writer(file)
-        #     # Write header
-        #     writer.writerow(["Metric", "Value"])
-        #     # Write data
-        #     writer.writerow(["Minimum Absolute Error", min_absolute_error])
-        #     writer.writerow(["RMSE", rmse])
-        #     writer.writerow(["R-squared", r_squared])
-        #     writer.writerow(["Pearson Coefficient", pearson_coefficient])
         return(errors)
     
     def check_validity(parameters):
@@ -394,5 +334,3 @@ class SZ_utils():
     def make_directory(parameters):
         if not os.path.exists(parameters['path']):
             os.mkdir(parameters['path'])
-            
-    

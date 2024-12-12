@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
-
+#!/usr/bin/python
+#coding=utf-8
 """
 /***************************************************************************
-    classvAlgorithmW
         begin                : 2021-11
-        copyright            : (C) 2021 by Giacomo Titti,
-                               Padova, November 2021
+        copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
         email                : giacomotitti@gmail.com
  ***************************************************************************/
 
 /***************************************************************************
-    classvAlgorithmW
-    Copyright (C) 2021 by Giacomo Titti, Padova, November 2021
+    Copyright (C) 2024 by Giacomo Titti, Bologna, November 2024
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,12 +26,8 @@
 """
 
 __author__ = 'Giacomo Titti'
-__date__ = '2021-11-01'
-__copyright__ = '(C) 2021 by Giacomo Titti'
-
-# This will get replaced with a git SHA1 when you do a git archive
-
-__revision__ = '$Format:%H$'
+__date__ = '2024-11-01'
+__copyright__ = '(C) 2024 by Giacomo Titti'
 
 from qgis.core import (QgsProcessing,
                        QgsProcessingException,
@@ -48,7 +41,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterField,
 )
-from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 import math
 import operator
@@ -56,16 +49,11 @@ import os
 import numpy as np
 import math
 import operator
-import random
 from qgis import *
 # ##############################
-import matplotlib.pyplot as plt
-import csv
-from processing.algs.gdal.GdalUtils import GdalUtils
 import pandas as pd
 import tempfile
 from sz_module.scripts.utils import SZ_utils
-
 
 class classvAlgorithmW(QgsProcessingAlgorithm):
     def init(self, config=None):
@@ -81,32 +69,24 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}
         outputs = {}
-
-
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
         if parameters['covariates'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-
         parameters['field1'] = self.parameterAsString(parameters, self.STRING, context)
         if parameters['field1'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING))
-
         parameters['fieldlsd'] = self.parameterAsString(parameters, self.STRING2, context)
         if parameters['fieldlsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING2))
-
         parameters['w'] = self.parameterAsString(parameters, self.STRING3, context)
         if parameters['w'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING3))
-
         parameters['edgesGA'] = self.parameterAsString(parameters, self.OUTPUT3, context)
         if parameters['edgesGA'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
-
         parameters['classes'] = self.parameterAsEnum(parameters, self.NUMBER, context)
         if parameters['classes'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
@@ -135,17 +115,13 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
             return {}
         return results
 
-
 class Functions():
     def classy(parameters):
-
         df=parameters['df']
         y_true=np.array(df['y']).reshape(-1,1)
         scores=np.array(df['SI']).reshape(-1,1)
         y_scores=np.array(df['SI']).reshape(-1,1)
         W=np.array(df[parameters['W']]).reshape(-1,1)
-
-        ################################figure
         fpr1, tpr1, tresh1 = roc_curve(y_true,scores,sample_weight=W)
         r=roc_auc_score(y_true, scores)
         print('AUC =',r)
@@ -209,7 +185,6 @@ class Functions():
                 summ+=1
             ##########################PASS
             count+=1
-
             #########################GA
             file={}
             qq=0
