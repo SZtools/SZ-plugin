@@ -157,17 +157,24 @@ def add_QGIS_env(prefix_path,plugin_venv):
         bin_path = os.path.join(prefix_path,plugin_venv,"bin")
 
     if site_packages_path not in sys.path:
-        log(f"Adding {site_packages_path} to PYTHONPATH")
-        sys.path.insert(0, site_packages_path)
-        os.environ["PYTHONPATH"] = (
-            site_packages_path + ";" + os.environ.get("PYTHONPATH", "")
-        )
-
-        log(f"Adding {site_packages_path1} to PYTHONPATH")
-        sys.path.insert(0, site_packages_path1)
-        os.environ["PYTHONPATH"] = (
-            site_packages_path1 + ";" + os.environ.get("PYTHONPATH", "")
-        )
+        if platform.system() == 'Windows': 
+            log(f"Adding {site_packages_path} to PYTHONPATH")
+            sys.path.insert(0, site_packages_path)
+            os.environ["PYTHONPATH"] = (
+                site_packages_path + ";" + os.environ.get("PYTHONPATH", "")
+            )
+        else:
+            log(f"Adding {site_packages_path} to PYTHONPATH")
+            sys.path.insert(0, site_packages_path)
+            os.environ["PYTHONPATH"] = (
+                site_packages_path + ";" + os.environ.get("PYTHONPATH", "")
+            )
+            
+            log(f"Adding {site_packages_path1} to PYTHONPATH")
+            sys.path.insert(0, site_packages_path1)
+            os.environ["PYTHONPATH"] = (
+                site_packages_path1 + ";" + os.environ.get("PYTHONPATH", "")
+            )
     
     if bin_path not in os.environ["PATH"]:
         log(f"Adding {bin_path} to PATH")
