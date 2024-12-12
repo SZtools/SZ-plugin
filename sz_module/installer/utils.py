@@ -29,6 +29,8 @@ __author__ = 'Giacomo Titti'
 __date__ = '2024-11-01'
 __copyright__ = '(C) 2024 by Giacomo Titti'
 
+# this code is inspired from: QPIP, UMEP for processing
+
 import os
 import subprocess
 from subprocess import (
@@ -91,7 +93,7 @@ def run_cmd(args, description="sz-plugin load...."):
             level=Qgis.Success,
         )
 
-def locate_py():
+def locate_py():#inspired from 'UMEP for processing' plugin
         # get Python version
         str_ver_qgis = sys.version.split(" ")[0]
         try:
