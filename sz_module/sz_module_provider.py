@@ -141,8 +141,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithmGAM_trans,
             'name':'Transfer_GAM',
             'displayName':'02 Predict Generalized Additive Model',
-             'group':'03 SI transfer',
-            'groupId':'03 SI transfer',
+             'group':'03 Transfer learning',
+            'groupId':'03 Transfer learning',
             'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
@@ -152,8 +152,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithmML_trans,
             'name':'Transfer_ML',
             'displayName':'01 Predict Machine Learning',
-             'group':'03 SI transfer',
-            'groupId':'03 SI transfer',
+             'group':'03 Transfer learning',
+            'groupId':'03 Transfer learning',
             'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
@@ -174,8 +174,8 @@ class classeProvider(QgsProcessingProvider):
             'function': CoreAlgorithmNN_trans,
             'name':'Transfer_NN',
             'displayName':'03 Predict Neural Network',
-            'group':'03 SI transfer',
-            'groupId':'03 SI transfer',
+            'group':'03 Transfer learning',
+            'groupId':'03 Transfer learning',
             'shortHelpString':"This function apply Neural Network algorithms to transfer susceptibility",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
@@ -220,8 +220,8 @@ class classeProvider(QgsProcessingProvider):
             'function': rocGenerator,
             'name':'ROC',
             'displayName':'04 ROC',
-            'group':'04 Classify SI',
-            'groupId':'04 Classify SI',
+            'group':'04 Classification',
+            'groupId':'04 Classification',
             'shortHelpString':"ROC curve creator",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
@@ -286,8 +286,8 @@ class classeProvider(QgsProcessingProvider):
             'function': classvAlgorithm,
             'name':'classy vector by ROC',
             'displayName':'01 Classify vector by ROC',
-            'group':'04 Classify SI',
-            'groupId':'04 Classify SI',
+            'group':'04 Classification',
+            'groupId':'04 Classification',
             'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative ROC curve",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
@@ -297,8 +297,8 @@ class classeProvider(QgsProcessingProvider):
             'function': classvAlgorithmW,
             'name':'classy vector by wROC',
             'displayName':'02 Classify vector by weighted ROC',
-            'group':'04 Classify SI',
-            'groupId':'04 Classify SI',
+            'group':'04 Classification',
+            'groupId':'04 Classification',
             'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative weighted ROC curve",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
@@ -308,8 +308,8 @@ class classeProvider(QgsProcessingProvider):
             'function': FPAlgorithm,
             'name':'Conf matrix',
             'displayName':'03 Confusion Matrix',
-            'group':'04 Classify SI',
-            'groupId':'04 Classify SI',
+            'group':'04 Classification',
+            'groupId':'04 Classification',
             'shortHelpString':"This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
