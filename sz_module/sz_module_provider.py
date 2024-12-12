@@ -93,14 +93,14 @@ class classeProvider(QgsProcessingProvider):
         """
 
         self.active={
-            'classcovtxt':True,
-            'classcovdeciles':True,
+            'classcovtxt':False,
+            'classcovdeciles':False,
             'statistic':True,
             'rocGenerator':True,
-            'cleankernel':True,
-            'statistickernel':True,
-            'sampler':True,
-            'rasterstatkernel':True,
+            'cleankernel':False,
+            'statistickernel':False,
+            'sampler':False,
+            'rasterstatkernel':False,
             'Corr':True,
             'classv':True,
             'classvW':True,
@@ -207,7 +207,7 @@ class classeProvider(QgsProcessingProvider):
             'alg': 'statistic',
             'function': statistic,
             'name':'attributes analysis',
-            'displayName':'02 Attribute Table Statistics',
+            'displayName':'01 Attribute Table Statistics',
             'group':'01 Data preparation',
             'groupId':'01 Data preparation',
             'shortHelpString':"analysis of the points density distribution by attribute fields",
@@ -220,8 +220,8 @@ class classeProvider(QgsProcessingProvider):
             'function': rocGenerator,
             'name':'ROC',
             'displayName':'04 ROC',
-            'group':'04 Classification',
-            'groupId':'04 Classification',
+            'group':'04 Result interpretation',
+            'groupId':'04 Result interpretation',
             'shortHelpString':"ROC curve creator",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
@@ -274,7 +274,7 @@ class classeProvider(QgsProcessingProvider):
             'alg': 'Corr',
             'function': CorrAlgorithm,
             'name':'Correlation plot',
-            'displayName':'08 Correlation plot',
+            'displayName':'02 Correlation plot',
             'group':'01 Data preparation',
             'groupId':'01 Data preparation',
             'shortHelpString':"This function calculate the correlation plot between continuous variables",
@@ -286,8 +286,8 @@ class classeProvider(QgsProcessingProvider):
             'function': classvAlgorithm,
             'name':'classy vector by ROC',
             'displayName':'01 Classify vector by ROC',
-            'group':'04 Classification',
-            'groupId':'04 Classification',
+            'group':'04 Result interpretation',
+            'groupId':'04 Result interpretation',
             'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative ROC curve",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
@@ -297,8 +297,8 @@ class classeProvider(QgsProcessingProvider):
             'function': classvAlgorithmW,
             'name':'classy vector by wROC',
             'displayName':'02 Classify vector by weighted ROC',
-            'group':'04 Classification',
-            'groupId':'04 Classification',
+            'group':'04 Result interpretation',
+            'groupId':'04 Result interpretation',
             'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative weighted ROC curve",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
@@ -308,8 +308,8 @@ class classeProvider(QgsProcessingProvider):
             'function': FPAlgorithm,
             'name':'Conf matrix',
             'displayName':'03 Confusion Matrix',
-            'group':'04 Classification',
-            'groupId':'04 Classification',
+            'group':'04 Result interpretation',
+            'groupId':'04 Result interpretation',
             'shortHelpString':"This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
