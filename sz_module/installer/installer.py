@@ -72,12 +72,12 @@ class installer():
         self.site_packages_path=''
         self.bin_path='' 
 
-    def is_already_installed(self):
+    def is_already_installed(self,version):
         if self.plugin_settings is False:
             return False
-        elif self.plugin_settings==str(self.version):
+        elif self.plugin_settings==str(version):
             return True
-        elif self.plugin_settings!=str(self.version):
+        elif self.plugin_settings!=str(version):
             return False
         
     def preliminay_req(self):

@@ -65,21 +65,18 @@ class classePlugin(object):
     def initGui(self):
         self.installer=installer(self.version,self.plugin_settings)
         print('Plugin already installed? ',self.plugin_settings)
-        print('0')
         if os.environ.get('DEBUG')=='False':
             if self.installer.preliminay_req() is False:
                 self.installer.unload()
                 log(f"An error occured during the installation")
                 raise RuntimeError("An error occured during the installation")
             else:
-                print('1')
-                if self.installer.is_already_installed() is False:
+                if self.installer.is_already_installed(self.version) is False:
                     if self.installer.requirements() is False:
                         self.installer.unload()
                         log(f"An error occured during the installation")
                         raise RuntimeError("An error occured during the installation")
                     else:
-                        print('2')
                         QSettings().setValue("SZ", str(self.version))
                         self.initProcessing() 
                 else:  
@@ -88,9 +85,4 @@ class classePlugin(object):
             self.initProcessing()  
 
     def unload(self):
-        QgsApplication.processingRegistry().removeProvider(self.provider)
-
-
-
-            
-          
+        QgsApplication.processingRegistry().removeProvider(self.provider)     
