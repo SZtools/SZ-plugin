@@ -104,7 +104,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'01 Machine Learning tools',
             'group':'02 Modelling',
             'groupId':'02 Modelling',
-            'shortHelpString':"This function apply Support Vector Machine to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+            'shortHelpString':"This function uses Machine Learning algorithms to model. It allows to cross-validate data by many methods. If you want just do fitting put k-fold equal to one",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -115,7 +115,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'02 Statistical tools',
             'group':'02 Modelling',
             'groupId':'02 Modelling',
-            'shortHelpString':"This function apply Generalized Additive Model to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+            'shortHelpString':"This function uses Generalized Additive Model to model. It allows to cross-validate data by many methods. If you want just do fitting put k-fold equal to one.",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -126,7 +126,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'02 Predict Generalized Additive Model',
              'group':'03 Transfer learning',
             'groupId':'03 Transfer learning',
-            'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
+            'shortHelpString':"This function uses Generalized Additive Model to transfer learning.",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -137,7 +137,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'01 Predict Machine Learning',
              'group':'03 Transfer learning',
             'groupId':'03 Transfer learning',
-            'shortHelpString':"This function apply Generalized Additive Model to transfer susceptibility",
+            'shortHelpString':"This function uses Machine Learning algorithms to transfer learning.",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -148,7 +148,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'03 Neural Network tools',
             'group':'02 Modelling',
             'groupId':'02 Modelling',
-            'shortHelpString':"This function apply Neural Network algorithms to calculate susceptibility. It allows to cross-validate the analysis by k-fold cross-validation method. If you want just do fitting put k-fold equal to one",
+            'shortHelpString':"This function uses Neural Networks algorithms to model. It allows to cross-validate data by many methods. If you want just do fitting put k-fold equal to one.",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -159,7 +159,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'03 Predict Neural Network',
             'group':'03 Transfer learning',
             'groupId':'03 Transfer learning',
-            'shortHelpString':"This function apply Neural Network algorithms to transfer susceptibility",
+            'shortHelpString':"This function uses Neural Networks algorithm to transfer learning.",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -192,7 +192,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'01 Attribute Table Statistics',
             'group':'01 Data preparation',
             'groupId':'01 Data preparation',
-            'shortHelpString':"analysis of the points density distribution by attribute fields",
+            'shortHelpString':"Analysis of the points density distribution by attribute fields. The function results distribution plots",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -204,7 +204,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'04 ROC',
             'group':'04 Result interpretation',
             'groupId':'04 Result interpretation',
-            'shortHelpString':"ROC curve creator",
+            'shortHelpString':"ROC curve creator. It calculates AUC, F1 score and Choen's Kappa coefficient.",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -270,7 +270,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'01 Classify vector by ROC',
             'group':'04 Result interpretation',
             'groupId':'04 Result interpretation',
-            'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative ROC curve",
+            'shortHelpString':"This function classifies a index (SI) maximizing the AUC of the relative ROC curve.",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -281,7 +281,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'02 Classify vector by weighted ROC',
             'group':'04 Result interpretation',
             'groupId':'04 Result interpretation',
-            'shortHelpString':"Classifies a index (SI) maximizing the AUC of the relative weighted ROC curve",
+            'shortHelpString':"This function classifies a index (SI) maximizing the AUC of the relative weighted ROC curve",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -292,7 +292,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'03 Confusion Matrix',
             'group':'04 Result interpretation',
             'groupId':'04 Result interpretation',
-            'shortHelpString':"This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3)",
+            'shortHelpString':"This function labels each feature as True Positive (0), True Negative (1), False Positive (2), False Negative (3) based on presence/absence.",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -311,36 +311,15 @@ class classeProvider(QgsProcessingProvider):
         # self.addAlgorithm(MyOtherAlgorithm())
 
     def id(self):
-        """
-        Returns the unique provider id, used for identifying the provider. This
-        string should be a unique, short, character only string, eg "qgis" or
-        "gdal". This string should not be localised.
-        """
         return 'SZ'
 
     def name(self):
-        """
-        Returns the provider name, which is used to describe the provider
-        within the GUI.
-
-        This string should be short (e.g. "Lastools") and localised.
-        """
         return self.tr('SZ')
 
     def icon(self):
-        """
-        Should return a QIcon which is used for your provider inside
-        the Processing toolbox.
-        """
         return QIcon(':/icon')
 
     def longName(self):
-        """
-        Returns the a longer version of the provider name, which can include
-        extra details such as version numbers. E.g. "Lastools LIDAR tools
-        (version 2.2.1)". This string should be localised. The default
-        implementation returns the same string as name().
-        """
         return self.name()
 
 class Instance(QgsProcessingAlgorithm):
