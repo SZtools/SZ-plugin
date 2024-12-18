@@ -2,16 +2,13 @@
 #coding=utf-8
 """
 /***************************************************************************
-    samplerAlgorithm
         begin                : 2021-11
-        copyright            : (C) 2021 by Giacomo Titti,
-                               Padova, November 2021
+        copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
         email                : giacomotitti@gmail.com
  ***************************************************************************/
 
 /***************************************************************************
-    samplerAlgorithm
-    Copyright (C) 2021 by Giacomo Titti, Padova, November 2021
+    Copyright (C) 2024 by Giacomo Titti, Bologna, November 2024
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,10 +26,9 @@
 """
 
 __author__ = 'Giacomo Titti'
-__date__ = '2021-11-01'
-__copyright__ = '(C) 2021 by Giacomo Titti'
+__date__ = '2024-11-01'
+__copyright__ = '(C) 2024 by Giacomo Titti'
 
-from qgis.PyQt.QtCore import QCoreApplication,QVariant
 from qgis.core import (QgsProcessing,
                        QgsProcessingException,
                        QgsProcessingAlgorithm,
@@ -50,40 +46,14 @@ from qgis import processing
 import numpy as np
 import random
 from qgis import *
-from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
+import os
+from osgeo import gdal,ogr
+
 
 class samplerAlgorithm(QgsProcessingAlgorithm):
-    INPUT = 'lsd'
-    OUTPUT1 = 'vout'
-    OUTPUT2 = 'tout'
-    MASK = 'poly'
-    NUMBER = 'w'
-    NUMBER1 = 'h'
-    NUMBER2 = 'train'
 
-    def tr(self, string):
-        return QCoreApplication.translate('Processing', string)
-
-    def createInstance(self):
-        return samplerAlgorithm()
-
-    def name(self):
-        return 'points sampler'
-
-    def displayName(self):
-        return self.tr('05 Points Sampler')
-
-    def group(self):
-        return self.tr('01 Data preparation')
-
-    def groupId(self):
-        return '01 Data preparation'
-
-    def shortHelpString(self):
-        return self.tr("Sample randomly training and validating datasets with the contraint to have only training or validating points per pixel")
-
-    def initAlgorithm(self, config=None):
+    def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Points'), types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
         self.addParameter(QgsProcessingParameterVectorLayer(self.MASK, self.tr('Contour polygon'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, 'Pixel width', type=QgsProcessingParameterNumber.Integer, defaultValue = 0,  minValue=0))
@@ -92,41 +62,33 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT1, 'Layer of sample', defaultValue=None, fileFilter='ESRI Shapefile (*.shp *.SHP)'))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT2, 'Layer of 1-sample',  defaultValue=None, fileFilter='ESRI Shapefile (*.shp *.SHP)'))
 
-    def processAlgorithm(self, parameters, context, model_feedback):
+    def process(self, parameters, context, model_feedback):
         self.f=tempfile.gettempdir()
-
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}
         outputs = {}
-
         parameters['lsd'] = self.parameterAsVectorLayer(parameters, self.INPUT, context).source()
         if parameters['lsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-
         parameters['poly'] = self.parameterAsVectorLayer(parameters, self.MASK, context).source()
         if parameters['poly'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.MASK))
-
         parameters['w'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['w'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
-
         parameters['h'] = self.parameterAsInt(parameters, self.NUMBER1, context)
         if parameters['h'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER1))
-
         parameters['train'] = self.parameterAsInt(parameters, self.NUMBER2, context)
         if parameters['train'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER2))
-
         parameters['vout'] = self.parameterAsFileOutput(parameters, self.OUTPUT1, context)
         if parameters['vout'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT1))
-
         parameters['tout'] = self.parameterAsFileOutput(parameters, self.OUTPUT2, context)
         if parameters['tout'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT2))
-
+        
         alg_params = {
             'INPUT': parameters['lsd'],
             'INPUT1': parameters['poly'],
@@ -134,43 +96,41 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
             'h': parameters['h'],
             'train': parameters['train']
         }
-        v,t,xy=self.resampler(alg_params)
+        v,t,xy,ref=Functions.resampler(alg_params)
         outputs['V'] = v
         outputs['T'] = t
         outputs['xy'] = xy
+        outputs['ref'] = ref
 
         alg_params = {
             'INPUT1': parameters['vout'],
             'INPUT2': outputs['V'],
-            'INPUT3': outputs['xy']
+            'INPUT3': outputs['xy'],
+            'ref': outputs['ref']
         }
-        self.save(alg_params)
+        Functions.save(alg_params)
 
         alg_params = {
             'INPUT1': parameters['tout'],
             'INPUT2': outputs['T'],
-            'INPUT3': outputs['xy']
+            'INPUT3': outputs['xy'],
+            'ref': outputs['ref']
         }
-        self.save(alg_params)
-
+        Functions.save(alg_params)
 
         vlayer = QgsVectorLayer(parameters['vout'], 'valid', "ogr")
         QgsProject.instance().addMapLayer(vlayer)
 
-
-        vlayer1 = QgsVectorLayer(parameters['tout'], 'train', "ogr")
-        QgsProject.instance().addMapLayer(vlayer1)
+        tlayer1 = QgsVectorLayer(parameters['tout'], 'train', "ogr")
+        QgsProject.instance().addMapLayer(tlayer1)
 
         fileName = parameters['vout']
-        print(fileName)
         layer1 = QgsVectorLayer(fileName,"test","ogr")
         subLayers =layer1.dataProvider().subLayers()
 
         for subLayer in subLayers:
             name = subLayer.split('!!::!!')[1]
-            print(name,'name')
             uri = "%s|layername=%s" % (fileName, name,)
-            print(uri,'uri')
             # Create layer
             sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
             if not sub_vlayer.isValid():
@@ -180,15 +140,12 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('sample', context.project(),'LAYER1'))
 
         fileName = parameters['tout']
-        print(fileName)
         layer1 = QgsVectorLayer(fileName,"test","ogr")
         subLayers =layer1.dataProvider().subLayers()
 
         for subLayer in subLayers:
             name = subLayer.split('!!::!!')[1]
-            print(name,'name')
             uri = "%s|layername=%s" % (fileName, name,)
-            print(uri,'uri')
             # Create layer
             sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
             if not sub_vlayer.isValid():
@@ -202,58 +159,58 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
             return {}
         return results
 
-    def resampler(self,parameters):
-        self.poly=parameters['INPUT1']
-        vlayer = QgsVectorLayer(self.poly, "layer", "ogr")
+class Functions():
+    def resampler(parameters):
+        f=parameters['fold']
+        poly=parameters['INPUT1']
+        vlayer = QgsVectorLayer(poly, "layer", "ogr")
         ext=vlayer.extent()#xmin
-        self.xmin = ext.xMinimum()
-        self.xmax = ext.xMaximum()
-        self.ymin = ext.yMinimum()
-        self.ymax = ext.yMaximum()
-        self.newXNumPxl=(np.ceil(abs(self.xmax-self.xmin)/(parameters['w']))-1).astype(int)
-        self.newYNumPxl=(np.ceil(abs(self.ymax-self.ymin)/(parameters['h']))-1).astype(int)
-        self.xsize=self.newXNumPxl
-        self.ysize=self.newYNumPxl
-        self.origine=[self.xmin,self.ymax]
-        #########################################
-        #try:
-        dem_datas=np.zeros((self.ysize,self.xsize),dtype='int64')
+        xmin = ext.xMinimum()
+        xmax = ext.xMaximum()
+        ymin = ext.yMinimum()
+        ymax = ext.yMaximum()
+        newXNumPxl=(np.ceil(abs(xmax-xmin)/(parameters['w']))-1).astype(int)
+        newYNumPxl=(np.ceil(abs(ymax-ymin)/(parameters['h']))-1).astype(int)
+        xsize=newXNumPxl
+        ysize=newYNumPxl
+        origine=[xmin,ymax]
+        dem_datas=np.zeros((ysize,xsize),dtype='int64')
         # write the data to output file
-        rf1=self.f+'/inv_sampler.tif'
+        rf1=f+'/inv_sampler.tif'
         dem_datas1=np.zeros(np.shape(dem_datas),dtype='float32')
-        dem_datas1[:]=dem_datas[:]#[::-1]
+        dem_datas1[:]=dem_datas[:]
         w1=parameters['w']
         h1=parameters['h']*(-1)
-        self.array2raster(rf1,w1,h1,dem_datas1,self.origine,parameters['INPUT'])##########rasterize inventory
+        Functions.array2raster(rf1,w1,h1,dem_datas1,origine,parameters['INPUT'])##########rasterize inventory
         del dem_datas
         del dem_datas1
-        ##################################
+
         IN1a=rf1
-        IN2a=self.f+'/invq_sampler.tif'
-        IN3a=self.f+'/inventorynxn_sampler.tif'
-        self.cut(IN1a,IN3a)##########traslate inventory
-        self.ds15=None
-        self.ds15 = gdal.Open(IN3a)
-        if self.ds15 is None:#####################verify empty row input
+        IN2a=f+'/invq_sampler.tif'
+        IN3a=f+'/inventorynxn_sampler.tif'
+        Functions.cut(IN1a,IN3a,poly)##########traslate inventory
+        ds15=None
+        ds15 = gdal.Open(IN3a)
+        if ds15 is None:#####################verify empty row input
             QgsMessageLog.logMessage("ERROR: can't open raster input", tag="WoE")
             raise ValueError  # can't open raster input, see 'WoE' Log Messages Panel
-        ap=self.ds15.GetRasterBand(1)
+        ap=ds15.GetRasterBand(1)
         NoData=ap.GetNoDataValue()
         invmatrix = np.array(ap.ReadAsArray()).astype(np.int64)
-        bands = self.ds15.RasterCount
+        bands = ds15.RasterCount
         if bands>1:#####################verify bands
             QgsMessageLog.logMessage("ERROR: input rasters shoud be 1-band raster", tag="WoE")
             raise ValueError  # input rasters shoud be 1-band raster, see 'WoE' Log Messages Panel
         ###########################################load inventory
-        self.catalog0=np.zeros(np.shape(invmatrix),dtype='int64')
+        catalog0=np.zeros(np.shape(invmatrix),dtype='int64')
         print(np.shape(invmatrix),'shape catalog')
-        self.catalog0[:]=invmatrix[:]
+        catalog0[:]=invmatrix[:]
         del invmatrix
         #######################################inventory from shp to tif
-        v,t,XY=self.vector2arrayinv(IN3a,parameters['INPUT'],self.catalog0,parameters['train'])
-        return v,t,XY
+        v,t,XY,ref=Functions.vector2arrayinv(IN3a,parameters['INPUT'],catalog0,parameters['train'])
+        return v,t,XY,ref
 
-    def array2raster(self,newRasterfn,pixelWidth,pixelHeight,array,oo,lsd):
+    def array2raster(newRasterfn,pixelWidth,pixelHeight,array,oo,lsd):
         ds = ogr.Open(lsd)
         cr=np.shape(array)
         cols=cr[1]
@@ -263,38 +220,29 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         driver = gdal.GetDriverByName('GTiff')
         print(newRasterfn)
         print(int(cols), int(rows))
-
         gdal.UseExceptions()
         try:
             outRaster = driver.Create(newRasterfn, int(cols), int(rows), 1, gdal.GDT_Float32)
         except Exception as e:
             print(f"Error creating raster dataset: {e}")
-        #outRaster = driver.Create(newRasterfn, int(cols), int(rows), 1, gdal.GDT_Float32)
         outRaster.SetGeoTransform((originX, pixelWidth, 0, originY, 0, pixelHeight))
         outband = outRaster.GetRasterBand(1)
         outband.SetNoDataValue(-9999)
         outband.WriteArray(array)
-        #outRasterSRS = osr.SpatialReference()
-        #outRasterSRS.ImportFromEPSG(int(self.epsg[self.epsg.rfind(':')+1:]))
         outRaster.SetProjection(ds.GetLayer().GetSpatialRef().ExportToWkt())
         outband.FlushCache()
-        print(cols,rows,originX, pixelWidth,originY, pixelHeight, 'array2raster')
         del array
 
-    def cut(self,in1,in3):
-        print(self.newYNumPxl,self.newXNumPxl,'cause dimensions')
-        #if self.polynum==1:
+    def cut(in1,in3,poly):
         try:
             if os.path.isfile(in3):
                 os.remove(in3)
-
-            processing.run('gdal:cliprasterbymasklayer', {'INPUT': in1,'MASK': self.poly, 'NODATA': -9999, 'ALPHA_BAND': False, 'CROP_TO_CUTLINE': True, 'KEEP_RESOLUTION': True, 'MULTITHREADING': True, 'OPTIONS': '', 'DATA_TYPE': 6,'OUTPUT': in3})
-
+            processing.run('gdal:cliprasterbymasklayer', {'INPUT': in1,'MASK': poly, 'NODATA': -9999, 'ALPHA_BAND': False, 'CROP_TO_CUTLINE': True, 'KEEP_RESOLUTION': True, 'MULTITHREADING': True, 'OPTIONS': '', 'DATA_TYPE': 6,'OUTPUT': in3})
         except:
             QgsMessageLog.logMessage("Failure to save sized /tmp input", tag="WoE")
             raise ValueError  # Failure to save sized /tmp input Log Messages Panel
 
-    def vector2arrayinv(self,raster,lsd,invzero,parameters):
+    def vector2arrayinv(raster,lsd,invzero,parameters):
         rlayer = QgsRasterLayer(raster, "layer")
         if not rlayer.isValid():
             print("Layer failed to load!")
@@ -313,7 +261,7 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         driverd = ogr.GetDriverByName('ESRI Shapefile')
         ds9 = driverd.Open(lsd)
         layer = ds9.GetLayer()
-        self.ref = layer.GetSpatialRef()
+        ref = layer.GetSpatialRef()
         count=0
         for feature in layer:
             count+=1
@@ -327,23 +275,19 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         OS=np.array([xm,yM])
         NumPxl=(np.ceil(abs((XY-OS)/size)-1)).astype(int)#from 0 first cell
         valuess=np.zeros(np.shape(invzero),dtype='float32')
-
         for i in range(count):
             if XY[i,1]<=yM and XY[i,1]>=ym and XY[i,0]<=xM and XY[i,0]>=xm:
                 valuess[NumPxl[i,1].astype(int),NumPxl[i,0].astype(int)]=1
         rows,cols=np.where(valuess==1)
-
         l=len(rows)
         vec=np.arange(l)
         tt=np.ceil((parameters/100.)*l).astype(int)
         tr=np.asarray(random.sample(range(0, l), tt))
         vec[tr]=-1
         va=vec[vec>-1]
-
         trow=rows[tr]
         tcol=cols[tr]
         traincells=np.array([trow,tcol]).T
-
         vrow=rows[va]
         vcol=cols[va]
         validcells=np.array([vrow,vcol]).T
@@ -352,14 +296,13 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         for i in range(len(traincells)):
             ttt=np.where((NumPxl[:,1]==traincells[i,0]) & (NumPxl[:,0]==traincells[i,1]))
             t=t+list(ttt[0])
-
         for i in range(len(validcells)):
             vv=np.where((NumPxl[:,1]==validcells[i,0]) & (NumPxl[:,0]==validcells[i,1]))
             v=v+list(vv[0])
-        return v,t,XY
+        return v,t,XY,ref
 
-    def save(self,parameters):
-     
+    def save(parameters):
+        ref=parameters['ref']
         XY=parameters['INPUT3']
         driver = ogr.GetDriverByName("ESRI Shapefile")
         if os.path.exists(parameters['INPUT1']):
@@ -367,7 +310,7 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         # create the data source
         ds=driver.CreateDataSource(parameters['INPUT1'])
         # create the layer
-        layer = ds.CreateLayer("vector", self.ref, ogr.wkbPoint)
+        layer = ds.CreateLayer("vector", ref, ogr.wkbPoint)
         # Add the fields we're interested in
         field_name = ogr.FieldDefn("id", ogr.OFTInteger)
         field_name.SetWidth(100)
@@ -393,22 +336,3 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         vlayer = QgsVectorLayer(parameters['INPUT1'], 'vector', "ogr")
         # add the layer to the registry
         QgsProject.instance().addMapLayer(vlayer)
-
-    def addmap(self,parameters):
-        context=parameters()
-        fileName = parameters['trainout']
-        layer = QgsVectorLayer(fileName,"train","ogr")
-        subLayers =layer.dataProvider().subLayers()
-
-        for subLayer in subLayers:
-            name = subLayer.split('!!::!!')[1]
-            print(name,'name')
-            uri = "%s|layername=%s" % (fileName, name,)
-            print(uri,'uri')
-            # Create layer
-            sub_vlayer = QgsVectorLayer(uri, name, 'ogr')
-            if not sub_vlayer.isValid():
-                print('layer failed to load')
-            # Add layer to map
-            context.temporaryLayerStore().addMapLayer(sub_vlayer)
-            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('layer', context.project(),'LAYER'))
