@@ -1,39 +1,41 @@
 # This file contains metadata for your plugin.
 
-# This file should be included when you package your plugin.
-# Mandatory items:
+# This file should be included when you package your plugin.# Mandatory items:
 
 [general]
 name=sz_processing
 qgisMinimumVersion=3.28
 description=Susceptibility Zoning plugin
-version=2.0.0
-author=Giacomo Titti and Luigi Lombardo
+version=1.1.5
+author=Giacomo Titti
 email=giacomotitti@gmail.com
-about=SZ-plugin allows the evaluation of the space-time susceptibility from the pre-processing of the data to the cross-validation of the susceptibility map.
+
+about=SZ-plugin allows the evaluation of the spatial susceptibility from the pre-processing of the data to the cross-validation of the susceptibility map.
+
 tracker=https://github.com/SZtools/SZ-plugin/issues
 repository=https://github.com/SZtools/SZ-plugin
 # End of mandatory metadata
 
 # Recommended items:
-hasProcessingProvider=yes
 
+hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 # changelog=
+
 # Tags are comma separated with spaces allowed
 tags=susceptibility, cross-validation, pre-processing, statistical methods, hazard
-homepage=https://sz-docs.readthedocs.io/en/latest/
-category=Space-time analysis
-plugin_dependencies= scikit-learn, pygam, pandas, shapely, fiona, seaborn
-icon=images/icon.png
 
+homepage=https://github.com/SZtools/SZ-plugin
+category=Spatial analysis
+# plugin_dependencies= scikit-learn, libpysal
+icon=images/icon.png
 # experimental flag
 experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
 
-# Category of the plugin: Raster, Vector, Database or Web
+Category of the plugin: Raster, Vector, Database or Web
 # category=
 
 # If the plugin can run on QGIS Server.

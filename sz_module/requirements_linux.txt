@@ -1,6 +1,0 @@
-scikit-learn==1.5.1
-pygam
-pandas==1.5
-shapely
-fiona
-seaborn

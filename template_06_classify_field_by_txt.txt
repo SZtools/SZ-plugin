@@ -1,0 +1,5 @@
+value_1 value_2 class_1
+value_2 value_3 class_2
+value_3 value_4 class_3
+value_4 value_5 class_4
+value_5 value_6 class_5
