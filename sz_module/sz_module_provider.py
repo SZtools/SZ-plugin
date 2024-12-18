@@ -192,7 +192,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'01 Attribute Table Statistics',
             'group':'01 Data preparation',
             'groupId':'01 Data preparation',
-            'shortHelpString':"Analysis of the points density distribution by attribute fields. The function results distribution plots",
+            'shortHelpString':"Distribution plot of the fields value density.",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 

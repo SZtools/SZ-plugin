@@ -51,8 +51,8 @@ from .utils import SZ_utils
 class statistic(QgsProcessingAlgorithm):
 
     def init(self, config=None):
-        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Vector'), types=[QgsProcessing.TypeVectorAnyGeometry], defaultValue=None))
-        self.addParameter(QgsProcessingParameterField(self.STRING, 'ID field', parentLayerParameterName=self.INPUT, defaultValue=None))
+        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorAnyGeometry], defaultValue=None))
+        self.addParameter(QgsProcessingParameterField(self.STRING, 'ID', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output csv', '*.csv', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.FOLDER, 'Folder destination', defaultValue=None,createByDefault = True))
 
