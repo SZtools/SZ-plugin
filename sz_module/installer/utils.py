@@ -154,7 +154,6 @@ def add_QGIS_env(prefix_path,plugin_venv):
         search_pattern = os.path.join(prefix_path,plugin_venv, "lib", "python*", "site-packages")
         site_packages_path = glob.glob(search_pattern)[0]
         bin_path = os.path.join(prefix_path,plugin_venv,"bin")
-
         search_pattern = os.path.join(prefix_path,plugin_venv, "lib64", "python*", "site-packages")
         site_packages_path1 = glob.glob(search_pattern)[0]
         bin_path = os.path.join(prefix_path,plugin_venv,"bin")
@@ -178,7 +177,7 @@ def add_QGIS_env(prefix_path,plugin_venv):
             os.environ["PYTHONPATH"] = (
                 site_packages_path1 + ";" + os.environ.get("PYTHONPATH", "")
             )
-    
+
     if bin_path not in os.environ["PATH"]:
         log(f"Adding {bin_path} to PATH")
         os.environ["PATH"] = bin_path + ";" + os.environ["PATH"]  

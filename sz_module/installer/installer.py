@@ -97,7 +97,8 @@ class installer():
             try:
                 #windows
                 command=install_pip(['ensurepip'],os.path.join(self.venv_path,"Scripts","pythonw.exe"))
-            except Exception:
+            except Exception as e:
+                log(f"An error occurred: {e}")
                 #linux and macos
                 command=install_pip(['ensurepip'],os.path.join(self.venv_path,"bin","python")) 
         except Exception as e:
