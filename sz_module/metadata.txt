@@ -4,7 +4,7 @@
 # Mandatory items:
 
 [general]
-name=SZ-plugin
+name=SZ
 qgisMinimumVersion=3.28
 description=Spatiotemporal data-driven Zoning plugin
 version=2.0.1
