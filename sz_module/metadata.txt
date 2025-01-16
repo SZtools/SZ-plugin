@@ -4,13 +4,13 @@
 # Mandatory items:
 
 [general]
-name=sz_processing
+name=SZ-plugin
 qgisMinimumVersion=3.28
-description=Susceptibility Zoning plugin
-version=2.0.0
+description=Spatiotemporal data-driven Zoning plugin
+version=2.0.1
 author=Giacomo Titti and Luigi Lombardo
 email=giacomotitti@gmail.com
-about=SZ-plugin allows the evaluation of the space-time susceptibility from the pre-processing of the data to the cross-validation of the susceptibility map.
+about=SZ-plugin allows the user to model space-time regressions and classifications from the pre-processing of the data to the cross-validation of the final map. Application in: Titti, G., Hu, L., Festi, P., Elia, L., Borgatti, L. & Lombardo, L. (2025). An updated version of the SZ-plugin: from space to space-time data-driven modeling in QGIS. Preprint https://doi.org/10.31223/X5JD9X . Please cite as: Titti, G., Sarretta, A., Lombardo, L., Crema, S., Pasuto, A., & Borgatti, L. (2022). Mapping susceptibility with open-source tools: a new plugin for QGIS. Frontiers in Earth Science, 10, 842425.
 tracker=https://github.com/SZtools/SZ-plugin/issues
 repository=https://github.com/SZtools/SZ-plugin
 # End of mandatory metadata
@@ -21,8 +21,8 @@ hasProcessingProvider=yes
 # Uncomment the following line and add your changelog:
 # changelog=
 # Tags are comma separated with spaces allowed
-tags=susceptibility, cross-validation, pre-processing, statistical methods, hazard
-homepage=https://sz-docs.readthedocs.io/en/latest/
+tags=space-time susceptibility, regression, classification, cross-validation, Generalized Attitive Model, Random Forest, Support Vector Machine, Decision Tree, Neural Network, Multi-layer Perceptron, natural hazard
+homepage=https://sz-docs.readthedocs.io/
 category=Space-time analysis
 plugin_dependencies= scikit-learn, pygam, pandas, shapely, fiona, seaborn
 icon=images/icon.png

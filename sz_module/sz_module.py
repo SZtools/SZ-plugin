@@ -53,7 +53,8 @@ class classePlugin(object):
         with open(dir+'/metadata.txt','r') as file:
             for line in file:
                 if line.startswith('version='):
-                    self.version = line.strip().split('version=')[1].strip()
+                    long_version = line.strip().split('version=')[1].strip()
+                    self.version = '.'.join(long_version.split('.')[:-1])
         self.plugin_settings = QSettings().value("SZ",False)
 
     def initProcessing(self):
