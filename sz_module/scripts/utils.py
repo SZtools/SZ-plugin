@@ -138,6 +138,7 @@ class SZ_utils():
         return(df,crs)
 
     def stampfit(parameters):
+        print('plotting....')
         df=parameters['df']
         y_true=df['y']
         scores=df['SI']
@@ -151,6 +152,7 @@ class SZ_utils():
         suscept01[scores <= tresh1[idx]] = 0
         f1_tot = f1_score(y_true, suscept01)
         ck_tot = cohen_kappa_score(y_true, suscept01)
+        print('AUC=',r)
         fig=plt.figure()
         lw = 2
         plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f, F1 = %0.2f, K = %0.2f)' %(r, f1_tot,ck_tot))

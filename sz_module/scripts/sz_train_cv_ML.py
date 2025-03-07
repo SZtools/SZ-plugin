@@ -133,6 +133,8 @@ class CoreAlgorithm_cv():
 
         outputs['df'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
+        print('df',outputs['df'])
+
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
@@ -148,6 +150,8 @@ class CoreAlgorithm_cv():
         }
 
         outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier[ML[parameters['family']]])
+
+        print('prob',outputs['prob'])
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
