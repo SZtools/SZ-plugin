@@ -242,6 +242,12 @@ class CoreAlgorithmGAM_trans():
         if feedback.isCanceled():
             return {}
 
+        alg_params = {
+            'df': outputs['df'],
+            'OUT':parameters['folder']
+        }
+        SZ_utils.stampfit(alg_params)
+
         feedback.setCurrentStep(6)
         if feedback.isCanceled():
             return {}
@@ -264,7 +270,7 @@ class CoreAlgorithmGAM_trans():
             context.temporaryLayerStore().addMapLayer(sub_vlayer)
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('transfer', context.project(),'LAYER'))
 
-        feedback.setCurrentStep(3)
+        feedback.setCurrentStep(7)
         if feedback.isCanceled():
             return {}
         
@@ -285,7 +291,7 @@ class CoreAlgorithmGAM_trans():
             context.temporaryLayerStore().addMapLayer(sub_vlayer)
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('train', context.project(),'LAYER'))
         
-        feedback.setCurrentStep(4)
+        feedback.setCurrentStep(8)
         if feedback.isCanceled():
             return {}
 
