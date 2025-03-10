@@ -87,6 +87,7 @@ class Algorithms():
     def alg_MLrun(classifier,X,y,train,test,df,fold,nomi,filename=''):
         classifier.fit(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy())
         prob_predic=classifier.predict_proba(X.loc[test,nomi].to_numpy())[::,1]
+        print(prob_predic)
         ML_utils.ML_save(classifier,fold,nomi,filename)
         return prob_predic,classifier
 

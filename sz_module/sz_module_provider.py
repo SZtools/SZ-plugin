@@ -362,14 +362,14 @@ class Instance(QgsProcessingAlgorithm):
 
         self.classifier={
             'ML_cv':{
-                'SVC':SVC(kernel = 'linear', random_state = 0,probability=True),
-                'RF':RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0),
-                'DT':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
+                'SVC':SVC(random_state = 0, probability=True),
+                'RF':RandomForestClassifier(max_depth=2 ,n_estimators = 10, random_state = 0),
+                'DT':DecisionTreeClassifier(max_depth=2 , random_state = 0,min_samples_split=10, min_samples_leaf=10),
             },
             'ML_trans':{
-                'SVC':SVC(kernel = 'linear', random_state = 0,probability=True),
-                'RF':RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0),
-                'DT':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
+                'SVC':SVC(random_state = 0, probability=True),
+                'RF':RandomForestClassifier(max_depth=2 ,n_estimators = 10, random_state = 0),
+                'DT':DecisionTreeClassifier(max_depth=2 , random_state = 0,min_samples_split=10, min_samples_leaf=10),
             },
             'GAM_cv':{'binomial':LogisticGAM,'gaussian':LinearGAM},
             'GAM_trans':{'binomial':LogisticGAM,'gaussian':LinearGAM},
