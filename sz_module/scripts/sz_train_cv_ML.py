@@ -57,7 +57,7 @@ class CoreAlgorithm_cv():
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
-        self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVC','DT','RF'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVM Classifier','DT Classifier','RF Classfier','SVM Regressor','DT Regressor','RF Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         self.addParameter(QgsProcessingParameterEnum(self.STRING3, 'CV method', options=['random CV','spatial CV','temporal CV (Time Series Split)','temporal CV (Leave One Out)', 'space-time CV (Leave One Out)'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
         self.addParameter(QgsProcessingParameterField(self.STRING4, 'Time field (for temporal CV only)', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any, optional=True ))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV: K=1 to fit, k>1 to cross-validate for spatial CV only'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2,optional=True))
@@ -72,7 +72,7 @@ class CoreAlgorithm_cv():
         outputs = {}
 
         cv_method={'0':'random','1':'spatial','2':'temporal_TSS','3':'temporal_LOO','4':'spacetime_LOO'}
-        ML={'0':'SVC','1':'DT','2':'RF'}
+        ML={'0':'SVM_classifier','1':'DT_classifier','2':'RF_classifier','3':'SVM_regressor','4':'DT_regressor','5':'RF_regressor'}
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -164,13 +164,28 @@ class CoreAlgorithm_cv():
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
             return {}
+        
+        if ML[parameters['family']]=='SVM_classifier' or ML[parameters['family']]=='DT_classifier' or ML[parameters['family']]=='RF_classifier':
+            alg_params = {
+                'test_ind': outputs['test_ind'],
+                'df': outputs['df'],
+                'OUT':parameters['folder']
+            }
+            SZ_utils.stamp_cv(alg_params)
 
-        alg_params = {
-            'test_ind': outputs['test_ind'],
-            'df': outputs['df'],
-            'OUT':parameters['folder']
-        }
-        SZ_utils.stamp_cv(alg_params)
+        else:
+            alg_params = {
+                'test_ind': outputs['test_ind'],
+                'df': outputs['df'],
+                'OUT':parameters['folder']
+            }
+            outputs['error_train']=SZ_utils.stamp_qq(alg_params)
+
+            alg_params = {
+                'df': outputs['df'],                
+                'OUT':parameters['folder']
+            }
+            outputs['error_train']=SZ_utils.stamp_qq_fit(alg_params)
 
         feedback.setCurrentStep(4)
         if feedback.isCanceled():

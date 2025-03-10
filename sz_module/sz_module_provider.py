@@ -57,10 +57,10 @@ from .scripts.sz_trans_ML import CoreAlgorithmML_trans
 from .scripts.sz_trans_NN import CoreAlgorithmNN_trans
 from .scripts.algorithms import Algorithms
 from sz_module.scripts.segmentation_aspect import segmentationAspectAlgorithm
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
+#from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier,DecisionTreeRegressor
+from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
+from sklearn.svm import SVC,SVR
 from sklearn.neural_network import MLPClassifier,MLPRegressor
 from pygam import LogisticGAM,LinearGAM
 from .utils import log
@@ -362,9 +362,12 @@ class Instance(QgsProcessingAlgorithm):
 
         self.classifier={
             'ML_cv':{
-                'SVC':SVC(random_state = 0, probability=True),
-                'RF':RandomForestClassifier(max_depth=2 ,n_estimators = 10, random_state = 0),
-                'DT':DecisionTreeClassifier(max_depth=2 , random_state = 0,min_samples_split=10, min_samples_leaf=10),
+                'SVM_classifier':SVC(kernel='linear',random_state = 0, probability=True),
+                'RF_classifier':RandomForestClassifier(max_depth=2 ,n_estimators = 10, random_state = 0),
+                'DT_classifier':DecisionTreeClassifier(max_depth=2 , random_state = 0,min_samples_split=10, min_samples_leaf=10),
+                'SVM_regressor':SVR(kernel='linear'),
+                'RF_regressor':RandomForestRegressor(max_depth=2 ,n_estimators = 10, random_state = 0),
+                'DT_regressor':DecisionTreeRegressor(max_depth=2 , random_state = 0,min_samples_split=10, min_samples_leaf=10),
             },
             'ML_trans':{
                 'SVC':SVC(random_state = 0, probability=True),
