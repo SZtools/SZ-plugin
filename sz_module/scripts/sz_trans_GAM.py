@@ -126,8 +126,8 @@ class CoreAlgorithmGAM_trans():
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT1))
 
-        parameters['out1'] = self.parameterAsFileOutput(parameters, self.OUTPUT1, context)
-        if parameters['out1'] is None:
+        parameters['out'] = self.parameterAsFileOutput(parameters, self.OUTPUT1, context)
+        if parameters['out'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT1))
 
         parameters['folder'] = self.parameterAsString(parameters, self.OUTPUT3, context)
@@ -223,7 +223,7 @@ class CoreAlgorithmGAM_trans():
         alg_params = {
             'df': outputs['trans'],
             'crs': outputs['crs_trans'],
-            'OUT': parameters['out1']
+            'OUT': parameters['out']
         }
         SZ_utils.save(alg_params)
 
@@ -241,9 +241,9 @@ class CoreAlgorithmGAM_trans():
         feedback.setCurrentStep(5)
         if feedback.isCanceled():
             return {}
-        results['out1'] = parameters['out1']
+        results['out'] = parameters['out']
 
-        fileName = parameters['out1']
+        fileName = parameters['out']
         layer = QgsVectorLayer(fileName,"transfer","ogr")
         subLayers =layer.dataProvider().subLayers()
 
