@@ -362,30 +362,30 @@ class Instance(QgsProcessingAlgorithm):
 
         self.classifier={
             'ML_cv':{
-                'SVM_classifier':SVC(kernel='linear',random_state = 0, probability=True),
-                'RF_classifier':RandomForestClassifier(max_depth=2 ,n_estimators = 10, random_state = 0),
-                'DT_classifier':DecisionTreeClassifier(max_depth=2 , random_state = 0,min_samples_split=10, min_samples_leaf=10),
+                'SVM_classifier':SVC(kernel='linear', probability=True,class_weight = 'balanced'),
+                'RF_classifier':RandomForestClassifier(n_estimators=10000,max_depth=2,class_weight = 'balanced'),
+                'DT_classifier':DecisionTreeClassifier(max_depth=2,class_weight = 'balanced'),
                 'SVM_regressor':SVR(kernel='linear'),
-                'RF_regressor':RandomForestRegressor(max_depth=2 ,n_estimators = 10, random_state = 0),
-                'DT_regressor':DecisionTreeRegressor(max_depth=2 , random_state = 0,min_samples_split=10, min_samples_leaf=10),
+                'RF_regressor':RandomForestRegressor(max_depth=2),
+                'DT_regressor':DecisionTreeRegressor(max_depth=2),
             },
             'ML_trans':{
-                'SVM_classifier':SVC(kernel='linear',random_state = 0, probability=True),
-                'RF_classifier':RandomForestClassifier(max_depth=2 ,n_estimators = 10, random_state = 0),
-                'DT_classifier':DecisionTreeClassifier(max_depth=2 , random_state = 0,min_samples_split=10, min_samples_leaf=10),
+                'SVM_classifier':SVC(kernel='linear', probability=True,class_weight = 'balanced'),
+                'RF_classifier':RandomForestClassifier(n_estimators=10000,max_depth=2,class_weight = 'balanced'),
+                'DT_classifier':DecisionTreeClassifier(max_depth=2,class_weight = 'balanced'),
                 'SVM_regressor':SVR(kernel='linear'),
-                'RF_regressor':RandomForestRegressor(max_depth=2 ,n_estimators = 10, random_state = 0),
-                'DT_regressor':DecisionTreeRegressor(max_depth=2 , random_state = 0,min_samples_split=10, min_samples_leaf=10),
+                'RF_regressor':RandomForestRegressor(max_depth=2),
+                'DT_regressor':DecisionTreeRegressor(max_depth=2),
             },
             'GAM_cv':{'binomial':LogisticGAM,'gaussian':LinearGAM},
             'GAM_trans':{'binomial':LogisticGAM,'gaussian':LinearGAM},
             'NN_trans':{
-                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
-                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8), max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), max_iter=2000, validation_fraction=0.1, early_stopping=True),
             },
             'NN_cv':{
-                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
-                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8),max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), max_iter=2000, validation_fraction=0.1, early_stopping=True),
             },
         }
 
