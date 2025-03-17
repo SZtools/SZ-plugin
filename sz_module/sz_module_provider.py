@@ -366,7 +366,7 @@ class Instance(QgsProcessingAlgorithm):
                 'RF_classifier':RandomForestClassifier(n_estimators=10000,max_depth=2,class_weight = 'balanced'),
                 'DT_classifier':DecisionTreeClassifier(max_depth=2,class_weight = 'balanced'),
                 'SVM_regressor':SVR(kernel='linear'),
-                'RF_regressor':RandomForestRegressor(max_depth=2),
+                'RF_regressor':RandomForestRegressor(n_estimators=10000,max_depth=2),
                 'DT_regressor':DecisionTreeRegressor(max_depth=2),
             },
             'ML_trans':{
@@ -374,7 +374,7 @@ class Instance(QgsProcessingAlgorithm):
                 'RF_classifier':RandomForestClassifier(n_estimators=10000,max_depth=2,class_weight = 'balanced'),
                 'DT_classifier':DecisionTreeClassifier(max_depth=2,class_weight = 'balanced'),
                 'SVM_regressor':SVR(kernel='linear'),
-                'RF_regressor':RandomForestRegressor(max_depth=2),
+                'RF_regressor':RandomForestRegressor(n_estimators=10000,max_depth=2),
                 'DT_regressor':DecisionTreeRegressor(max_depth=2),
             },
             'GAM_cv':{'binomial':LogisticGAM,'gaussian':LinearGAM},

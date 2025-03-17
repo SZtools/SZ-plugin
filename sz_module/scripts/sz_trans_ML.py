@@ -56,6 +56,8 @@ class CoreAlgorithmML_trans():
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVM Classifier','DT Classifier','RF Classfier','SVM Regressor','DT Regressor','RF Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING6, 'Class weight (for RF classifier and DT classifier)', options=['Balanced','Not balanced'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]),optional=True)
+        self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Estimators (for RF classifier and RF regressor)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True,defaultValue=10000))
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT1, self.tr('Input layer for transferability'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None, optional=False))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
@@ -68,6 +70,8 @@ class CoreAlgorithmML_trans():
         outputs = {}
 
         ML={'0':'SVM_classifier','1':'DT_classifier','2':'RF_classifier','3':'SVM_regressor','4':'DT_regressor','5':'RF_regressor'}
+        weight={'0':'balanced','1':None}
+
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -89,6 +93,14 @@ class CoreAlgorithmML_trans():
         if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING5))
         
+        parameters['estimators'] = self.parameterAsInt(parameters, self.NUMBER1, context)
+        if parameters['estimators'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER1))
+            
+        parameters['weight'] = self.parameterAsString(parameters, self.STRING6, context)
+        if parameters['weight'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING6))
+        
         source1 = self.parameterAsVectorLayer(parameters, self.INPUT1, context)
         parameters['input1']=source1.source()
         if parameters['input1'] is None:
@@ -107,6 +119,11 @@ class CoreAlgorithmML_trans():
         SZ_utils.make_directory({'path':parameters['folder']})
 
         parameters['testN']=1
+
+        if ML[parameters['family']]=='RF_classifier' or ML[parameters['family']]=='RF_regressor':
+            classifier.set_params(n_estimators=parameters['estimators'])
+        if ML[parameters['family']]=='RF_classifier' or ML[parameters['family']]=='DT_classifier':
+            classifier.set_params(class_weight=weight[parameters['weight']])
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
