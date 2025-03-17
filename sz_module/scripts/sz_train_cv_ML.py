@@ -47,10 +47,10 @@ from qgis.core import (QgsProcessing,
 from qgis.core import *
 from qgis import *
 import tempfile
-from scripts.utils import SZ_utils
-from scripts.algorithms import CV_utils
-from ..utils import log
-from ..test.utils import load_test_input
+from sz_module.scripts.utils import SZ_utils
+from sz_module.scripts.algorithms import CV_utils
+from sz_module.utils import log
+from sz_module.test.utils import load_test_input
 
 class CoreAlgorithm_cv():
 

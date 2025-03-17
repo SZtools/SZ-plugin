@@ -4,6 +4,8 @@
         "STRING": ["Elev_std", "Asp_std"],
         "STRING2": "slide_coun",
         "STRING5": 2,
+        "STRING6": "Balanced",
+        "NUMBER1": "1000",
         "STRING3": 0,
         "STRING4": null,
         "NUMBER": 1,

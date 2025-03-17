@@ -417,20 +417,20 @@ class Instance(QgsProcessingAlgorithm):
         result={}
 
         if self.dict_of_scripts['alg'] in self.algorithms:
-            if os.environ.get('DEBUG')=='False':
-                try:
-                    result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
-                except Exception as e:
-                    log(f"An error occurred: {e}")
-            else:
-                result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
+            # if os.environ.get('DEBUG')=='False':
+            #     try:
+            #         result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
+            #     except Exception as e:
+            #         log(f"An error occurred: {e}")
+            # else:
+            result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
         else:
-            if os.environ.get('DEBUG')=='False':
-                try:
-                    result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
-                except Exception as e:
-                    log(f"An error occurred: {e}")
-            else:
-                result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
+            # if os.environ.get('DEBUG')=='False':
+            #     try:
+            #         result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
+            #     except Exception as e:
+            #         log(f"An error occurred: {e}")
+            # else:
+            result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
         
         return result

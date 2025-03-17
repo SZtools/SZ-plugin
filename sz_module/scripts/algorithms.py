@@ -165,7 +165,6 @@ class CV_utils():
                 elif algorithm==Algorithms.alg_MLrun:
                     prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi,family=parameters['family'])
                 df.loc[test,'SI']=prob[0]
-                
                 test_ind[0]=test
         return prob,test_ind,predictors_weights
     
