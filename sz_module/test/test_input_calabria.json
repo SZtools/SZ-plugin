@@ -1,0 +1,44 @@
+{
+    "ML_cv": {
+        "INPUT": "su_lev0_grow_morpho_litho_ped_clc_clean_lsd",
+        "STRING": ["Elev_std", "Asp_std"],
+        "STRING2": "slide_coun",
+        "STRING5": 2,
+        "STRING6": 0,
+        "NUMBER1": 1000,
+        "STRING3": 0,
+        "STRING4": null,
+        "NUMBER": 1,
+        "OUTPUT": "TEMPORARY_OUTPUT",
+        "OUTPUT3": "TEMPORARY_OUTPUT"
+    },
+    "NN_cv": {
+        "INPUT": "su_lev0_grow_morpho_litho_ped_clc_clean_lsd",
+        "STRING": ["Elev_std", "Asp_std"],
+        "STRING2": "slide_coun",
+        "STRING5": 0,
+        "STRING7": 0,
+        "STRING3": 0,
+        "STRING4": null,
+        "NUMBER": 1,
+        "OUTPUT": "TEMPORARY_OUTPUT",
+        "OUTPUT3": "TEMPORARY_OUTPUT"
+    },
+    "GAM_cv": {
+        "INPUT": "su_lev0_grow_morpho_litho_ped_clc_clean_lsd",
+        "STRING": ["SIdx_mean", "Nss_std"],
+        "STRING1": ["id_suolo", "id_clc"],
+        "STRING2": "slide_coun",
+        "STRING3": ["Asp_mean", "Rlf_std"],
+        "STRING4": 0,
+        "STRING5": 0,
+        "STRING6": null,
+        "STRING7": 0,
+        "STRING8": null,
+        "STRING9": null,
+        "NUMBER": 1,
+        "NUMBER1": 10,
+        "OUTPUT": "TEMPORARY_OUTPUT",
+        "OUTPUT3": "TEMPORARY_OUTPUT"
+    }
+  }

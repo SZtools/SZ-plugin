@@ -56,11 +56,11 @@ from .scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
 from .scripts.sz_trans_ML import CoreAlgorithmML_trans
 from .scripts.sz_trans_NN import CoreAlgorithmNN_trans
 from .scripts.algorithms import Algorithms
-from sz_module.scripts.segmentation_aspect import segmentationAspectAlgorithm
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
+from .scripts.segmentation_aspect import segmentationAspectAlgorithm
+#from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier,DecisionTreeRegressor
+from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
+from sklearn.svm import SVC,SVR
 from sklearn.neural_network import MLPClassifier,MLPRegressor
 from pygam import LogisticGAM,LinearGAM
 from .utils import log
@@ -92,7 +92,7 @@ class classeProvider(QgsProcessingProvider):
             'GAM_cv':True,
             'GAM_trans':True,
             'ML_trans':True,
-            'SegAsp':False,
+            'SegAsp':True,
             'NN_trans':True,
             'NN_cv':True,
         }
