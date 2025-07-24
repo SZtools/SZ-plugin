@@ -543,23 +543,12 @@ class Functions():
         df=parameters['INPUT']
         adj=parameters['INPUT1']
         
-        
         aspect_mean_SU = np.arctan(df['sin_sum'].to_numpy()/df['cos_sum'].to_numpy()) #aspect mean per SU (formula 4)
-        print(aspect_mean_SU)
-        print(np.where(np.isnan(aspect_mean_SU))[0])
         aspect_mean_Stu = np.arctan(np.sum(df['sin_sum'].to_numpy())/np.sum(df['cos_sum'].to_numpy())) #aspect mean per study area (formula 4)
-        print(aspect_mean_Stu)
-        print(np.where(np.isnan(aspect_mean_Stu))[0])
         teta_SU = np.arctan((np.sin(aspect_mean_SU)-np.sin(aspect_mean_Stu))/(np.cos(aspect_mean_SU)-np.cos(aspect_mean_Stu))) #teta per solope unit (formula 7-8)
-        print(teta_SU)
-        print(np.where(np.isnan(teta_SU))[0])
         first_denom = np.sum(np.power(teta_SU,2)) #first argument of denominator in formula 2
-        print(first_denom)
-        print(np.where(np.isnan(first_denom))[0])
         second_denom = len(adj) #second argument of denominator in formula 2
-        print(second_denom)
         denom = first_denom * second_denom # denominator of formula 2
-        print(denom)
         N = df.shape[0] # numberof SU
         aspect_product = np.cos(teta_SU[adj['focal']])*np.cos(teta_SU[adj['neighbor']])+np.sin(teta_SU[adj['focal']])*np.sin(teta_SU[adj['neighbor']]) # formula 6
         numerator = N*np.sum(aspect_product) # numerator of formula 2
