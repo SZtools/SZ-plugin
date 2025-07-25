@@ -299,11 +299,11 @@ class classeProvider(QgsProcessingProvider):
         dict_of_scripts={
             'alg': 'SegAsp',
             'function': segmentationAspectAlgorithm,
-            'name':'Segmentation aspect',
-            'displayName':'09 Segmentation aspect',
+            'name':'Segmentation metric',
+            'displayName':'03 Segmentation metric',
             'group':'01 Data preparation',
             'groupId':'01 Data preparation',
-            'shortHelpString':"Segmentation aspect metric proposed for SU by Alvioli et al (2016). For more details, please refer to the paper.",
+            'shortHelpString':"Segmentation metric is a SU optimization method proposed by Ahmed et al. (2024) and inspired by the work of Alvioli et al. (2016). For more details, please refer to the paper Ahmed et al. (2024).",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 

@@ -67,8 +67,7 @@ from sz_module.scripts.utils import SZ_utils
 
 from shapely import wkt
 from shapely.strtree import STRtree
-import networkx as nx
-
+import time
 
 
 
@@ -90,6 +89,9 @@ class segmentationAspectAlgorithm():
 
 
     def process(self, parameters, context, feedback):
+        start_time = time.time()
+
+
         self.f=tempfile.mkdtemp(prefix="SZ_")
         print('TEMP folder: ',self.f)
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
@@ -437,6 +439,11 @@ class segmentationAspectAlgorithm():
         outputs['S'].to_csv(parameters['folder']+'/segmentation_metric.csv')
         results['OUTPUT']=outputs['S']
         #results['OUTPUT']=outputs['gdp']
+
+        end_time = time.time()
+        print(f"Execution time: {end_time - start_time:.4f} seconds")
+
+        
         return results
     
 class Functions():
@@ -468,7 +475,7 @@ class Functions():
     #     gdf_adj_list = gdf_neighbors.to_adjlist()
     #     return gdf_adj_list
     
-    def adjacent_matrix(parameters):
+    def adjacent_matrix_old(parameters):
         gdf = parameters['INPUT'].reset_index(drop=True)
         polygon_coords = []
         #gdf['geom']=gdf['geom'].apply(wkt.loads)
@@ -479,6 +486,7 @@ class Functions():
             for polygon in geom.geoms:
                 poly_vertices.update(polygon.exterior.coords)
             polygon_coords.append(poly_vertices)
+
 
         # Step 2: Build adjacency list as DataFrame rows
         rows = []
@@ -493,22 +501,26 @@ class Functions():
 
         return df
 
-        # gdf = parameters['INPUT'].reset_index(drop=True)
+    def adjacent_matrix(parameters):
+        gdf = parameters['INPUT'].reset_index(drop=True)
+        geometries = [wkt.loads(wkt_str) for wkt_str in gdf['geom']]
 
-        # # Prepare empty adjacency list
-        # adjacency_list = []
-        # gdf['geom']=gdf['geom'].apply(wkt.loads)
-        # # Loop to build Queen contiguity (intersects or touches)
-        # for i, geom_i in enumerate(gdf['geom']):
-        #     for j, geom_j in enumerate(gdf['geom']):
-        #         if i != j and (geom_i.touches(geom_j)):# or geom_i.intersects(geom_j)):
-        #             adjacency_list.append({'focal': i, 'neighbor': j})
+        # Create spatial index and reverse map
+        tree = STRtree(geometries)
+        geom_index_map = {geom: i for i, geom in enumerate(geometries)}
 
-        # # Return as a DataFrame (similar to libpysal.to_adjlist())
-        # adj_df = pd.DataFrame(adjacency_list)
-        # print(adj_df)
-        
-        # return adj_df
+        rows = []
+        for i, geom in enumerate(geometries):
+            neighbors = tree.query(geom)
+            for neighbor in neighbors:
+                    if neighbor is not None:
+                        adj_geom=tree.geometries.take(neighbor)
+                        if geom != adj_geom:
+                            j = geom_index_map.get(adj_geom)
+                            if geom.touches(adj_geom):
+                                rows.append({'focal': i, 'neighbor': j})
+
+        return pd.DataFrame(rows)
 
 
 
