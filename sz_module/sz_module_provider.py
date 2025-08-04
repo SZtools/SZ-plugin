@@ -303,7 +303,7 @@ class classeProvider(QgsProcessingProvider):
             'displayName':'03 Segmentation metric',
             'group':'01 Data preparation',
             'groupId':'01 Data preparation',
-            'shortHelpString':"Segmentation metric is a SU optimization method proposed by Ahmed et al. (2024) and inspired by the work of Alvioli et al. (2016). For more details, please refer to the paper Ahmed et al. (2024).",
+            'shortHelpString':"Segmentation metric is a SU optimization method proposed by Ahmed et al. (2025) and inspired by the work of Alvioli et al. (2016). For more details, please refer to the paper Ahmed et al. (2025 DOI: 10.5194/nhess-25-2519-2025).",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
