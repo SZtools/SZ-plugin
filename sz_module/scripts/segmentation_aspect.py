@@ -2,13 +2,6 @@
 #coding=utf-8
 
 """
-Model exported as python.
-Name : segmentation_aspect
-Group : SU metrics
-With QGIS : 32811
-"""
-
-"""
 /***************************************************************************
         begin                : 2021-11
         copyright            : (C) 2024 by Giacomo Titti,Bologna, November 2024
@@ -80,17 +73,10 @@ class segmentationAspectAlgorithm():
         self.addParameter(QgsProcessingParameterVectorLayer('poly', 'Landslide Polygons', types=[QgsProcessing.TypeVectorPolygon], defaultValue='lsd_test'))
         self.addParameter(QgsProcessingParameterRasterLayer('dem', 'DEM', defaultValue='dem_test'))
         self.addParameter(QgsProcessingParameterNumber('minarea', 'Minimum area', type=QgsProcessingParameterNumber.Integer, defaultValue=None))
-        #self.addParameter(QgsProcessingParameterFileDestination('output_a', 'Output Area Metric', '*.csv', defaultValue=None))
-        #self.addParameter(QgsProcessingParameterFileDestination('output_d', 'Output Density Metric', '*.csv', defaultValue=None))
-        #self.addParameter(QgsProcessingParameterFileDestination('output_sm', 'Output Aspect Segmentation Metric', '*.csv', defaultValue=None))
-        #self.addParameter(QgsProcessingParameterFileDestination('output_s', 'Output Segmentation', '*.csv', defaultValue=None))
         self.addParameter(QgsProcessingParameterFile('folder', 'Destination folder', behavior=QgsProcessingParameterFile.Folder, fileFilter='All files (*.*)', defaultValue=None,optional=True))
-
-
 
     def process(self, parameters, context, feedback):
         start_time = time.time()
-
 
         self.f=tempfile.mkdtemp(prefix="SZ_")
         print('TEMP folder: ',self.f)
@@ -119,22 +105,6 @@ class segmentationAspectAlgorithm():
         if parameters['minarea'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, 'minarea'))
 
-        # parameters['outcsv_a'] = self.parameterAsFileOutput(parameters, 'output_a', context)
-        # if parameters['outcsv_a'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, 'output_a'))
-
-        # parameters['outcsv_d'] = self.parameterAsFileOutput(parameters, 'output_d', context)
-        # if parameters['outcsv_d'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, 'output_d'))
-        
-        # parameters['outcsv_sm'] = self.parameterAsFileOutput(parameters, 'output_sm', context)
-        # if parameters['outcsv_sm'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, 'output_sm'))
-        
-        # parameters['outcsv_s'] = self.parameterAsFileOutput(parameters, 'output_s', context)
-        # if parameters['outcsv_s'] is None:
-        #     raise QgsProcessingException(self.invalidSourceError(parameters, 'output_s'))
-
         parameters['folder'] = self.parameterAsString(parameters, 'folder', context)
         if parameters['folder'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, 'folder'))
@@ -142,7 +112,6 @@ class segmentationAspectAlgorithm():
         if parameters['folder']=='':
             parameters['folder']=self.f
         
-
         # Aspect
         alg_params = {
             'INPUT': parameters['dem'],
@@ -458,27 +427,16 @@ class Functions():
         area=parameters['FIELD']
         cv=1-(np.sqrt(np.power(df['sin_sum'].to_numpy(),2)+np.power(df['cos_sum'].to_numpy(),2))/df['cos_count'].to_numpy())
 
-        #if np.isnan(cv).any():
-        #    raise ValueError("DEM too small")
-
         mask = ~pd.isnull(cv)  # mask where cv is not null
 
         V = np.sum(cv[mask] * df[area].to_numpy()[mask]) / np.sum(df[area].to_numpy()[mask])
 
-        #V = np.sum(cv*df[area].to_numpy())/np.sum(df[area].to_numpy())
         print('V: ',V)
         return V
-
-    # def adjacent_matrix(self,parameters):
-    #     gdf_neighbors = lp.weights.Queen.from_dataframe(parameters['INPUT'])
-    #     gdf_adj_mtx, gdf_adj_mtx_indices = gdf_neighbors.full()
-    #     gdf_adj_list = gdf_neighbors.to_adjlist()
-    #     return gdf_adj_list
     
     def adjacent_matrix_old(parameters):
         gdf = parameters['INPUT'].reset_index(drop=True)
         polygon_coords = []
-        #gdf['geom']=gdf['geom'].apply(wkt.loads)
 
         for wkt_str in gdf['geom']:
             geom = wkt.loads(wkt_str)
@@ -487,8 +445,6 @@ class Functions():
                 poly_vertices.update(polygon.exterior.coords)
             polygon_coords.append(poly_vertices)
 
-
-        # Step 2: Build adjacency list as DataFrame rows
         rows = []
 
         for i in range(len(polygon_coords)):
@@ -496,7 +452,6 @@ class Functions():
                 if i != j and polygon_coords[i] & polygon_coords[j]:
                     rows.append({'focal': i, 'neighbor': j})
 
-        # Step 3: Create DataFrame
         df = pd.DataFrame(rows)
 
         return df
@@ -521,35 +476,6 @@ class Functions():
                                 rows.append({'focal': i, 'neighbor': j})
 
         return pd.DataFrame(rows)
-
-
-
-    
-        # # Load geometries
-        # geometries = [wkt.loads(w) for w in parameters['INPUT']['geom']]
-
-        # # Spatial index
-        # tree = STRtree(geometries)
-        # geom_index = {id(g): i for i, g in enumerate(geometries)}
-
-        # seen = set()
-        # adjacency_list = []
-
-        # for i, geom in enumerate(geometries):
-        #     neighbors = tree.query(geom)
-        #     print()
-        #     for neighbor in neighbors:
-        #         j = geom_index.get(id(neighbor))
-        #         if j is None or i == j:
-        #             continue
-        #         if geom.touches(neighbor):
-        #             pair = tuple(sorted((i, j)))
-        #             if pair not in seen:
-        #                 adjacency_list.append({'focal': i, 'neighbor': j})
-        #                 seen.add(pair)
-        # print(adjacency_list)
-        # # Ensure DataFrame always has correct columns
-        # return pd.DataFrame(adjacency_list, columns=['focal', 'neighbor'])
     
     def I_calculator(parameters):
         df=parameters['INPUT']
@@ -603,7 +529,6 @@ class Functions():
             if lip_value > 0:
                 lsd_area_included += feat['area']
         A=lsd_area_included/lsd_area
-        #D=1/(su["lip"].sum()/len(su[su["point_count"]>0]))
         print('A: ',A)
         return A
 
@@ -616,11 +541,6 @@ class Functions():
         A=np.divide((a-np.min(a)), (a.max() - a.min()))
         D=np.divide((d-np.min(d)), (d.max() - d.min()))
         F=np.divide((f-np.min(f)), (f.max() - f.min()))
-
-        #A=np.divide(np.diff(np.max(df['A'].to_numpy()),df['A'].to_numpy()),np.diff(np.max(df['A'].to_numpy()),np.min(df['A'].to_numpy())))
-        #D=np.divide(np.diff(np.max(df['D'].to_numpy()),df['D'].to_numpy()),np.diff(np.max(df['D'].to_numpy()),np.min(df['D'].to_numpy())))
-        #F=np.divide(np.diff(np.max(df['F'].to_numpy()),df['F'].to_numpy()),np.diff(np.max(df['F'].to_numpy()),np.min(df['F'].to_numpy())))
-
         S=np.multiply(A,np.multiply(D,F))
         df['S']=S
         print('S: ',S)
