@@ -40,5 +40,16 @@
         "NUMBER1": 10,
         "OUTPUT": "TEMPORARY_OUTPUT",
         "OUTPUT3": "TEMPORARY_OUTPUT"
+    },
+    "ML_trans": {
+        "INPUT": "input_variables",
+        "STRING": ["Elev_mean", "Slope_mean"],
+        "STRING2": "y",
+        "STRING5": 2,
+        "STRING6": 0,
+        "NUMBER1": "1000",
+        "INPUT1":"input_variables",
+        "OUTPUT": "TEMPORARY_OUTPUT",
+        "OUTPUT3": "TEMPORARY_OUTPUT"
     }
   }

@@ -48,19 +48,33 @@ from qgis import *
 import tempfile
 from sz_module.scripts.utils import SZ_utils
 from sz_module.scripts.algorithms import CV_utils,Algorithms
+from sz_module.test.utils import load_test_input
+
 
 class CoreAlgorithmML_trans():
 
     def init(self, config=None):
-        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
-        self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
-        self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
-        self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVM Classifier','DT Classifier','RF Classfier','SVM Regressor','DT Regressor','RF Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
-        self.addParameter(QgsProcessingParameterEnum(self.STRING6, 'Class weight (for RF classifier and DT classifier)', options=['Balanced','Not balanced'], allowMultiple=False, usesStaticStrings=False, defaultValue=[],optional=True))
-        self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Estimators (for RF classifier and RF regressor)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True,defaultValue=10000))
-        self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT1, self.tr('Input layer for transferability'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None, optional=False))
-        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
-        self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
+        if os.environ.get('DEBUG')=='True':
+            data=load_test_input("ML_trans")
+            self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=data[self.INPUT]))
+            self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=data[self.STRING], allowMultiple=True,type=QgsProcessingParameterField.Any))
+            self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=data[self.STRING2]))
+            self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVM Classifier','DT Classifier','RF Classfier','SVM Regressor','DT Regressor','RF Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING5]))
+            self.addParameter(QgsProcessingParameterEnum(self.STRING6, 'Class weight (for RF classifier and DT classifier)', options=['Balanced','Not balanced'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING6],optional=True))
+            self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Estimators (for RF classifier and RF regressor)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True,defaultValue=data[self.NUMBER1]))
+            self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT1, self.tr('Input layer for transferability'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=data[self.INPUT1], optional=False))
+            self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=data[self.OUTPUT]))
+            self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=data[self.OUTPUT3], createByDefault = True))
+        else:
+            self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
+            self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
+            self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
+            self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVM Classifier','DT Classifier','RF Classfier','SVM Regressor','DT Regressor','RF Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=None))
+            self.addParameter(QgsProcessingParameterEnum(self.STRING6, 'Class weight (for RF classifier and DT classifier)', options=['Balanced','Not balanced'], allowMultiple=False, usesStaticStrings=False, defaultValue=None,optional=True))
+            self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Estimators (for RF classifier and RF regressor)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True,defaultValue=10000))
+            self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT1, self.tr('Input layer for transferability'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None, optional=False))
+            self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
+            self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
 
     def process(self, parameters, context, feedback, algorithm=None, classifier=None):
 
@@ -120,10 +134,15 @@ class CoreAlgorithmML_trans():
 
         parameters['testN']=1
 
-        if ML[parameters['family']]=='RF_classifier' or ML[parameters['family']]=='RF_regressor':
-            classifier.set_params(n_estimators=parameters['estimators'])
-        if ML[parameters['family']]=='RF_classifier' or ML[parameters['family']]=='DT_classifier':
-            classifier.set_params(class_weight=weight[parameters['weight']])
+        if ML[parameters['family']]=='RF_classifier':
+            classifier['RF_classifier'].set_params(n_estimators=parameters['estimators'])
+        elif ML[parameters['family']]=='RF_regressor':
+            classifier['RF_regressor'].set_params(n_estimators=parameters['estimators'])
+
+        if ML[parameters['family']]=='RF_classifier':
+            classifier['RF_classifier'].set_params(class_weight=weight[parameters['weight']])
+        elif ML[parameters['family']]=='DT_classifier':
+            classifier['DT_classifier'].set_params(class_weight=weight[parameters['weight']])
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
@@ -168,6 +187,7 @@ class CoreAlgorithmML_trans():
         alg_params = {
             'predictors_weights':outputs['predictors_weights'],
             'nomi': parameters['field1'],
+            'family':ML[parameters['family']],
             'df':outputs['df_trans']
         }
         outputs['trans']=Algorithms.ML_transfer(alg_params)
