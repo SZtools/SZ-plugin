@@ -58,9 +58,9 @@ from .scripts.sz_trans_NN import CoreAlgorithmNN_trans
 from .scripts.algorithms import Algorithms
 from .scripts.segmentation_aspect import segmentationAspectAlgorithm
 #from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
+from sklearn.svm import SVC,SVR
 from sklearn.neural_network import MLPClassifier,MLPRegressor
 from pygam import LogisticGAM,LinearGAM
 from .utils import log

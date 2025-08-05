@@ -4,7 +4,7 @@
         "STRING": ["Elev_mean", "Slope_mean"],
         "STRING2": "y",
         "STRING5": 2,
-        "STRING6": "Balanced",
+        "STRING6": 0,
         "NUMBER1": "1000",
         "STRING3": 0,
         "STRING4": null,
