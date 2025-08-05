@@ -56,11 +56,11 @@ from .scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
 from .scripts.sz_trans_ML import CoreAlgorithmML_trans
 from .scripts.sz_trans_NN import CoreAlgorithmNN_trans
 from .scripts.algorithms import Algorithms
-from sz_module.scripts.segmentation_aspect import segmentationAspectAlgorithm
+from .scripts.segmentation_aspect import segmentationAspectAlgorithm
 #from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier,DecisionTreeRegressor
-from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
-from sklearn.svm import SVC,SVR
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier,MLPRegressor
 from pygam import LogisticGAM,LinearGAM
 from .utils import log
@@ -92,7 +92,7 @@ class classeProvider(QgsProcessingProvider):
             'GAM_cv':True,
             'GAM_trans':True,
             'ML_trans':True,
-            'SegAsp':False,
+            'SegAsp':True,
             'NN_trans':True,
             'NN_cv':True,
         }
@@ -299,11 +299,11 @@ class classeProvider(QgsProcessingProvider):
         dict_of_scripts={
             'alg': 'SegAsp',
             'function': segmentationAspectAlgorithm,
-            'name':'Segmentation aspect',
-            'displayName':'09 Segmentation aspect',
+            'name':'Segmentation metric',
+            'displayName':'03 Segmentation metric',
             'group':'01 Data preparation',
             'groupId':'01 Data preparation',
-            'shortHelpString':"Segmentation aspect metric proposed for SU by Alvioli et al (2016). For more details, please refer to the paper.",
+            'shortHelpString':"Segmentation metric is a SU optimization method proposed by Ahmed et al. (2025) and inspired by the work of Alvioli et al. (2016). For more details, please refer to the paper Ahmed et al. (2025 DOI: 10.5194/nhess-25-2519-2025).",
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
