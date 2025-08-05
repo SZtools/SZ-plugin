@@ -72,8 +72,8 @@ class CoreAlgorithm_cv():
             self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
             self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
             self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
-            self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVM Classifier','DT Classifier','RF Classfier','SVM Regressor','DT Regressor','RF Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
-            self.addParameter(QgsProcessingParameterEnum(self.STRING6, 'Class weight (for RF classifier and DT classifier)', options=['Balanced','Not balanced'], allowMultiple=False, usesStaticStrings=False, defaultValue=[],optional=True))
+            self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVM Classifier','DT Classifier','RF Classfier','SVM Regressor','DT Regressor','RF Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=None))
+            self.addParameter(QgsProcessingParameterEnum(self.STRING6, 'Class weight (for RF classifier and DT classifier)', options=['Balanced','Not balanced'], allowMultiple=False, usesStaticStrings=False, defaultValue='Balanced',optional=True))
             self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Estimators (for RF classifier and RF regressor)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True,defaultValue=10000))
             self.addParameter(QgsProcessingParameterEnum(self.STRING3, 'CV method', options=['random CV','spatial CV','temporal CV (Time Series Split)','temporal CV (Leave One Out)', 'space-time CV (Leave One Out)'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
             self.addParameter(QgsProcessingParameterField(self.STRING4, 'Time field (for temporal CV only)', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any, optional=True ))
@@ -149,10 +149,15 @@ class CoreAlgorithm_cv():
                 log(f"Time field is missing for temporal CV")
                 raise RuntimeError("Time field is missing for temporal CV")
             
-        if ML[parameters['family']]=='RF_classifier' or ML[parameters['family']]=='RF_regressor':
-            classifier.set_params(n_estimators=parameters['estimators'])
-        if ML[parameters['family']]=='RF_classifier' or ML[parameters['family']]=='DT_classifier':
-            classifier.set_params(class_weight=weight[parameters['weight']])
+        if ML[parameters['family']]=='RF_classifier':
+            classifier['RF_classifier'].set_params(n_estimators=parameters['estimators'])
+        elif ML[parameters['family']]=='RF_regressor':
+            classifier['RF_regressor'].set_params(n_estimators=parameters['estimators'])
+
+        if ML[parameters['family']]=='RF_classifier':
+            classifier['RF_classifier'].set_params(class_weight=weight[parameters['weight']])
+        elif ML[parameters['family']]=='DT_classifier':
+            classifier['DT_classifier'].set_params(class_weight=weight[parameters['weight']])
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
