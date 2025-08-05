@@ -113,24 +113,24 @@ class SZ_utils():
             df=pd.DataFrame(gdp[parameters['nomi']].copy())
         try:
             lsd=gdp[parameters['lsd']]
-            try:
-                if parameters['family']=='binomial':
-                    lsd[lsd>0]=1
-                elif parameters['family']=='gaussian' and parameters['scale']=='log_scale':
-                    lsd[lsd>0]=np.log(lsd[lsd>0])
-                elif parameters['family']=='gaussian' and parameters['scale']=='linear_scale':
-                    print('do nothing')
-                elif parameters['family']=='MLP_regressor' and parameters['scale']=='log_scale':
-                    lsd[lsd>0]=np.log(lsd[lsd>0])
-                elif parameters['family']=='MLP_regressor' and parameters['scale']=='linear_scale':
-                    print('do nothing')
-                else:
-                    lsd[lsd>0]=1
-            except:
+            #try:
+            if parameters['family']=='gaussian' and parameters['scale']=='log_scale':
+                lsd[lsd>0]=np.log(lsd[lsd>0])
+            elif parameters['family']=='gaussian' and parameters['scale']=='linear_scale':
+                print('do not scale target')
+            elif parameters['family']=='MLP_regressor' and parameters['scale']=='log_scale':
+                lsd[lsd>0]=np.log(lsd[lsd>0])
+            elif parameters['family']=='MLP_regressor' and parameters['scale']=='linear_scale':
+                print('do not scale target')
+            elif parameters['family']=='SVM_regressor' or parameters['family']=='DT_regressor' or parameters['family']=='RF_regressor':
+                print('do not scale target')
+            else:
                 lsd[lsd>0]=1
+            #except:
+            #    lsd[lsd>0]=1
             df['y']=lsd#.astype(int)
         except:
-            print('no lsd required')
+            print('no target required')
         df['ID']=gdp.index
         df['geom']=gdp['geom']
         print('input layer loaded')
@@ -138,6 +138,7 @@ class SZ_utils():
         return(df,crs)
 
     def stampfit(parameters):
+        print('plotting....')
         df=parameters['df']
         y_true=df['y']
         scores=df['SI']
@@ -151,6 +152,7 @@ class SZ_utils():
         suscept01[scores <= tresh1[idx]] = 0
         f1_tot = f1_score(y_true, suscept01)
         ck_tot = cohen_kappa_score(y_true, suscept01)
+        print('AUC=',r)
         fig=plt.figure()
         lw = 2
         plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f, F1 = %0.2f, K = %0.2f)' %(r, f1_tot,ck_tot))

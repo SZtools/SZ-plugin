@@ -58,9 +58,9 @@ from .scripts.sz_trans_NN import CoreAlgorithmNN_trans
 from .scripts.algorithms import Algorithms
 from .scripts.segmentation_aspect import segmentationAspectAlgorithm
 #from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.ensemble import RandomForestClassifier,RandomForestRegressor
+from sklearn.svm import SVC,SVR
 from sklearn.neural_network import MLPClassifier,MLPRegressor
 from pygam import LogisticGAM,LinearGAM
 from .utils import log
@@ -362,24 +362,30 @@ class Instance(QgsProcessingAlgorithm):
 
         self.classifier={
             'ML_cv':{
-                'SVC':SVC(kernel = 'linear', random_state = 0,probability=True),
-                'RF':RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0),
-                'DT':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
+                'SVM_classifier':SVC(kernel='linear', probability=True,class_weight = 'balanced'),
+                'RF_classifier':RandomForestClassifier(n_estimators=10000,max_depth=2,class_weight = 'balanced'),
+                'DT_classifier':DecisionTreeClassifier(max_depth=2,class_weight = 'balanced'),
+                'SVM_regressor':SVR(kernel='linear'),
+                'RF_regressor':RandomForestRegressor(n_estimators=10000,max_depth=2),
+                'DT_regressor':DecisionTreeRegressor(max_depth=2),
             },
             'ML_trans':{
-                'SVC':SVC(kernel = 'linear', random_state = 0,probability=True),
-                'RF':RandomForestClassifier(n_estimators = 10, criterion = 'entropy', random_state = 0),
-                'DT':DecisionTreeClassifier(criterion = 'entropy', random_state = 0),
+                'SVM_classifier':SVC(kernel='linear', probability=True,class_weight = 'balanced'),
+                'RF_classifier':RandomForestClassifier(n_estimators=10000,max_depth=2,class_weight = 'balanced'),
+                'DT_classifier':DecisionTreeClassifier(max_depth=2,class_weight = 'balanced'),
+                'SVM_regressor':SVR(kernel='linear'),
+                'RF_regressor':RandomForestRegressor(n_estimators=10000,max_depth=2),
+                'DT_regressor':DecisionTreeRegressor(max_depth=2),
             },
             'GAM_cv':{'binomial':LogisticGAM,'gaussian':LinearGAM},
             'GAM_trans':{'binomial':LogisticGAM,'gaussian':LinearGAM},
             'NN_trans':{
-                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
-                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8), max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), max_iter=2000, validation_fraction=0.1, early_stopping=True),
             },
             'NN_cv':{
-                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
-                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), random_state=42, max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_classifier':MLPClassifier(hidden_layer_sizes=(16, 32, 64, 128, 64, 32, 16, 8),max_iter=2000, validation_fraction=0.1, early_stopping=True),
+                'MLP_regressor':MLPRegressor(hidden_layer_sizes=(16, 32, 64, 128, 32, 16, 8), max_iter=2000, validation_fraction=0.1, early_stopping=True),
             },
         }
 
@@ -411,20 +417,20 @@ class Instance(QgsProcessingAlgorithm):
         result={}
 
         if self.dict_of_scripts['alg'] in self.algorithms:
-            if os.environ.get('DEBUG')=='False':
-                try:
-                    result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
-                except Exception as e:
-                    log(f"An error occurred: {e}")
-            else:
-                result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
+            # if os.environ.get('DEBUG')=='False':
+            #     try:
+            #         result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
+            #     except Exception as e:
+            #         log(f"An error occurred: {e}")
+            # else:
+            result=self.dict_of_scripts['function'].process(self,parameters, context, feedback, algorithm=self.algorithms[self.dict_of_scripts['alg']], classifier=self.classifier[self.dict_of_scripts['alg']])
         else:
-            if os.environ.get('DEBUG')=='False':
-                try:
-                    result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
-                except Exception as e:
-                    log(f"An error occurred: {e}")
-            else:
-                result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
+            # if os.environ.get('DEBUG')=='False':
+            #     try:
+            #         result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
+            #     except Exception as e:
+            #         log(f"An error occurred: {e}")
+            # else:
+            result=self.dict_of_scripts['function'].process(self,parameters, context, feedback)
         
         return result

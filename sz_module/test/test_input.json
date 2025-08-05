@@ -1,11 +1,11 @@
 {
     "ML_cv": {
         "INPUT": "input_variables",
-        "STRING": ["Slope_mean", "NDVI_mean"],
+        "STRING": ["Elev_mean", "Slope_mean"],
         "STRING2": "y",
         "STRING5": 2,
         "STRING6": 0,
-        "NUMBER1": 1000,
+        "NUMBER1": "1000",
         "STRING3": 0,
         "STRING4": null,
         "NUMBER": 1,
@@ -38,6 +38,17 @@
         "STRING9": null,
         "NUMBER": 1,
         "NUMBER1": 10,
+        "OUTPUT": "TEMPORARY_OUTPUT",
+        "OUTPUT3": "TEMPORARY_OUTPUT"
+    },
+    "ML_trans": {
+        "INPUT": "input_variables",
+        "STRING": ["Elev_mean", "Slope_mean"],
+        "STRING2": "y",
+        "STRING5": 2,
+        "STRING6": 0,
+        "NUMBER1": "1000",
+        "INPUT1":"input_variables",
         "OUTPUT": "TEMPORARY_OUTPUT",
         "OUTPUT3": "TEMPORARY_OUTPUT"
     }
