@@ -189,13 +189,13 @@ class CoreAlgorithm_cv():
         if feedback.isCanceled():
             return {}
 
-        if parameters['testN']>0:
-            alg_params = {
-                'df': outputs['df'],
-                'crs': outputs['crs'],
-                'OUT': parameters['out']
-            }
-            SZ_utils.save(alg_params)
+        
+        alg_params = {
+            'df': outputs['df'],
+            'crs': outputs['crs'],
+            'OUT': parameters['out']
+        }
+        SZ_utils.save(alg_params)
 
         feedback.setCurrentStep(3)
         if feedback.isCanceled():
@@ -210,18 +210,19 @@ class CoreAlgorithm_cv():
             SZ_utils.stamp_cv(alg_params)
 
         else:
-            alg_params = {
-                'test_ind': outputs['test_ind'],
-                'df': outputs['df'],
-                'OUT':parameters['folder']
-            }
-            outputs['error_train']=SZ_utils.stamp_qq(alg_params)
-
-            alg_params = {
-                'df': outputs['df'],                
-                'OUT':parameters['folder']
-            }
-            outputs['error_train']=SZ_utils.stamp_qq_fit(alg_params)
+            if parameters['testN']>1:
+                alg_params = {
+                    'test_ind': outputs['test_ind'],
+                    'df': outputs['df'],
+                    'OUT':parameters['folder']
+                }
+                outputs['error_train']=SZ_utils.stamp_qq(alg_params)
+            else:
+                alg_params = {
+                    'df': outputs['df'],                
+                    'OUT':parameters['folder']
+                }
+                outputs['error_train']=SZ_utils.stamp_qq_fit(alg_params)
 
         feedback.setCurrentStep(4)
         if feedback.isCanceled():

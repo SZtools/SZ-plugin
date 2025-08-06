@@ -46,6 +46,8 @@ from qgis.core import (QgsVectorLayer,
                        QgsFeature,
                        QgsGeometry,
                        QgsProcessingContext,
+                       QgsCoordinateReferenceSystem,
+                       QgsVectorLayerExporter,
 )
 import numpy as np
 import pandas as pd
@@ -269,7 +271,6 @@ class SZ_utils():
         df=parameters['df']
         nomi=list(df.head())
         fields = QgsFields()
-
         for field in nomi:
             if field=='ID':
                 fields.append(QgsField(field, QVariant.Int))
@@ -283,6 +284,7 @@ class SZ_utils():
         save_options = QgsVectorFileWriter.SaveVectorOptions()
         save_options.driverName = 'GPKG'
         save_options.fileEncoding = 'UTF-8'
+        save_options.layerCrs = parameters['crs']
         writer = QgsVectorFileWriter.create(
           parameters['OUT'],
           fields,
@@ -292,7 +294,7 @@ class SZ_utils():
           save_options
         )
         if writer.hasError() != QgsVectorFileWriter.NoError:
-            print("Error when creating shapefile: ",  writer.errorMessage())
+            print("Error when creating gpkg: ",  writer.errorMessage())
         for i, row in df.iterrows():
             fet = QgsFeature()
             fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
