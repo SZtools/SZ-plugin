@@ -68,10 +68,10 @@ import time
 class segmentationAspectAlgorithm():
    
     def init(self, config=None):
-        self.addParameter(QgsProcessingParameterMultipleLayers('su', 'SU', layerType=QgsProcessing.TypeVectorPolygon, defaultValue=['su_test','su1_test','su2_test']))
-        self.addParameter(QgsProcessingParameterVectorLayer('point', 'Landslide Identification Points', types=[QgsProcessing.TypeVectorPoint], defaultValue='lip_test'))
-        self.addParameter(QgsProcessingParameterVectorLayer('poly', 'Landslide Polygons', types=[QgsProcessing.TypeVectorPolygon], defaultValue='lsd_test'))
-        self.addParameter(QgsProcessingParameterRasterLayer('dem', 'DEM', defaultValue='dem_test'))
+        self.addParameter(QgsProcessingParameterMultipleLayers('su', 'SU', layerType=QgsProcessing.TypeVectorPolygon, defaultValue=None))
+        self.addParameter(QgsProcessingParameterVectorLayer('point', 'Landslide Identification Points', types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
+        self.addParameter(QgsProcessingParameterVectorLayer('poly', 'Landslide Polygons', types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
+        self.addParameter(QgsProcessingParameterRasterLayer('dem', 'DEM', defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber('minarea', 'Minimum area', type=QgsProcessingParameterNumber.Integer, defaultValue=None))
         self.addParameter(QgsProcessingParameterFile('folder', 'Destination folder', behavior=QgsProcessingParameterFile.Folder, fileFilter='All files (*.*)', defaultValue=None,optional=True))
 
