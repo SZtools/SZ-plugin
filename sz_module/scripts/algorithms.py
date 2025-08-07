@@ -59,7 +59,11 @@ class Algorithms():
         nomi=parameters['nomi']
         df=parameters['df']
         df_scaled=CV_utils.scaler(df,nomi,'standard')
-        prob_predic=parameters['predictors_weights'].predict_proba(df_scaled.loc[:,nomi].to_numpy())[::,1]
+        family=parameters['family']
+        if family=='SVM_classifier' or family=='RF_classifier' or family=='DT_classifier':
+            prob_predic=parameters['predictors_weights'].predict_proba(df_scaled.loc[:,nomi].to_numpy())[::,1]
+        else:
+            prob_predic=parameters['predictors_weights'].predict(df_scaled.loc[:,nomi].to_numpy())
         df['SI']=prob_predic
         return df
     
@@ -73,7 +77,7 @@ class Algorithms():
         else:
             prob_fit=parameters['predictors_weights'].predict(df_scaled[nomi])
             df['SI']=prob_fit
-        return(df)
+        return df
     
     def alg_NNrun(classifier,X,y,train,test,df,fold,nomi,filename='',family=None):
         classifier.fit(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy())
@@ -84,9 +88,12 @@ class Algorithms():
         NN_utils.NN_plot(classifier,fold,filename)
         return prob_predic,classifier
 
-    def alg_MLrun(classifier,X,y,train,test,df,fold,nomi,filename=''):
+    def alg_MLrun(classifier,X,y,train,test,df,fold,nomi,filename='',family=None):
         classifier.fit(X.loc[train,nomi].to_numpy(), y.iloc[train].to_numpy())
-        prob_predic=classifier.predict_proba(X.loc[test,nomi].to_numpy())[::,1]
+        if family=='SVM_classifier' or family=='RF_classifier' or family=='DT_classifier':
+            prob_predic=classifier.predict_proba(X.loc[test,nomi].to_numpy())[::,1]
+        else:
+            prob_predic=classifier.predict(X.loc[test,nomi].to_numpy())
         ML_utils.ML_save(classifier,fold,nomi,filename)
         return prob_predic,classifier
 
@@ -131,8 +138,8 @@ class CV_utils():
                     prob[i],CI[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
                 elif algorithm==Algorithms.alg_NNrun:
                     prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i),family=parameters['family'])
-                else:
-                    prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i))
+                elif algorithm==Algorithms.alg_MLrun:
+                    prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i),family=parameters['family'])
                     gam=None
                 df.loc[test_ind[i],'SI']=prob[i]
         else:
@@ -144,8 +151,8 @@ class CV_utils():
                         prob[i],CI[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],filename=str(i),family=parameters['family'])
                     elif algorithm==Algorithms.alg_NNrun:
                         prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i),family=parameters['family'])
-                    else:
-                        prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i))
+                    elif algorithm==Algorithms.alg_MLrun:
+                        prob[i],predictors_weights=algorithm(classifier,df_scaled,y,train_ind[i],test_ind[i],df,fold=parameters['fold'],nomi=nomi,filename=str(i),family=parameters['family'])
                         gam=None
                     df.loc[test_ind[i],'SI']=prob[i]
             elif parameters['testN']==1:
@@ -155,10 +162,9 @@ class CV_utils():
                     prob[0],CI[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,splines=parameters['splines'],dtypes=parameters['dtypes'],nomi=nomi,fold=parameters['fold'],family=parameters['family'])
                 elif algorithm==Algorithms.alg_NNrun:
                     prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi,family=parameters['family'])
-                else:
-                    prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi)
+                elif algorithm==Algorithms.alg_MLrun:
+                    prob[0],predictors_weights=algorithm(classifier,df_scaled,y,train,test,df,fold=parameters['fold'],nomi=nomi,family=parameters['family'])
                 df.loc[test,'SI']=prob[0]
-                
                 test_ind[0]=test
         return prob,test_ind,predictors_weights
     
@@ -308,14 +314,34 @@ class GAM_utils():
         if int(np.ceil(count/3.))<4:
             rows=4
         else:
-            rows=int(np.ceil(count/3.))
+            total_rows=int(np.ceil(count/3.))
+            pages=int(np.ceil(total_rows/4))
+            rows=4
         
         ########################################################################not scaled plot
 
-        fig = plt.figure(figsize=(15,15))
+        #fig = plt.figure(figsize=(15,15))
+        fig, axs = plt.subplots(rows, 3, figsize=(15,15))
+        axs = axs.flatten()
+        count_in_page=0
+        page=0
         for i, term in enumerate(gam.terms):
+
             if term.isintercept:
                 continue
+
+            #count_in_page+=1
+            if count_in_page==12:
+                fig.savefig(fold+'/Model_covariates'+filename+'page'+ str(page) +'.pdf', bbox_inches='tight')
+                page+=1
+                fig, axs = plt.subplots(rows, 3, figsize=(15,15))#plt.figure(figsize=(15,15))
+                axs = axs.flatten()
+                count_in_page=0
+            
+            ax = axs[count_in_page]
+            count_in_page += 1
+
+
             X=np.array([min(df.iloc[:, i])])
             m=np.min(df.iloc[:, i])
             interval=(np.max(df.iloc[:, i])-np.min(df.iloc[:, i]))/(len(df[GAM_sel[i]])-1)
@@ -323,7 +349,7 @@ class GAM_utils():
                 X=np.append(X,m+interval)
                 m=m+interval
             if isinstance(gam.terms[i], terms.FactorTerm):
-                ax=fig.add_subplot(rows, 3, i+1)   
+                #ax=fig.add_subplot(rows, 3, count_in_page)   
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
                 x=df[GAM_sel[i]].unique()
@@ -350,7 +376,7 @@ class GAM_utils():
                 continue
             
             elif isinstance(gam.terms[i], terms.LinearTerm):
-                ax=fig.add_subplot(rows, 3, i+1)   
+                #ax=fig.add_subplot(rows, 3, count_in_page)   
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
                 ax.plot(X, pdep, c='blue')                
@@ -393,7 +419,7 @@ class GAM_utils():
                 continue
 
             elif isinstance(gam.terms[i], terms.SplineTerm):
-                ax=fig.add_subplot(rows, 3, i+1)   
+                #ax=fig.add_subplot(rows, 3, count_in_page)   
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
                 ax.plot(X, pdep, c='blue')
@@ -402,15 +428,33 @@ class GAM_utils():
                 ax.set_ylabel('Partial Effect')
                 ax.set_ylim(MIN,MAX)
                 continue
-        fig.savefig(fold+'/Model_covariates'+filename+'.pdf', bbox_inches='tight')
+            
+        for j in range(count_in_page, len(axs)):
+            axs[j].axis('off')
+        fig.savefig(fold+'/Model_covariates'+filename+'page'+ str(page) +'.pdf', bbox_inches='tight')
 
         ########################################################################scaled plot
-        fig1 = plt.figure(figsize=(15,15))
+        #fig1 = plt.figure(figsize=(15,15))
+        fig1, axs1 = plt.subplots(rows, 3, figsize=(15,15))
+        axs1 = axs1.flatten()
+        count_in_page=0
+        page=0
         for i, term in enumerate(gam.terms):
             if term.isintercept:
                 continue
+
+            if count_in_page==12:
+                fig1.savefig(fold+'/Model_covariates_scaled'+filename+'page'+ str(page) +'.pdf', bbox_inches='tight')
+                page+=1
+                fig1, axs1 = plt.subplots(rows, 3, figsize=(15,15))#plt.figure(figsize=(15,15))
+                axs1 = axs1.flatten()
+                count_in_page=0
+            
+            ax1 = axs1[count_in_page]
+            count_in_page += 1
+
             if isinstance(gam.terms[i], terms.FactorTerm):
-                ax1=fig1.add_subplot(rows, 3, i+1)  
+                #ax1=fig1.add_subplot(rows, 3, i+1)  
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
                 x=df[GAM_sel[i]].unique()
@@ -436,7 +480,7 @@ class GAM_utils():
                 ax1.set_ylim(MIN,MAX)
                 continue
             elif isinstance(gam.terms[i], terms.LinearTerm):
-                ax1=fig1.add_subplot(rows, 3, i+1)
+                #ax1=fig1.add_subplot(rows, 3, i+1)
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
                 ax1.plot(XX[:, term.feature], pdep, c='blue')
@@ -466,7 +510,7 @@ class GAM_utils():
                 fig3.savefig(fold + '/Model_covariates_interaction_scaled' + filename + '.pdf', bbox_inches='tight')
                 continue
             elif isinstance(gam.terms[i], terms.SplineTerm):
-                ax1=fig1.add_subplot(rows, 3, i+1)  
+                #ax1=fig1.add_subplot(rows, 3, i+1)  
                 XX = gam.generate_X_grid(term=i,n=len(df[GAM_sel[i]]))
                 pdep, confi = gam.partial_dependence(term=i, X=XX, width=0.95)
                 ax1.plot(XX[:, term.feature], pdep, c='blue')
@@ -475,7 +519,10 @@ class GAM_utils():
                 ax1.set_ylabel('Partial Effect')
                 ax1.set_ylim(MIN,MAX)
                 continue
-        fig1.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
+        for j in range(count_in_page, len(axs)):
+            axs[j].axis('off')
+        fig1.savefig(fold+'/Model_covariates_scaled'+filename+'page'+ str(page) +'.pdf', bbox_inches='tight')
+        #fig1.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
         del gam
         del df
 

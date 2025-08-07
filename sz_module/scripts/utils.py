@@ -113,24 +113,24 @@ class SZ_utils():
             df=pd.DataFrame(gdp[parameters['nomi']].copy())
         try:
             lsd=gdp[parameters['lsd']]
-            try:
-                if parameters['family']=='binomial':
-                    lsd[lsd>0]=1
-                elif parameters['family']=='gaussian' and parameters['scale']=='log_scale':
-                    lsd[lsd>0]=np.log(lsd[lsd>0])
-                elif parameters['family']=='gaussian' and parameters['scale']=='linear_scale':
-                    print('do nothing')
-                elif parameters['family']=='MLP_regressor' and parameters['scale']=='log_scale':
-                    lsd[lsd>0]=np.log(lsd[lsd>0])
-                elif parameters['family']=='MLP_regressor' and parameters['scale']=='linear_scale':
-                    print('do nothing')
-                else:
-                    lsd[lsd>0]=1
-            except:
+            #try:
+            if parameters['family']=='gaussian' and parameters['scale']=='log_scale':
+                lsd[lsd>0]=np.log(lsd[lsd>0])
+            elif parameters['family']=='gaussian' and parameters['scale']=='linear_scale':
+                print('do not scale target')
+            elif parameters['family']=='MLP_regressor' and parameters['scale']=='log_scale':
+                lsd[lsd>0]=np.log(lsd[lsd>0])
+            elif parameters['family']=='MLP_regressor' and parameters['scale']=='linear_scale':
+                print('do not scale target')
+            elif parameters['family']=='SVM_regressor' or parameters['family']=='DT_regressor' or parameters['family']=='RF_regressor':
+                print('do not scale target')
+            else:
                 lsd[lsd>0]=1
+            #except:
+            #    lsd[lsd>0]=1
             df['y']=lsd#.astype(int)
         except:
-            print('no lsd required')
+            print('no target required')
         df['ID']=gdp.index
         df['geom']=gdp['geom']
         print('input layer loaded')
@@ -138,6 +138,7 @@ class SZ_utils():
         return(df,crs)
 
     def stampfit(parameters):
+        print('plotting....')
         df=parameters['df']
         y_true=df['y']
         scores=df['SI']
@@ -151,6 +152,7 @@ class SZ_utils():
         suscept01[scores <= tresh1[idx]] = 0
         f1_tot = f1_score(y_true, suscept01)
         ck_tot = cohen_kappa_score(y_true, suscept01)
+        print('AUC=',r)
         fig=plt.figure()
         lw = 2
         plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f, F1 = %0.2f, K = %0.2f)' %(r, f1_tot,ck_tot))
@@ -263,40 +265,92 @@ class SZ_utils():
             fig.savefig(parameters['OUT']+'/fig_qq_fit.pdf')
 
     def save(parameters):
-        print('writing output geopackage.....')
-        df=parameters['df']
-        nomi=list(df.head())
-        fields = QgsFields()
+        # print('writing output geopackage.....')
+        # df=parameters['df']
+        # nomi=list(df.head())
+        # fields = QgsFields()
+        # for field in nomi:
+        #     if field=='ID':
+        #         fields.append(QgsField(field, QVariant.Int))
+        #     if field=='geom':
+        #         continue
+        #     if field=='y':
+        #         fields.append(QgsField(field, QVariant.Double))
+        #     else:
+        #         fields.append(QgsField(field, QVariant.Double))
+        # transform_context = QgsProject.instance().transformContext()
+        # save_options = QgsVectorFileWriter.SaveVectorOptions()
+        # save_options.driverName = 'GPKG'
+        # save_options.fileEncoding = 'UTF-8'
+        # save_options.layerCrs = parameters['crs']
+        # writer = QgsVectorFileWriter.create(
+        #   parameters['OUT'],
+        #   fields,
+        #   QgsWkbTypes.Polygon,
+        #   parameters['crs'],
+        #   transform_context,
+        #   save_options
+        # )
+        # if writer.hasError() != QgsVectorFileWriter.NoError:
+        #     print("Error when creating gpkg: ",  writer.errorMessage())
+        # for i, row in df.iterrows():
+        #     fet = QgsFeature()
+        #     fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
+        #     fet.setAttributes(list(map(float,list(df.loc[ i, df.columns != 'geom']))))
+        #     writer.addFeature(fet)
+        # del writer
 
-        for field in nomi:
-            if field=='ID':
-                fields.append(QgsField(field, QVariant.Int))
-            if field=='geom':
+        print('Writing output GeoPackage...')
+
+        df = parameters['df']
+        crs = parameters['crs']
+        output_path = parameters['OUT']
+
+        uri = f"Polygon?crs={crs.authid()}"
+        layer = QgsVectorLayer(uri, "temp_layer", "memory")
+        pr = layer.dataProvider()
+
+        # Step 2: Define and add fields
+        fields = QgsFields()
+        for field in df.columns:
+            if field == 'geom':
                 continue
-            if field=='y':
-                fields.append(QgsField(field, QVariant.Double))
+            elif field == 'ID':
+                fields.append(QgsField(field, QVariant.Int))
             else:
                 fields.append(QgsField(field, QVariant.Double))
-        transform_context = QgsProject.instance().transformContext()
-        save_options = QgsVectorFileWriter.SaveVectorOptions()
-        save_options.driverName = 'GPKG'
-        save_options.fileEncoding = 'UTF-8'
-        writer = QgsVectorFileWriter.create(
-          parameters['OUT'],
-          fields,
-          QgsWkbTypes.Polygon,
-          parameters['crs'],
-          transform_context,
-          save_options
-        )
-        if writer.hasError() != QgsVectorFileWriter.NoError:
-            print("Error when creating shapefile: ",  writer.errorMessage())
+
+        pr.addAttributes(fields)
+        layer.updateFields()
+
+        # Step 3: Add features
+        feats = []
         for i, row in df.iterrows():
-            fet = QgsFeature()
-            fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
-            fet.setAttributes(list(map(float,list(df.loc[ i, df.columns != 'geom']))))
-            writer.addFeature(fet)
-        del writer
+            feat = QgsFeature()
+            feat.setGeometry(QgsGeometry.fromWkt(row['geom']))
+            attr = [row[col] for col in df.columns if col != 'geom']
+            feat.setAttributes(attr)
+            feats.append(feat)
+
+        pr.addFeatures(feats)
+        layer.updateExtents()
+
+        options = QgsVectorFileWriter.SaveVectorOptions()
+        options.driverName = "GPKG"
+        options.fileEncoding = "UTF-8"
+
+        transform_context = QgsProject.instance().transformContext()
+        error, error_string = QgsVectorFileWriter.writeAsVectorFormatV2(
+            layer,
+            output_path,
+            transform_context,
+            options
+        )
+
+        if error != QgsVectorFileWriter.NoError:
+            print("Failed to write GPKG:", error_string)
+        else:
+            print("Saved with CRS:", layer.crs().authid())
 
     def addmap(parameters):
         context=parameters()

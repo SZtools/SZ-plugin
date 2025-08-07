@@ -170,7 +170,7 @@ class CoreAlgorithmNN_trans():
         alg_params = {
             'df': outputs['trans'],
             'crs': outputs['crs_trans'],
-            'OUT': parameters['folder']+'/trans.gpkg'
+            'OUT': parameters['out']
         }
         SZ_utils.save(alg_params)
 
@@ -192,7 +192,7 @@ class CoreAlgorithmNN_trans():
         results['out'] = parameters['out']
 
         fileName = parameters['out']
-        layer1 = QgsVectorLayer(fileName,"test","ogr")
+        layer1 = QgsVectorLayer(fileName,"transfer","ogr")
         subLayers =layer1.dataProvider().subLayers()
 
         for subLayer in subLayers:
@@ -204,7 +204,7 @@ class CoreAlgorithmNN_trans():
                 print('layer failed to load')
             # Add layer to map
             context.temporaryLayerStore().addMapLayer(sub_vlayer)
-            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('test', context.project(),'LAYER1'))
+            context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('transfer', context.project(),'LAYER1'))
 
         feedback.setCurrentStep(7)
         if feedback.isCanceled():
@@ -227,7 +227,7 @@ class CoreAlgorithmNN_trans():
             context.temporaryLayerStore().addMapLayer(sub_vlayer)
             context.addLayerToLoadOnCompletion(sub_vlayer.id(), QgsProcessingContext.LayerDetails('train', context.project(),'LAYER'))
         
-        feedback.setCurrentStep(4)
+        feedback.setCurrentStep(9)
         if feedback.isCanceled():
             return {}
 
