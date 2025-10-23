@@ -113,21 +113,22 @@ class SZ_utils():
             df=pd.DataFrame(gdp[parameters['nomi']].copy())
         try:
             lsd=gdp[parameters['lsd']]
-            #try:
-            if parameters['family']=='gaussian' and parameters['scale']=='log_scale':
-                lsd[lsd>0]=np.log(lsd[lsd>0])
-            elif parameters['family']=='gaussian' and parameters['scale']=='linear_scale':
-                print('do not scale target')
-            elif parameters['family']=='MLP_regressor' and parameters['scale']=='log_scale':
-                lsd[lsd>0]=np.log(lsd[lsd>0])
-            elif parameters['family']=='MLP_regressor' and parameters['scale']=='linear_scale':
-                print('do not scale target')
-            elif parameters['family']=='SVM_regressor' or parameters['family']=='DT_regressor' or parameters['family']=='RF_regressor':
-                print('do not scale target')
-            else:
+            try:
+                if parameters['family']=='gaussian' and parameters['scale']=='log_scale':
+                    lsd[lsd>0]=np.log(lsd[lsd>0])
+                elif parameters['family']=='gaussian' and parameters['scale']=='linear_scale':
+                    print('do not scale target')
+                elif parameters['family']=='MLP_regressor' and parameters['scale']=='log_scale':
+                    lsd[lsd>0]=np.log(lsd[lsd>0])
+                elif parameters['family']=='MLP_regressor' and parameters['scale']=='linear_scale':
+                    print('do not scale target')
+                elif parameters['family']=='SVM_regressor' or parameters['family']=='DT_regressor' or parameters['family']=='RF_regressor':
+                    print('do not scale target')
+                else:
+                    lsd[lsd>0]=1
+            except:
                 lsd[lsd>0]=1
-            #except:
-            #    lsd[lsd>0]=1
+
             df['y']=lsd#.astype(int)
         except:
             print('no target required')
