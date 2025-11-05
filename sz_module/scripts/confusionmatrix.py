@@ -132,9 +132,9 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        results['out'] = parameters['out']
+        results['out'] = os.path.join(parameters['out'], 'cm.gpkg')
  
-        fileName = parameters['out']
+        fileName = os.path.join(parameters['out'], 'cm.gpkg')
         layer1 = QgsVectorLayer(fileName,"confusion_matrix","ogr")
         subLayers =layer1.dataProvider().subLayers()
 
