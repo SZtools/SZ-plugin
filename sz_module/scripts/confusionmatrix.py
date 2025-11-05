@@ -56,7 +56,7 @@ import numpy as np
 from qgis import *
 import pandas as pd
 from sklearn.metrics import roc_curve
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import ConfusionMatrixDisplay
 import tempfile
 import matplotlib.pyplot as plt
 from .utils import SZ_utils
@@ -66,8 +66,8 @@ class FPAlgorithm(QgsProcessingAlgorithm):
  
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Input layer'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
-        self.addParameter(QgsProcessingParameterField(self.STRING, 'Index', parentLayerParameterName=self.INPUT, defaultValue=None))
-        self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
+        self.addParameter(QgsProcessingParameterField(self.STRING, 'Predicted classification', parentLayerParameterName=self.INPUT, defaultValue=None))
+        self.addParameter(QgsProcessingParameterField(self.STRING2, 'Real binary classification (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Cutoff percentile (if empty use the YOUDEN index)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True))
         #self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
         self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT, 'Outputs folder destination', defaultValue=None, createByDefault = True))
@@ -221,7 +221,6 @@ class Functions():
         print('fp=', str((df['tptnfpfn'] == 2).sum()))
         print('fn=', str((df['tptnfpfn'] == 3).sum()))
         cm=np.array([[(df['tptnfpfn'] == 1).sum(),(df['tptnfpfn'] == 2).sum()],[(df['tptnfpfn'] == 3).sum(),(df['tptnfpfn'] == 0).sum()]])
-        print(cm)
         disp=ConfusionMatrixDisplay(confusion_matrix=cm)
         disp.plot()
         plt.savefig(os.path.join(parameters['fold'], 'cm.png'), bbox_inches='tight')
