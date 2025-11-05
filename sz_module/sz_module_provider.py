@@ -35,7 +35,6 @@ from qgis.core import QgsProcessingProvider,QgsProcessingAlgorithm
 from qgis.PyQt.QtCore import QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from sz_module.images.cqp_resources_rc import qInitResources
-qInitResources()
 import os
 from .scripts.selfroc import rocGenerator
 from .scripts.lsdanalysis import statistic
@@ -45,7 +44,7 @@ from .scripts.randomsampler3 import samplerAlgorithm
 from .scripts.stat31 import rasterstatkernelAlgorithm
 from .scripts.classvector import classvAlgorithm
 from .scripts.classvectorw import classvAlgorithmW
-from .scripts.tptn import FPAlgorithm
+from .scripts.confusionmatrix import FPAlgorithm
 from .scripts.classcovtxt import classcovtxtAlgorithm
 from .scripts.classcovdeciles import classcovdecAlgorithm
 from .scripts.corrplot import CorrAlgorithm

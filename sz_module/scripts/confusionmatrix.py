@@ -56,7 +56,10 @@ import numpy as np
 from qgis import *
 import pandas as pd
 from sklearn.metrics import roc_curve
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import tempfile
+import matplotlib.pyplot as plt
+from .utils import SZ_utils
 
 
 class FPAlgorithm(QgsProcessingAlgorithm):
@@ -66,7 +69,9 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Index', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Cutoff percentile (if empty use the YOUDEN index)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True))
-        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
+        #self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
+        self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT, 'Outputs folder destination', defaultValue=None, createByDefault = True))
+
 
     def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
@@ -94,17 +99,20 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         parameters['testN'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['testN'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
-   
-        parameters['out'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
+           
+        parameters['out'] = self.parameterAsString(parameters, self.OUTPUT, context)
         if parameters['out'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
+        
+        SZ_utils.make_directory({'path':parameters['out']})
+
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
             'testN':parameters['testN'],
-            'fold':self.f
+            'fold':parameters['out']
         }
 
         outputs['df'],outputs['nomi'],outputs['crs']=Functions.load(alg_params)
@@ -116,7 +124,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         alg_params = {
             'df': outputs['df'],
             'crs': outputs['crs'],
-            'OUT': parameters['out']
+            'OUT': os.path.join(parameters['out'], 'cm.gpkg')
         }
         Functions.save(alg_params)
 
@@ -195,14 +203,14 @@ class Functions():
         else:
             cutoff=np.percentile(xx, parameters['testN'])
         print('cutoff: ',cutoff)
-        df['class_cut']='positive'
-        df['presabs']='false'
-        df['class_cut'].iloc[np.where(x<=cutoff)[0]]='negative'
-        df['presabs'].iloc[np.where(y==1)]='true'
-        tp = np.where((df['class_cut']=='positive')&(df['presabs']=='true'))
-        tn = np.where((df['class_cut']=='negative')&(df['presabs']=='true'))
-        fp = np.where((df['class_cut']=='positive')&(df['presabs']=='false'))
-        fn = np.where((df['class_cut']=='negative')&(df['presabs']=='false'))
+        df['class_cut']='negative'
+        df['presabs']='negative'
+        df['class_cut'].iloc[np.where(x>=cutoff)[0]]='positive'
+        df['presabs'].iloc[np.where(y==1)]='positive'
+        tp = np.where((df['class_cut']=='positive')&(df['presabs']=='positive'))
+        fn = np.where((df['class_cut']=='negative')&(df['presabs']=='positive'))
+        fp = np.where((df['class_cut']=='positive')&(df['presabs']=='negative'))
+        tn = np.where((df['class_cut']=='negative')&(df['presabs']=='negative'))
         df['tptnfpfn']=0
         df['tptnfpfn'].iloc[tp[0]]=0
         df['tptnfpfn'].iloc[tn[0]]=1
@@ -212,6 +220,11 @@ class Functions():
         print('tn=', str((df['tptnfpfn'] == 1).sum()))
         print('fp=', str((df['tptnfpfn'] == 2).sum()))
         print('fn=', str((df['tptnfpfn'] == 3).sum()))
+        cm=np.array([[(df['tptnfpfn'] == 1).sum(),(df['tptnfpfn'] == 2).sum()],[(df['tptnfpfn'] == 3).sum(),(df['tptnfpfn'] == 0).sum()]])
+        print(cm)
+        disp=ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot()
+        plt.savefig(os.path.join(parameters['fold'], 'cm.png'), bbox_inches='tight')
         return df,nomi,crs
 
     def save(parameters):
