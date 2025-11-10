@@ -126,7 +126,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
             'crs': outputs['crs'],
             'OUT': os.path.join(parameters['out'], 'cm.gpkg')
         }
-        Functions.save(alg_params)
+        SZ_utils.save(alg_params)
 
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
@@ -227,10 +227,66 @@ class Functions():
         return df,nomi,crs
 
     def save(parameters):
-        df=parameters['df']
-        nomi=list(df.head())
+        # df=parameters['df']
+        # nomi=list(df.head())
+        # fields = QgsFields()
+        # for field in nomi:
+        #     if field=='ID':
+        #         fields.append(QgsField(field, QVariant.Int))
+        #     if field=='geom':
+        #         continue
+        #     if field=='y':
+        #         fields.append(QgsField(field, QVariant.Int))
+        #     if field=='tptnfpfn':
+        #         fields.append(QgsField(field, QVariant.Int))
+        #     if  field=='class_cut':
+        #         continue
+        #     if  field=='presabs':
+        #         continue
+        #     else:
+        #         fields.append(QgsField(field, QVariant.Double))
+
+        # #crs = QgsProject.instance().crs()
+        # transform_context = QgsProject.instance().transformContext()
+        # save_options = QgsVectorFileWriter.SaveVectorOptions()
+        # save_options.driverName = 'GPKG'
+        # save_options.fileEncoding = 'UTF-8'
+
+        # writer = QgsVectorFileWriter.create(
+        #   parameters['OUT'],
+        #   fields,
+        #   QgsWkbTypes.Polygon,
+        #   parameters['crs'],
+        #   transform_context,
+        #   save_options
+        # )
+        
+        # if writer.hasError() != QgsVectorFileWriter.NoError:
+        #     print("Error when creating shapefile: ",  writer.errorMessage())
+        # strings=['geom', 'class_cut', 'presabs']
+        # columns_float = [item for item in df.columns if item not in strings]
+        # for i, row in df.iterrows():
+        #     fet = QgsFeature()
+        #     fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
+        #     fet.setAttributes(list(map(float,list(df.loc[ i, columns_float]))))
+        #     writer.addFeature(fet)
+        # del writer
+
+        print('Writing output GeoPackage...')
+
+        df = parameters['df']
+        df = df.select_dtypes(include=[np.number]).join(df[['geom']])
+
+        crs = parameters['crs']
+        output_path = parameters['OUT']
+
+        uri = f"Polygon?crs={crs.authid()}"
+        layer = QgsVectorLayer(uri, "temp_layer", "memory")
+        pr = layer.dataProvider()
+
+        # Step 2: Define and add fields
         fields = QgsFields()
-        for field in nomi:
+        for field in df.columns:
             if field=='ID':
                 fields.append(QgsField(field, QVariant.Int))
             if field=='geom':
@@ -246,31 +302,41 @@ class Functions():
             else:
                 fields.append(QgsField(field, QVariant.Double))
 
-        #crs = QgsProject.instance().crs()
-        transform_context = QgsProject.instance().transformContext()
-        save_options = QgsVectorFileWriter.SaveVectorOptions()
-        save_options.driverName = 'GPKG'
-        save_options.fileEncoding = 'UTF-8'
 
-        writer = QgsVectorFileWriter.create(
-          parameters['OUT'],
-          fields,
-          QgsWkbTypes.Polygon,
-          parameters['crs'],
-          transform_context,
-          save_options
-        )
-        
-        if writer.hasError() != QgsVectorFileWriter.NoError:
-            print("Error when creating shapefile: ",  writer.errorMessage())
-        strings=['geom', 'class_cut', 'presabs']
-        columns_float = [item for item in df.columns if item not in strings]
+        pr.addAttributes(fields)
+        layer.updateFields()
+
+        print(df.head(10))
+        print(fields)
+
+        # Step 3: Add features
+        feats = []
         for i, row in df.iterrows():
-            fet = QgsFeature()
-            fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
-            fet.setAttributes(list(map(float,list(df.loc[ i, columns_float]))))
-            writer.addFeature(fet)
-        del writer
+            feat = QgsFeature()
+            feat.setGeometry(QgsGeometry.fromWkt(row['geom']))
+            attr = [row[col] for col in df.columns if col != 'geom']
+            feat.setAttributes(attr)
+            feats.append(feat)
+
+        pr.addFeatures(feats)
+        layer.updateExtents()
+
+        options = QgsVectorFileWriter.SaveVectorOptions()
+        options.driverName = "GPKG"
+        options.fileEncoding = "UTF-8"
+
+        transform_context = QgsProject.instance().transformContext()
+        error, error_string = QgsVectorFileWriter.writeAsVectorFormatV2(
+            layer,
+            output_path,
+            transform_context,
+            options
+        )
+
+        if error != QgsVectorFileWriter.NoError:
+            print("Failed to write GPKG:", error_string)
+        else:
+            print("Saved with CRS:", layer.crs().authid())
 
     def addmap(parameters):
         context=parameters()

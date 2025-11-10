@@ -46,6 +46,7 @@ from qgis.core import (QgsVectorLayer,
                        QgsFeature,
                        QgsGeometry,
                        QgsProcessingContext,
+                       QgsCoordinateTransformContext
 )
 import numpy as np
 import pandas as pd
@@ -57,21 +58,41 @@ from shapely.wkt import dumps
 import fiona
 
 class SZ_utils():
-    def generate_ghost_input(input,output):
-        input_shapefile_path = input
-        layer = QgsVectorLayer(input_shapefile_path, 'Input Layer', 'ogr')
+    def generate_ghost_input(input_path, output_path):
+        input_path  = os.path.abspath(input_path)
+        output_path = os.path.abspath(output_path)
+
+        layer = QgsVectorLayer(input_path, 'Input Layer', "ogr")
+        if not layer.isValid():
+            raise RuntimeError("Layer failed to load. Ensure .shp, .shx, .dbf (and .prj) exist.")
+
+        save_opts = QgsVectorFileWriter.SaveVectorOptions()
+        save_opts.driverName = "GPKG"
+        save_opts.layerName = 'Input Layer'
+        save_opts.fileEncoding = "UTF-8"
+        save_opts.onlySelectedFeatures = False
+        save_opts.actionOnExistingFile = QgsVectorFileWriter.CreateOrOverwriteFile
+
+        field_names = {f.name().lower() for f in layer.fields()}
+        fid_name = "pk" if "fid" in field_names else "fid"
+
+        save_opts.layerOptions = [
+            f"FID={fid_name}",          
+            "GEOMETRY_NAME=geom",   
+            "SPATIAL_INDEX=YES"
+        ]
+
         transform_context = QgsProject.instance().transformContext()
-        save_options = QgsVectorFileWriter.SaveVectorOptions()
-        save_options.driverName = 'GPKG'
-        save_options.fileEncoding = 'UTF-8'
-        writer = QgsVectorFileWriter.writeAsVectorFormat(
-          layer,  
-          output,
-          save_options
+        if not isinstance(transform_context, QgsCoordinateTransformContext):
+            transform_context = QgsCoordinateTransformContext()
+
+        err, msg = QgsVectorFileWriter.writeAsVectorFormatV2(
+            layer, output_path, transform_context, save_opts
         )
-        print(output)
-        del writer
-        del layer
+
+        if err != QgsVectorFileWriter.NoError:
+            raise RuntimeError(f"Export failed: {msg or err}")
+
 
     def load_geopackage(file_path, table_name='file'):
         print('loading dataframe')
@@ -304,6 +325,7 @@ class SZ_utils():
         print('Writing output GeoPackage...')
 
         df = parameters['df']
+        df = df.select_dtypes(include=[np.number]).join(df[['geom']])
         crs = parameters['crs']
         output_path = parameters['OUT']
 
