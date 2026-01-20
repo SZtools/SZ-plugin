@@ -133,29 +133,30 @@ class SZ_utils():
             print('no target required')
         df['ID']=gdp.index
         df['geom']=gdp['geom']
-        print('input layer loaded')
+        print('input layer loaded:', list(df.columns))
         del gdp
         return(df,crs)
 
     def stampfit(parameters):
         print('plotting....')
         df=parameters['df']
-        y_true=df['y']
-        scores=df['SI']
+        y_true = df["y"].to_numpy()
+        y_true = (y_true > 0).astype(int)
+        scores=df['SI'].to_numpy(dtype=float)
         ################################figure
         fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
-        norm=(scores-scores.min())/(scores.max()-scores.min())
+        j = tpr1 - fpr1
+        idx = int(np.argmax(j))
+        best_thr = float(tresh1[idx])# x YOUDEN INDEX
         r=roc_auc_score(y_true, scores)
-        idx = np.argmax(tpr1 - fpr1)  # x YOUDEN INDEX
-        suscept01 = copy(scores)
-        suscept01[scores > tresh1[idx]] = 1
-        suscept01[scores <= tresh1[idx]] = 0
-        f1_tot = f1_score(y_true, suscept01)
-        ck_tot = cohen_kappa_score(y_true, suscept01)
-        print('AUC=',r)
+        print(r,'AUC')
+        y_pred = (scores > best_thr).astype(int)
+        # Extra metrics
+        f1_tot = f1_score(y_true, y_pred, zero_division=0)
+        ck_tot = cohen_kappa_score(y_true, y_pred)
         fig=plt.figure()
         lw = 2
-        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'Complete dataset (AUC = %0.2f, F1 = %0.2f, K = %0.2f)' %(r, f1_tot,ck_tot))
+        plt.plot(fpr1, tpr1,color="green",lw=lw,label=f"AUC = {r:0.2f}, F1 = {f1_tot:0.2f}, K = {ck_tot:0.2f}\nThr = {best_thr:0.4g}")
         plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
@@ -171,26 +172,53 @@ class SZ_utils():
 
     def stamp_cv(parameters):
         print('plotting....')
-        df=parameters['df']
+        df = parameters["df"].dropna(subset=["SI"]).reset_index(drop=True)
         df=df.dropna(subset=['SI'])
         test_ind=parameters['test_ind']
-        y_v=df['y']
-        scores_v=df['SI']
+        y_v=df["y"].to_numpy()
+        y_v = (y_v > 0).astype(int)
+        scores_v=df['SI'].to_numpy(dtype=float)
         lw = 2
         ################################figure
         fig=plt.figure()
         plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
-        for i in range(len(test_ind)):
-            fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
-            aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
-            print('ROC '+ str(i) +' AUC=',aucv)
-            idx = np.argmax(tprv - fprv)  # x YOUDEN INDEX
-            suscept01 = copy(scores_v)
-            suscept01[scores_v > treshv[idx]] = 1
-            suscept01[scores_v <= treshv[idx]] = 0
-            f1_tot = f1_score(y_v, suscept01)
-            ck_tot = cohen_kappa_score(y_v, suscept01)
-            plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' AUC = %0.2f, F1 = %0.2f, K = %0.2f' %(aucv, f1_tot,ck_tot))
+
+        for i, idxs in enumerate(test_ind):
+            idxs = np.asarray(idxs)
+
+            yt = y_v[idxs]
+            st = scores_v[idxs]
+
+            # Skip folds with only one class in test set
+            if len(np.unique(yt)) < 2:
+                print(f"ROC fold {i+1}: skipped (only one class in test set)")
+                continue
+
+            fprv, tprv, treshv = roc_curve(yt, st)
+            aucv = roc_auc_score(yt, st)
+            print("ROC", str(i), "AUC=", aucv)
+
+            j = tprv - fprv
+            best_idx = int(np.argmax(j))
+            best_thr = float(treshv[best_idx])
+
+            y_pred = (st > best_thr).astype(int)
+            f1_tot = f1_score(yt, y_pred, zero_division=0)
+            ck_tot = cohen_kappa_score(yt, y_pred)
+
+
+        # for i in range(len(test_ind)):
+        #     fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
+        #     aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
+        #     print('ROC '+ str(i) +' AUC=',aucv)
+        #     j = tprv - fprv
+        #     idx = int(np.argmax(j))
+        #     best_thr = float(treshv[idx])# x YOUDEN INDEX
+        #     suscept01 = copy(scores_v[test_ind[i]])
+        #     y_pred = (suscept01 > best_thr).astype(int)
+        #     f1_tot = f1_score(y_v[test_ind[i]], y_pred, zero_division=0)
+        #     ck_tot = cohen_kappa_score(y_v[test_ind[i]], y_pred)
+            plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' AUC = %0.2f, F1 = %0.2f, K = %0.2f\nThr = %0.4g' %(aucv, f1_tot,ck_tot, best_thr))
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
         plt.xlabel('False Positive Rate')
@@ -317,6 +345,8 @@ class SZ_utils():
                 continue
             elif field == 'ID':
                 fields.append(QgsField(field, QVariant.Int))
+            #elif field == 'iid':################Perla
+                #fields.append(QgsField(field, QVariant.Int))###############Perla
             else:
                 fields.append(QgsField(field, QVariant.Double))
 

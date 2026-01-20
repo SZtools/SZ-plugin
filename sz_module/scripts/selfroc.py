@@ -87,7 +87,8 @@ class rocGenerator(QgsProcessingAlgorithm):
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'nomi': parameters['field1'],
-            'lsd' : parameters['fieldlsd']
+            'lsd' : parameters['fieldlsd'],
+            'family':''
         }
         outputs['gdp'],outputs['crs']=SZ_utils.load_cv(self.f,alg_params)
 
@@ -108,22 +109,23 @@ class rocGenerator(QgsProcessingAlgorithm):
 class Functions():
     def roc(parameters):
         df=parameters['df']
-        y_true=df['y']
-        scores=df['SI']
+        y_true = df["y"].to_numpy()
+        y_true = (y_true > 0).astype(int)
+        scores=df['SI'].to_numpy(dtype=float)
         ################################figure
         fpr1, tpr1, tresh1 = roc_curve(y_true,scores)
-        norm=(scores-scores.min())/(scores.max()-scores.min())
+        j = tpr1 - fpr1
+        idx = int(np.argmax(j))
+        best_thr = float(tresh1[idx])# x YOUDEN INDEX
         r=roc_auc_score(y_true, scores)
-        print(r,'!!!!!!')
-        idx = np.argmax(tpr1 - fpr1)  # x YOUDEN INDEX
-        suscept01 = copy(scores)
-        suscept01[scores > tresh1[idx]] = 1
-        suscept01[scores <= tresh1[idx]] = 0
-        f1_tot = f1_score(y_true, suscept01)
-        ck_tot = cohen_kappa_score(y_true, suscept01)
+        print(r,'AUC')
+        y_pred = (scores > best_thr).astype(int)
+        # Extra metrics
+        f1_tot = f1_score(y_true, y_pred, zero_division=0)
+        ck_tot = cohen_kappa_score(y_true, y_pred)
         fig=plt.figure()
         lw = 2
-        plt.plot(fpr1, tpr1, color='green',lw=lw, label= 'AUC = %0.2f, F1 = %0.2f, K = %0.2f' %(r, f1_tot,ck_tot))
+        plt.plot(fpr1, tpr1,color="green",lw=lw,label=f"AUC = {r:0.2f}, F1 = {f1_tot:0.2f}, K = {ck_tot:0.2f}\nThr = {best_thr:0.4g}")
         plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])

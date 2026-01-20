@@ -55,7 +55,7 @@ from qgis.core import *
 import numpy as np
 from qgis import *
 import pandas as pd
-from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_curve,confusion_matrix
 import tempfile
 
 
@@ -186,33 +186,68 @@ class Functions():
         dd_sort_index=np.argsort(dd[:, ind])[::-1]
         dd_sort = dd[dd_sort_index]
         df_sort = pd.DataFrame(data=dd_sort, columns=titles)
-        xx=df_sort[parameters['field1']].to_numpy()
+        #xx=df_sort[parameters['field1']].to_numpy()
         x=df[parameters['field1']].to_numpy()
         y=df['y'].to_numpy()
         if parameters['testN']==0:
             fpr1, tpr1, tresh1 = roc_curve(y,x)
-            cutoff = np.max(tpr1 - fpr1)  # x YOUDEN INDEX
+            #cutoff = np.max(tpr1 - fpr1)  # x YOUDEN INDEX
+            j = tpr1 - fpr1
+            best_idx = int(np.argmax(j))
+            cutoff = float(tresh1[best_idx])# x YOUDEN INDEX
         else:
-            cutoff=np.percentile(xx, parameters['testN'])
+            xx_desc = np.sort(x)[::-1]
+            cutoff = float(np.percentile(xx_desc, parameters['testN']))
+            #cutoff=np.percentile(xx, parameters['testN'])
         print('cutoff: ',cutoff)
-        df['class_cut']='positive'
-        df['presabs']='false'
-        df['class_cut'].iloc[np.where(x<=cutoff)[0]]='negative'
-        df['presabs'].iloc[np.where(y==1)]='true'
-        tp = np.where((df['class_cut']=='positive')&(df['presabs']=='true'))
-        tn = np.where((df['class_cut']=='negative')&(df['presabs']=='true'))
-        fp = np.where((df['class_cut']=='positive')&(df['presabs']=='false'))
-        fn = np.where((df['class_cut']=='negative')&(df['presabs']=='false'))
-        df['tptnfpfn']=0
-        df['tptnfpfn'].iloc[tp[0]]=0
-        df['tptnfpfn'].iloc[tn[0]]=1
-        df['tptnfpfn'].iloc[fp[0]]=2
-        df['tptnfpfn'].iloc[fn[0]]=3
-        print('tp=', str((df['tptnfpfn'] == 0).sum()))
-        print('tn=', str((df['tptnfpfn'] == 1).sum()))
-        print('fp=', str((df['tptnfpfn'] == 2).sum()))
-        print('fn=', str((df['tptnfpfn'] == 3).sum()))
-        return df,nomi,crs
+        # df['class_cut']='positive'
+        # df['presabs']='false'
+        # df['class_cut'].iloc[np.where(x<=cutoff)[0]]='negative'
+        # df['presabs'].iloc[np.where(y==1)]='true'
+        # tp = np.where((df['class_cut']=='positive')&(df['presabs']=='true'))
+        # tn = np.where((df['class_cut']=='negative')&(df['presabs']=='true'))
+        # fp = np.where((df['class_cut']=='positive')&(df['presabs']=='false'))
+        # fn = np.where((df['class_cut']=='negative')&(df['presabs']=='false'))
+        # df['tptnfpfn']=0
+        # df['tptnfpfn'].iloc[tp[0]]=0
+        # df['tptnfpfn'].iloc[tn[0]]=1
+        # df['tptnfpfn'].iloc[fp[0]]=2
+        # df['tptnfpfn'].iloc[fn[0]]=3
+        # print('tp=', str((df['tptnfpfn'] == 0).sum()))
+        # print('tn=', str((df['tptnfpfn'] == 1).sum()))
+        # print('fp=', str((df['tptnfpfn'] == 2).sum()))
+        # print('fn=', str((df['tptnfpfn'] == 3).sum()))
+        # return df,nomi,crs
+
+        y_pred = (x > cutoff).astype(int)  # 1=positive, 0=negative
+
+        # Confusion matrix: tn, fp, fn, tp (sklearn order)
+        tn, fp, fn, tp = confusion_matrix(y, y_pred, labels=[0, 1]).ravel()
+
+        print("tp=", tp)
+        print("tn=", tn)
+        print("fp=", fp)
+        print("fn=", fn)
+
+        # Add columns similar to yours (but safe assignments)
+        df["class_cut"] = np.where(y_pred == 1, "positive", "negative")
+        df["presabs"] = np.where(y == 1, "true", "false")
+
+        # Match your tptnfpfn coding:
+        # 0=tp, 1=tn, 2=fp, 3=fn
+        # Use vectorized logic (no chained .iloc)
+        df["tptnfpfn"] = np.select(
+            [
+                (y_pred == 1) & (y == 1),  # tp
+                (y_pred == 0) & (y == 0),  # tn
+                (y_pred == 1) & (y == 0),  # fp
+                (y_pred == 0) & (y == 1),  # fn
+            ],
+            [0, 1, 2, 3],
+            default=-1
+        ).astype(int)
+
+        return df, nomi, crs
 
     def save(parameters):
         df=parameters['df']

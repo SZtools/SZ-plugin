@@ -37,11 +37,11 @@ from qgis import *
 import os
 from qgis.core import Qgis, QgsMessageLog
 
-def log(message):
-    QgsMessageLog.logMessage(message, "SZ", level=Qgis.MessageLevel.Info)
+def log(message,level=Qgis.Info):
+    QgsMessageLog.logMessage(message, "SZ", level)
 
-def warn(message):
-    QgsMessageLog.logMessage(message, "SZ", level=Qgis.MessageLevel.Warning)
+def warn(message,level=Qgis.Warning):
+    QgsMessageLog.logMessage(message, "SZ", level)
 
 # Function to load environment variables from a .env file
 def load_env_file(file_path):

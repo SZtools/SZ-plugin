@@ -197,6 +197,7 @@ class CoreAlgorithmGAM_trans():
             'INPUT_VECTOR_LAYER': parameters['input1'],
             'nomi':parameters['field3']+parameters['field1']+parameters['field2']+tensor,
             'lsd' : parameters['fieldlsd'],
+            #'identity': parameters['iid'],###################Perla
             'family':family[parameters['family']]
         }
         outputs['df_trans'],outputs['crs_trans']=SZ_utils.load_cv(self.f,alg_params)
