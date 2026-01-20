@@ -192,11 +192,11 @@ class Functions():
         newXNumPxl=np.round(abs(parameters['xmax']-parameters['xmin'])/(abs(geot[1]))).astype(int)
         newYNumPxl=np.round(abs(parameters['ymax']-parameters['ymin'])/(abs(geot[5]))).astype(int)
         try:
-            os.system('gdal_translate -of GTiff -ot Float32 -strict -outsize ' + str(newXNumPxl) +' '+ str(newYNumPxl) +' -projwin ' +str(parameters['xmin'])+' '+str(parameters['ymax'])+' '+ str(parameters['xmax']) + ' ' + str(parameters['ymin']) +' -co COMPRESS=DEFLATE -co PREDICTOR=1 -co ZLEVEL=6 ' + parameters['INPUT_RASTER_LAYER'] +' '+ f+'/sizedslopexxx.tif')
+            os.system('gdal_translate -of GTiff -ot Float32 -strict -outsize ' + str(newXNumPxl) +' '+ str(newYNumPxl) +' -projwin ' +str(parameters['xmin'])+' '+str(parameters['ymax'])+' '+ str(parameters['xmax']) + ' ' + str(parameters['ymin']) +' -co COMPRESS=DEFLATE -co PREDICTOR=1 -co ZLEVEL=6 ' + parameters['INPUT_RASTER_LAYER'] +' '+ os.path.join(f,'sizedslopexxx.tif'))
         except:
             raise ValueError
         del ds
-        ds1=gdal.Open(f+'/sizedslopexxx.tif')
+        ds1=gdal.Open(os.path.join(f,'sizedslopexxx.tif'))
         if ds1 is None:
             print("ERROR: can't open raster input")
         nodata=ds1.GetRasterBand(1).GetNoDataValue()

@@ -132,7 +132,7 @@ class Functions():
         plt.title('ROC')
         plt.legend(loc="lower right")
         try:
-            fig.savefig(parameters['OUT']+'/roc.pdf')
+            fig.savefig(os.path.join(parameters['OUT'], 'roc.pdf'))
         except:
             os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/roc.pdf')
+            fig.savefig(os.path.join(parameters['OUT'], 'roc.pdf'))

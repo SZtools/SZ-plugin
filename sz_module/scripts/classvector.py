@@ -131,9 +131,9 @@ class Functions():
             feat=attr+[geom.asWkt()]
             gdp.loc[len(gdp)] = feat
             count=+ 1
-        gdp.to_csv(self.f+'/file.csv')
+        gdp.to_csv(os.path.join(self.f,'file.csv'))
         del gdp
-        gdp=pd.read_csv(self.f+'/file.csv')
+        gdp=pd.read_csv(os.path.join(self.f,'file.csv'))
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
         df['SI']=gdp.loc[:,parameters['field1']]
         nomi=list(df.head())
@@ -237,13 +237,13 @@ class Functions():
         tpr1=ttpr
         fpr1=ffpr
         try:
-            file = open(parameters['OUTPUT']+'/plotROC.txt','w')#################save txt
+            file = open(os.path.join(parameters['OUTPUT'],'plotROC.txt'),'w')#################save txt
         except:
             os.mkdir(parameters['OUTPUT'])
-            file = open(parameters['OUTPUT']+'/plotROC.txt','w')#################save txt
+            file = open(os.path.join(parameters['OUTPUT'],'plotROC.txt'),'w')#################save txt
         var=[fpr1,tpr1]
         file.write('false positive, true positive: %s\n' %var)#################save fp,tp
-        np.savetxt(parameters['OUTPUT']+'/SIclasses.txt', classes1, delimiter=',')
+        np.savetxt(os.path.join(parameters['OUTPUT'],'SIclasses.txt'), classes1, delimiter=',')
 
     def rok(y,w,nclasses,c):
         fpra,tpra,t=roc_curve(y,w)

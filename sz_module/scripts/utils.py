@@ -102,8 +102,8 @@ class SZ_utils():
             return None
 
     def load_cv(directory,parameters):
-        SZ_utils.generate_ghost_input(parameters['INPUT_VECTOR_LAYER'],directory+'/file.gpkg')
-        gdp,crs=SZ_utils.load_geopackage(directory+'/file.gpkg')
+        SZ_utils.generate_ghost_input(parameters['INPUT_VECTOR_LAYER'],os.path.join(directory,'file.gpkg'))
+        gdp,crs=SZ_utils.load_geopackage(os.path.join(directory,'file.gpkg'))
         if 'time' in parameters:
             if parameters['time']==None:
                 df=pd.DataFrame(gdp[parameters['nomi']].copy())
@@ -164,10 +164,10 @@ class SZ_utils():
         plt.title('ROC')
         plt.legend(loc="lower right")
         try:
-            fig.savefig(parameters['OUT']+'/fig_fit.png')
+            fig.savefig(os.path.join(parameters['OUT'], 'fig_fit.png'))
         except:
             os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/fig_fit.png')
+            fig.savefig(os.path.join(parameters['OUT'], 'fig_fit.png'))
 
     def stamp_cv(parameters):
         print('plotting....')
@@ -196,12 +196,12 @@ class SZ_utils():
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
         plt.legend(loc="lower right")
-        print('ROC curve figure = ',parameters['OUT']+'/fig_cv.pdf')
+        print('ROC curve figure = ',os.path.join(parameters['OUT'], 'fig_cv.pdf'))
         try:
-            fig.savefig(parameters['OUT']+'/fig_cv.pdf')
+            fig.savefig(os.path.join(parameters['OUT'], 'fig_cv.pdf'))
         except:
             os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/fig_cv.pdf')
+            fig.savefig(os.path.join(parameters['OUT'], 'fig_cv.pdf'))
 
     def stamp_qq(parameters):
         print('plotting....')
@@ -232,12 +232,12 @@ class SZ_utils():
         plt.ylabel('Predicted')
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),fontsize='small')
         plt.tight_layout()
-        print('QQ figure = ',parameters['OUT']+'/fig_qq.pdf')
+        print('QQ figure = ',os.path.join(parameters['OUT'], 'fig_qq.pdf'))
         try:
-            fig.savefig(parameters['OUT']+'/fig_qq.pdf')
+            fig.savefig(os.path.join(parameters['OUT'], 'fig_qq.pdf'))
         except:
             os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/fig_qq.pdf')
+            fig.savefig(os.path.join(parameters['OUT'], 'fig_qq.pdf'))
 
     def stamp_qq_fit(parameters):
         print('plotting....')
@@ -257,12 +257,12 @@ class SZ_utils():
         plt.ylabel('Predicted')
         plt.legend(bbox_to_anchor =(0.5,-0.3), loc='lower center',fontsize='small')
         plt.tight_layout()
-        print('QQ figure = ',parameters['OUT']+'/fig_qq_fit.pdf')
+        print('QQ figure = ',os.path.join(parameters['OUT'], 'fig_qq_fit.pdf'))
         try:
-            fig.savefig(parameters['OUT']+'/fig_qq_fit.pdf')
+            fig.savefig(os.path.join(parameters['OUT'], 'fig_qq_fit.pdf'))
         except:
             os.mkdir(parameters['OUT'])
-            fig.savefig(parameters['OUT']+'/fig_qq_fit.pdf')
+            fig.savefig(os.path.join(parameters['OUT'], 'fig_qq_fit.pdf'))
 
     def save(parameters):
         # print('writing output geopackage.....')

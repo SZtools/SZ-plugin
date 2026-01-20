@@ -168,9 +168,9 @@ class Functions():
             feat=attr+[geom.asWkt()]
             gdp.loc[len(gdp)] = feat
             count=+ 1
-        gdp.to_csv(f+'/file.csv')
+        gdp.to_csv(os.path.join(f, 'file.csv'))
         del gdp
-        gdp=pd.read_csv(f+'/file.csv')
+        gdp=pd.read_csv(os.path.join(f, 'file.csv'))
         gdp['ID']=np.arange(1,len(gdp.iloc[:,0])+1)
         df=pd.DataFrame(data=gdp[parameters['field1']].to_numpy(), columns=[parameters['field1']])
         nomi=list(df.head())
