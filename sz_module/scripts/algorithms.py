@@ -29,6 +29,7 @@ __author__ = 'Giacomo Titti'
 __date__ = '2024-11-01'
 __copyright__ = '(C) 2024 by Giacomo Titti'
 
+import os
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold,LeaveOneOut,TimeSeriesSplit,KFold
@@ -332,7 +333,7 @@ class GAM_utils():
 
             #count_in_page+=1
             if count_in_page==12:
-                fig.savefig(fold+'/Model_covariates'+filename+'page'+ str(page) +'.pdf', bbox_inches='tight')
+                fig.savefig(os.path.join(fold,'Model_covariates'+filename+'page'+ str(page) +'.pdf'), bbox_inches='tight')
                 page+=1
                 fig, axs = plt.subplots(rows, 3, figsize=(15,15))#plt.figure(figsize=(15,15))
                 axs = axs.flatten()
@@ -415,7 +416,7 @@ class GAM_utils():
                 ax3d.set_xlabel(GAM_sel[i], fontsize=16)
                 ax3d.set_ylabel(GAM_sel[i + 1], fontsize=16)
                 ax3d.tick_params(labelsize=14)
-                fig2.savefig(fold+'/Model_covariates_interaction'+filename+'.pdf', bbox_inches='tight') 
+                fig2.savefig(os.path.join(fold,'Model_covariates_interaction'+filename+'.pdf'), bbox_inches='tight') 
                 continue
 
             elif isinstance(gam.terms[i], terms.SplineTerm):
@@ -431,7 +432,7 @@ class GAM_utils():
             
         for j in range(count_in_page, len(axs)):
             axs[j].axis('off')
-        fig.savefig(fold+'/Model_covariates'+filename+'page'+ str(page) +'.pdf', bbox_inches='tight')
+        fig.savefig(os.path.join(fold,'Model_covariates'+filename+'page'+ str(page) +'.pdf'), bbox_inches='tight')
 
         ########################################################################scaled plot
         #fig1 = plt.figure(figsize=(15,15))
@@ -444,7 +445,7 @@ class GAM_utils():
                 continue
 
             if count_in_page==12:
-                fig1.savefig(fold+'/Model_covariates_scaled'+filename+'page'+ str(page) +'.pdf', bbox_inches='tight')
+                fig1.savefig(os.path.join(fold,'Model_covariates_scaled'+filename+'page'+ str(page) +'.pdf'), bbox_inches='tight')
                 page+=1
                 fig1, axs1 = plt.subplots(rows, 3, figsize=(15,15))#plt.figure(figsize=(15,15))
                 axs1 = axs1.flatten()
@@ -521,14 +522,14 @@ class GAM_utils():
                 continue
         for j in range(count_in_page, len(axs)):
             axs[j].axis('off')
-        fig1.savefig(fold+'/Model_covariates_scaled'+filename+'page'+ str(page) +'.pdf', bbox_inches='tight')
-        #fig1.savefig(fold+'/Model_covariates_scaled'+filename+'.pdf', bbox_inches='tight')
+        fig1.savefig(os.path.join(fold,'Model_covariates_scaled'+filename+'page'+ str(page) +'.pdf'), bbox_inches='tight')
+        #fig1.savefig(os.path.join(fold,'Model_covariates_scaled'+filename+'.pdf'), bbox_inches='tight')
         del gam
         del df
 
     def GAM_save(gam,fold,filename=''):
         print('saving gam.pkl.....')
-        filename_pkl = fold+'/gam_coeff'+filename+'.pkl'
+        filename_pkl = os.path.join(fold,'gam_coeff'+filename+'.pkl')
         with open(filename_pkl, 'wb') as filez:
             pickle.dump(gam, filez)
         del gam
@@ -542,7 +543,7 @@ class ML_utils():
                 tree_rules = export_text(classifier, feature_names=nomi)
                 tree_rules_list = tree_rules.split('\n')
                 rules_df = pd.DataFrame({'Tree Rules': tree_rules_list})
-                rules_df.to_csv(fold+'/decision_tree_rules'+filename+'.csv', index=False)
+                rules_df.to_csv(os.path.join(fold,'decision_tree_rules'+filename+'.csv'), index=False)
             except:
                 print('no tree')
             feature_importance_df = pd.DataFrame({
@@ -550,7 +551,7 @@ class ML_utils():
                 'Importance': coeff
             })
             feature_importance_df = feature_importance_df.sort_values(by='Importance', ascending=False)
-            feature_importance_df.to_csv(fold+'/feature_importances'+filename+'.csv', index=False)
+            feature_importance_df.to_csv(os.path.join(fold,'feature_importances'+filename+'.csv'), index=False)
         except:#SVM
             regression_coeff=classifier.coef_
             regression_intercept=classifier.intercept_
@@ -559,8 +560,7 @@ class ML_utils():
                 'Feature': ['intercept'] + nomi,
                 'Coefficient': coeff
             })
-            coeff_df.to_csv(fold+'/coefficients'+filename+'.csv', index=False)
-
+            coeff_df.to_csv(os.path.join(fold,'coefficients'+filename+'.csv'), index=False)
 class NN_utils():
     def NN_plot(NNclassifier,fold,filename):
         plt.figure(figsize=(10, 6))
@@ -570,4 +570,4 @@ class NN_utils():
         plt.ylabel('Loss',fontsize=16)
         plt.grid()
         plt.legend(['Train','Test'],prop={'size': 16})
-        plt.savefig(fold+'/loss_curve'+filename+'.pdf', bbox_inches='tight')
+        plt.savefig(os.path.join(fold,'loss_curve'+filename+'.pdf'), bbox_inches='tight')

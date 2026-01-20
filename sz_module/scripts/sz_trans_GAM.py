@@ -234,7 +234,7 @@ class CoreAlgorithmGAM_trans():
         alg_params = {
             'df': outputs['df'],
             'crs': outputs['crs_trans'],
-            'OUT': parameters['folder']+'/train.gpkg'
+            'OUT': os.path.join(parameters['folder'], 'train.gpkg')
         }
         SZ_utils.save(alg_params)
 
@@ -264,7 +264,7 @@ class CoreAlgorithmGAM_trans():
         if feedback.isCanceled():
             return {}
         
-        fileName = parameters['folder']+'/train.gpkg'
+        fileName = os.path.join(parameters['folder'], 'train.gpkg')
         layer = QgsVectorLayer(fileName,"train","ogr")
         subLayers =layer.dataProvider().subLayers()
 

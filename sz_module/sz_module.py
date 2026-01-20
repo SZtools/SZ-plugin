@@ -50,7 +50,7 @@ class classePlugin(object):
         self.provider = None
         dir=(os.path.dirname(os.path.abspath(__file__)))
         load_env_file(os.path.join(dir, ".env"))
-        with open(dir+'/metadata.txt','r') as file:
+        with open(os.path.join(dir,'metadata.txt'),'r') as file:
             for line in file:
                 if line.startswith('version='):
                     long_version = line.strip().split('version=')[1].strip()

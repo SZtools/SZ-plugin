@@ -142,9 +142,9 @@ class Functions():
                 plt.xticks(rotation=60)
                 plt.grid(True)
                 plt.title(key)
-                plt.savefig(parameters['PATH']+'/fig'+key+'.png',bbox_inches='tight')
+                plt.savefig(os.path.join(parameters['PATH'],'fig'+key+'.png'),bbox_inches='tight')
                 fig=go.Figure()
                 fig.add_trace(go.Bar( x=x, y=y))
-                plotly.offline.plot(fig, filename=parameters['PATH']+'/fig'+key)
+                plotly.offline.plot(fig, filename=os.path.join(parameters['PATH'],'fig'+key))
             except:
                 print('error, skip field: ', key)

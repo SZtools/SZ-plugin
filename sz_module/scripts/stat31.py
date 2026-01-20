@@ -234,7 +234,7 @@ class Functions():
                         except:
                             attributi[count]=[float(g[ix][row[i],col[i]])]
                         count+=1
-            fn = self.f+'/stat'+str(lll[ix])+'.shp'
+            fn = os.path.join(self.f, 'stat'+str(lll[ix])+'.shp')
             if os.path.isfile(fn):
                 os.remove(fn)
             layerFields = QgsFields()

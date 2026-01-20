@@ -114,5 +114,5 @@ class Functions():
             plt.grid()
             plt.plot(np.arange(len(valuesfield['id'])), matrice[i,:])
             plt.legend([lista[i]],loc="upper left")
-            print(parameters['OUT']+'/fig'+lista[i]+'.pdf')
-            plt.savefig(parameters['OUT']+'/fig'+lista[i]+'.pdf',bbox_inches='tight')
+            print(os.path.join(parameters['OUT'],'fig'+lista[i]+'.pdf'))
+            plt.savefig(os.path.join(parameters['OUT'],'fig'+lista[i]+'.pdf'),bbox_inches='tight')

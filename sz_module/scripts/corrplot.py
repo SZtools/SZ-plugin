@@ -111,5 +111,5 @@ class Functions():
         sns.heatmap(df[cov_list_numeric].corr(method='pearson'), annot=True, fmt='.2f',
                     cmap=plt.get_cmap('coolwarm'), cbar=False, ax=ax)
         ax.set_yticklabels(ax.get_yticklabels(), rotation="horizontal")
-        plt.savefig(parameters['OUT']+'/Correlation_plot.pdf', bbox_inches='tight', pad_inches=0.0)
+        plt.savefig(os.path.join(parameters['OUT'],'Correlation_plot.pdf'), bbox_inches='tight', pad_inches=0.0)
         return parameters['OUT']

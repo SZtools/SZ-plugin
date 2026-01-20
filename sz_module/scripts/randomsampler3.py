@@ -176,7 +176,7 @@ class Functions():
         origine=[xmin,ymax]
         dem_datas=np.zeros((ysize,xsize),dtype='int64')
         # write the data to output file
-        rf1=f+'/inv_sampler.tif'
+        rf1=os.path.join(f,'inv_sampler.tif')
         dem_datas1=np.zeros(np.shape(dem_datas),dtype='float32')
         dem_datas1[:]=dem_datas[:]
         w1=parameters['w']
@@ -186,8 +186,8 @@ class Functions():
         del dem_datas1
 
         IN1a=rf1
-        IN2a=f+'/invq_sampler.tif'
-        IN3a=f+'/inventorynxn_sampler.tif'
+        IN2a=os.path.join(f,'invq_sampler.tif')
+        IN3a=os.path.join(f,'inventorynxn_sampler.tif')
         Functions.cut(IN1a,IN3a,poly)##########traslate inventory
         ds15=None
         ds15 = gdal.Open(IN3a)
