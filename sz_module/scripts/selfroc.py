@@ -121,7 +121,7 @@ class Functions():
         print(r,'AUC')
         y_pred = (scores > best_thr).astype(int)
         # Extra metrics
-        f1_tot = f1_score(y_true, y_pred, zero_division=0)
+        f1_tot = f1_score(y_true, y_pred)
         ck_tot = cohen_kappa_score(y_true, y_pred)
         fig=plt.figure()
         lw = 2

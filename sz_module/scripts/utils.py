@@ -152,7 +152,7 @@ class SZ_utils():
         print(r,'AUC')
         y_pred = (scores > best_thr).astype(int)
         # Extra metrics
-        f1_tot = f1_score(y_true, y_pred, zero_division=0)
+        f1_tot = f1_score(y_true, y_pred)
         ck_tot = cohen_kappa_score(y_true, y_pred)
         fig=plt.figure()
         lw = 2
@@ -183,16 +183,15 @@ class SZ_utils():
         fig=plt.figure()
         plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
 
-        for i, idxs in enumerate(test_ind):
-            idxs = np.asarray(idxs)
+        for i in range(len(test_ind)):
 
-            yt = y_v[idxs]
-            st = scores_v[idxs]
+            yt = y_v[test_ind[i]]
+            st = scores_v[test_ind[i]]
 
-            # Skip folds with only one class in test set
-            if len(np.unique(yt)) < 2:
-                print(f"ROC fold {i+1}: skipped (only one class in test set)")
-                continue
+            # # Skip folds with only one class in test set
+            # if len(np.unique(yt)) < 2:
+            #     print(f"ROC fold {i+1}: skipped (only one class in test set)")
+            #     continue
 
             fprv, tprv, treshv = roc_curve(yt, st)
             aucv = roc_auc_score(yt, st)
@@ -203,8 +202,9 @@ class SZ_utils():
             best_thr = float(treshv[best_idx])
 
             y_pred = (st > best_thr).astype(int)
-            f1_tot = f1_score(yt, y_pred, zero_division=0)
+            f1_tot = f1_score(yt, y_pred)
             ck_tot = cohen_kappa_score(yt, y_pred)
+            print("F1=", f1_tot, "K=", ck_tot, "Thr=", best_thr)
 
 
         # for i in range(len(test_ind)):
@@ -216,8 +216,9 @@ class SZ_utils():
         #     best_thr = float(treshv[idx])# x YOUDEN INDEX
         #     suscept01 = copy(scores_v[test_ind[i]])
         #     y_pred = (suscept01 > best_thr).astype(int)
-        #     f1_tot = f1_score(y_v[test_ind[i]], y_pred, zero_division=0)
+        #     f1_tot = f1_score(y_v[test_ind[i]], y_pred)
         #     ck_tot = cohen_kappa_score(y_v[test_ind[i]], y_pred)
+
             plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' AUC = %0.2f, F1 = %0.2f, K = %0.2f\nThr = %0.4g' %(aucv, f1_tot,ck_tot, best_thr))
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
