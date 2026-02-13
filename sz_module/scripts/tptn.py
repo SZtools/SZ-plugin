@@ -55,8 +55,9 @@ from qgis.core import *
 import numpy as np
 from qgis import *
 import pandas as pd
-from sklearn.metrics import roc_curve,confusion_matrix
+from sklearn.metrics import roc_curve,confusion_matrix, ConfusionMatrixDisplay
 import tempfile
+import matplotlib.pyplot as plt
 
 
 class FPAlgorithm(QgsProcessingAlgorithm):
@@ -222,7 +223,16 @@ class Functions():
         y_pred = (x > cutoff).astype(int)  # 1=positive, 0=negative
 
         # Confusion matrix: tn, fp, fn, tp (sklearn order)
-        tn, fp, fn, tp = confusion_matrix(y, y_pred, labels=[0, 1]).ravel()
+        cm = confusion_matrix(y, y_pred, labels=[0, 1]).ravel()
+        tn, fp, fn, tp = cm.ravel()
+
+        # Plot
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+        disp.plot(cmap="Blues")
+
+        # Save as PDF
+        plt.savefig(os.path.join(parameters['OUT'], "confusion_matrix.pdf"), format="pdf")
+        plt.close()
 
         print("tp=", tp)
         print("tn=", tn)
