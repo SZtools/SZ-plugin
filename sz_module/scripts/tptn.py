@@ -223,7 +223,7 @@ class Functions():
         y_pred = (x > cutoff).astype(int)  # 1=positive, 0=negative
 
         # Confusion matrix: tn, fp, fn, tp (sklearn order)
-        cm = confusion_matrix(y, y_pred, labels=[0, 1]).ravel()
+        cm = confusion_matrix(y, y_pred, labels=[0, 1])
         tn, fp, fn, tp = cm.ravel()
 
         # Plot
