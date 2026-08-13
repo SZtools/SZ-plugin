@@ -72,7 +72,7 @@ class FPAlgorithm(QgsProcessingAlgorithm):
 
 
     def process(self, parameters, context, feedback):
-        self.f=tempfile.gettempdir()
+        self.f=tempfile.mkdtemp(prefix='SZ_confusion_matrix_')
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
         outputs = {}
