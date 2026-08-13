@@ -146,5 +146,5 @@ class Functions():
                 fig=go.Figure()
                 fig.add_trace(go.Bar( x=x, y=y))
                 plotly.offline.plot(fig, filename=os.path.join(parameters['PATH'],'fig'+key))
-            except:
-                print('error, skip field: ', key)
+            except (KeyError, TypeError, ValueError, OSError) as error:
+                print('error, skip field: ', key, error)
