@@ -35,7 +35,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingMultiStepFeedback,
                        QgsProcessingParameterVectorLayer,
                        QgsProcessingParameterRasterLayer,
-                       QgsProcessingParameterVectorDestination,
+                       QgsProcessingParameterFileDestination,
                        QgsProcessingParameterExtent,
                        QgsProcessingParameterNumber,
                        QgsVectorLayer)
@@ -45,7 +45,6 @@ from osgeo import gdal,osr,ogr
 import sys
 import os
 from scipy.ndimage import generic_filter
-from processing.algs.gdal.GdalUtils import GdalUtils
 import tempfile
 
 class cleankernelAlgorithm(QgsProcessingAlgorithm):
@@ -53,35 +52,36 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
     def init(self, config=None):
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT, self.tr('Points'), types=[QgsProcessing.TypeVectorPoint], defaultValue=None))
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT1, self.tr('Raster'), defaultValue=None))
-        self.addParameter(QgsProcessingParameterVectorDestination(self.OUTPUT, self.tr('Output layer'), type=QgsProcessing.TypeVectorPoint, createByDefault=True, defaultValue=None))
+        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, self.tr('Output layer'), defaultValue=None, fileFilter='GeoPackage (*.gpkg *.GPKG)'))
         self.addParameter(QgsProcessingParameterExtent(self.EXTENT, self.tr('Extension'), defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Buffer radius in pixels'), type=QgsProcessingParameterNumber.Integer))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Min value acceptable'), type=QgsProcessingParameterNumber.Integer))
 
     def process(self, parameters, context, feedback):
-        self.f=tempfile.gettempdir()
+        self.f=tempfile.mkdtemp(prefix='SZ_cleaning_')
         feedback = QgsProcessingMultiStepFeedback(1, feedback)
         results = {}
         outputs = {}
-        parameters['Slope'] = self.parameterAsRasterLayer(parameters, self.INPUT1, context).source()
-        if parameters['Slope'] is None:
+        raster_layer = self.parameterAsRasterLayer(parameters, self.INPUT1, context)
+        if raster_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT1))
+        parameters['Slope'] = raster_layer.source()
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
-        parameters['Inventory']=source.source()
-        if parameters['Inventory'] is None:
+        if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
+        parameters['Inventory']=source.source()
         parameters['poly'] = self.parameterAsExtent(parameters, self.EXTENT, context)
         if parameters['poly'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.EXTENT))
+        parameters['Extension'] = parameters['poly']
         parameters['BufferRadiousInPxl'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['BufferRadiousInPxl'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
         parameters['minSlopeAcceptable'] = self.parameterAsInt(parameters, self.NUMBER1, context)
         if parameters['minSlopeAcceptable'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER1))
-        outFile = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
-        parameters['out'], outputFormat = GdalUtils.ogrConnectionStringAndFormat(outFile, context)
-        if parameters['out'] is None:
+        parameters['out'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
+        if not parameters['out']:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
 
         alg_params = {
@@ -144,7 +144,7 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
             'XY':outputs['XY'],
             'oout':outputs['oout']
         }
-        outputs['XYcoord']=Functions.vector()
+        outputs['XYcoord']=Functions.vector(alg_params)
         del alg_params['oout']
 
         alg_params = {
@@ -166,21 +166,22 @@ class cleankernelAlgorithm(QgsProcessingAlgorithm):
             'XYcoord':outputs['XYcoord']
         }
         outputs['cleaninventory']=Functions.saveV(alg_params)
-        del self.raster
 
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
+        results[self.OUTPUT] = outputs['cleaninventory']
         return results
     
 class Functions():
     def extent(parameters):
-        limits=np.fromstring(parameters['INPUT_EXTENT'], dtype=float, sep=',')
-        xmin=limits[0]
-        xmax=limits[1]
-        ymin=limits[2]
-        ymax=limits[3]
-        return xmin,xmax,ymin,ymax
+        extent=parameters['INPUT_EXTENT']
+        return (
+            extent.xMinimum(),
+            extent.xMaximum(),
+            extent.yMinimum(),
+            extent.yMaximum(),
+        )
 
     def importingandcounting(parameters):
         f=parameters['fold']
@@ -191,11 +192,27 @@ class Functions():
         geot=ds.GetGeoTransform()
         newXNumPxl=np.round(abs(parameters['xmax']-parameters['xmin'])/(abs(geot[1]))).astype(int)
         newYNumPxl=np.round(abs(parameters['ymax']-parameters['ymin'])/(abs(geot[5]))).astype(int)
-        exit_code = os.system('gdal_translate -of GTiff -ot Float32 -strict -outsize ' + str(newXNumPxl) +' '+ str(newYNumPxl) +' -projwin ' +str(parameters['xmin'])+' '+str(parameters['ymax'])+' '+ str(parameters['xmax']) + ' ' + str(parameters['ymin']) +' -co COMPRESS=DEFLATE -co PREDICTOR=1 -co ZLEVEL=6 ' + parameters['INPUT_RASTER_LAYER'] +' '+ os.path.join(f,'sizedslopexxx.tif'))
-        if exit_code != 0:
-            raise RuntimeError('gdal_translate failed while resizing the raster')
+        resized_raster = os.path.join(f,'sizedslopexxx.tif')
+        translated = gdal.Translate(
+            resized_raster,
+            ds,
+            format='GTiff',
+            outputType=gdal.GDT_Float32,
+            width=int(newXNumPxl),
+            height=int(newYNumPxl),
+            projWin=[
+                parameters['xmin'],
+                parameters['ymax'],
+                parameters['xmax'],
+                parameters['ymin'],
+            ],
+            creationOptions=['COMPRESS=DEFLATE', 'PREDICTOR=1', 'ZLEVEL=6'],
+        )
+        if translated is None:
+            raise RuntimeError('gdal.Translate failed while resizing the raster')
+        translated = None
         del ds
-        ds1=gdal.Open(os.path.join(f,'sizedslopexxx.tif'))
+        ds1=gdal.Open(resized_raster)
         if ds1 is None:
             print("ERROR: can't open raster input")
         nodata=ds1.GetRasterBand(1).GetNoDataValue()
@@ -272,13 +289,16 @@ class Functions():
 
     def saveV(parameters):
         ds1=parameters['ds1']
-        XYcoord=parameters['XY_coord']
+        XYcoord=parameters['XYcoord']
 
-        driver = ogr.GetDriverByName("ESRI Shapefile")
-        if os.path.exists(parameters['OUTPUT']):
-            driver.DeleteDataSource(parameters['OUTPUT'])
-        ds=driver.CreateDataSource(parameters['OUTPUT'])
-        srs=osr.SpatialReference(wkt = s1.GetProjection())
+        output_path = parameters['OUTPUT']
+        driver = ogr.GetDriverByName("GPKG")
+        if os.path.exists(output_path):
+            driver.DeleteDataSource(output_path)
+        ds=driver.CreateDataSource(output_path)
+        if ds is None:
+            raise QgsProcessingException(f'Unable to create {output_path}')
+        srs=osr.SpatialReference(wkt=ds1.GetProjection())
         layer = ds.CreateLayer("inventory_cleaned", srs, ogr.wkbPoint)
         field_name = ogr.FieldDefn("id", ogr.OFTInteger)
         field_name.SetWidth(100)
@@ -300,4 +320,4 @@ class Functions():
             feature = None
         # Save and close the data source
         ds = None
-        return parameters['OUTPUT']
+        return output_path
