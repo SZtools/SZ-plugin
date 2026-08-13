@@ -282,7 +282,8 @@ class CoreAlgorithmGAM_cv():
             }
             outputs['error_train']=SZ_utils.stamp_qq_fit(alg_params)
 
-        results['out'] = parameters['out']
+        results[self.OUTPUT] = parameters['out']
+        results[self.OUTPUT3] = parameters['folder']
 
         feedback.setCurrentStep(5)
         if feedback.isCanceled():
