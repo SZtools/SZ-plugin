@@ -94,7 +94,8 @@ class CorrAlgorithm(QgsProcessingAlgorithm):
             'nomi': parameters['field1'],
             'OUT':parameters['folder']
         }
-        results['folder']=Functions.corr(alg_params)
+        Functions.corr(alg_params)
+        results[self.OUTPUT3] = parameters['folder']
     
         feedback.setCurrentStep(2)
         if feedback.isCanceled():
