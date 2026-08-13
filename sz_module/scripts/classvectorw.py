@@ -113,6 +113,7 @@ class classvAlgorithmW(QgsProcessingAlgorithm):
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
+        results[self.OUTPUT3] = parameters['edgesGA']
         return results
 
 class Functions():
