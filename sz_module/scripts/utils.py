@@ -74,11 +74,20 @@ class SZ_utils():
         print('loading dataframe')
 
         layer = QgsVectorLayer(file_path, 'Input Layer', 'ogr')
+        if not layer.isValid():
+            raise ValueError(f'Unable to open vector layer: {file_path}')
         crs = layer.crs()
 
         records = []
 
-        with fiona.open(file_path) as source:
+        source_path, *uri_options = file_path.split('|')
+        layer_name = None
+        for option in uri_options:
+            if option.startswith('layername='):
+                layer_name = option.split('=', 1)[1]
+
+        open_options = {'layer': layer_name} if layer_name else {}
+        with fiona.open(source_path, **open_options) as source:
             for i, feature in enumerate(source):
                 try:
                     properties = dict(feature['properties'])
