@@ -56,6 +56,14 @@ from shapely.geometry import shape
 from shapely.wkt import dumps
 import fiona
 
+
+import pandas as pd
+import fiona
+
+from qgis.core import QgsVectorLayer
+from shapely.geometry import shape
+from shapely.wkt import dumps
+
 class SZ_utils():
     def generate_ghost_input(input,output):
         input_shapefile_path = input
@@ -73,23 +81,76 @@ class SZ_utils():
         del writer
         del layer
 
+    # def load_geopackage(file_path, table_name='file'):
+    #     print('loading dataframe')
+    #     layer = QgsVectorLayer(file_path, 'Input Layer', 'ogr')
+    #     crs=layer.crs()
+    #     input_gpkg = file_path
+    #     with fiona.open(input_gpkg) as source:
+    #         records = []
+    #         for feature in source:
+    #             properties = feature['properties']
+    #             geom_wkt = dumps(shape(feature['geometry']))
+    #             properties['geom'] = geom_wkt  
+    #             records.append(properties)
+    #     df = pd.DataFrame(records)
+    #     del layer
+    #     del source
+    #     del records
+    #     return df,crs
+    
     def load_geopackage(file_path, table_name='file'):
         print('loading dataframe')
+
         layer = QgsVectorLayer(file_path, 'Input Layer', 'ogr')
-        crs=layer.crs()
-        input_gpkg = file_path
-        with fiona.open(input_gpkg) as source:
-            records = []
-            for feature in source:
-                properties = feature['properties']
-                geom_wkt = dumps(shape(feature['geometry']))
-                properties['geom'] = geom_wkt  
-                records.append(properties)
+        crs = layer.crs()
+
+        records = []
+
+        with fiona.open(file_path) as source:
+            for i, feature in enumerate(source):
+                try:
+                    properties = dict(feature['properties'])
+
+                    if feature['geometry'] is None:
+                        print(f"Skipping feature {i}: null geometry")
+                        continue
+
+                    geom = shape(feature['geometry'])
+
+                    if geom is None or geom.is_empty:
+                        print(f"Skipping feature {i}: empty geometry")
+                        continue
+
+                    try:
+                        from shapely import force_2d
+                        geom = force_2d(geom)
+                    except ImportError:
+                        from shapely.ops import transform
+
+                        def _to_2d(x, y, z=None):
+                            return (x, y)
+
+                        geom = transform(_to_2d, geom)
+
+                    # Important: force the WKT writer itself to output 2D
+                    geom_wkt = dumps(geom, output_dimension=2)
+
+                    properties['geom'] = geom_wkt
+                    records.append(properties)
+
+                except Exception as e:
+                    print("Bad feature index:", i)
+                    print("Feature id:", feature.get("id"))
+                    print("Geometry:", feature.get("geometry"))
+                    raise e
+
         df = pd.DataFrame(records)
+
         del layer
-        del source
         del records
-        return df,crs
+
+        return df, crs
 
     def get_id_column(file_path, table_name='file'):
         conn = sqlite3.connect(file_path)

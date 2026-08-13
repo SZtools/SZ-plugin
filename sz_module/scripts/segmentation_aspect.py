@@ -190,7 +190,7 @@ class segmentationAspectAlgorithm():
             alg_params = {
                 'INPUT': SU.source(),
                 'METHOD': 1,  # Structure
-                'OUTPUT': os.path.join(self.f, 'FixGeometries'+str(i)+'.gpkg')
+                'OUTPUT': os.path.join(self.f, 'FixGeometries'+str(i)+'.shp')
             }
             outputs['FixGeometries'] = processing.run('native:fixgeometries', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -198,7 +198,7 @@ class segmentationAspectAlgorithm():
             alg_params = {
                 'CALC_METHOD': 0,  # Layer CRS
                 'INPUT': outputs['FixGeometries']['OUTPUT'],
-                'OUTPUT': os.path.join(self.f, 'Area'+str(i)+'.gpkg')
+                'OUTPUT': os.path.join(self.f, 'Area'+str(i)+'.shp')
             }
             outputs['Area'] = processing.run('qgis:exportaddgeometrycolumns', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
             
@@ -207,14 +207,14 @@ class segmentationAspectAlgorithm():
             'INPUT': outputs['Area']['OUTPUT'],
             'OPERATOR': 2,  # <
             'VALUE': parameters['minarea'],
-            'OUTPUT': os.path.join(self.f, 'SUclean'+str(i)+'.gpkg')
+            'OUTPUT': os.path.join(self.f, 'SUclean'+str(i)+'.shp')
             }
             outputs['SUclean'] = processing.run('native:extractbyattribute', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
             
             alg_params = {
                 'COLUMN': ['area'],
                 'INPUT': outputs['SUclean']['OUTPUT'],
-                'OUTPUT': os.path.join(self.f, 'DropFields'+str(i)+'.gpkg')
+                'OUTPUT': os.path.join(self.f, 'DropFields'+str(i)+'.shp')
             }
             outputs['DropFields'] = processing.run('native:deletecolumn', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -225,7 +225,7 @@ class segmentationAspectAlgorithm():
                 'FIELD_TYPE': 1,  # Integer (32 bit)
                 'FORMULA': '$id',
                 'INPUT': outputs['DropFields']['OUTPUT'],
-                'OUTPUT': os.path.join(self.f, 'FieldCalculator'+str(i)+'.gpkg')
+                'OUTPUT': os.path.join(self.f, 'FieldCalculator'+str(i)+'.shp')
             }
             outputs['FieldCalculator'] = processing.run('native:fieldcalculator', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
        
@@ -239,7 +239,7 @@ class segmentationAspectAlgorithm():
                 'OVERLAY': outputs['FieldCalculator']['OUTPUT'],
                 'OVERLAY_FIELDS': [''],
                 'OVERLAY_FIELDS_PREFIX': '',
-                'OUTPUT': os.path.join(self.f, 'IntersectionA'+str(i)+'.gpkg')
+                'OUTPUT': os.path.join(self.f, 'IntersectionA'+str(i)+'.shp')
             }
             outputs['IntersectionA'] = processing.run('native:intersection', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -254,7 +254,7 @@ class segmentationAspectAlgorithm():
                 'POINTS': parameters['lip'],
                 'POLYGONS': outputs['IntersectionA']['OUTPUT'],
                 'WEIGHT': '',
-                'OUTPUT': os.path.join(self.f, 'CountPointsInPolygonA'+str(i)+'.gpkg')
+                'OUTPUT': os.path.join(self.f, 'CountPointsInPolygonA'+str(i)+'.shp')
             }
             outputs['CountPointsInPolygonA'] = processing.run('native:countpointsinpolygon', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -266,7 +266,7 @@ class segmentationAspectAlgorithm():
             alg_params = {
                 'CALC_METHOD': 0,  # Layer CRS
                 'INPUT': outputs['CountPointsInPolygonA']['OUTPUT'],
-                'OUTPUT': os.path.join(self.f, 'AddGeometryAttributesA'+str(i)+'.gpkg')
+                'OUTPUT': os.path.join(self.f, 'AddGeometryAttributesA'+str(i)+'.shp')
             }
             outputs['AddGeometryAttributesA'] = processing.run('qgis:exportaddgeometrycolumns', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -284,7 +284,7 @@ class segmentationAspectAlgorithm():
             'POINTS': parameters['lip'],
             'POLYGONS': outputs['FieldCalculator']['OUTPUT'],
             'WEIGHT': '',
-            'OUTPUT': os.path.join(self.f, 'CountPointsInPolygon'+str(i)+'.gpkg')#QgsProcessing.TEMPORARY_OUTPUT
+            'OUTPUT': os.path.join(self.f, 'CountPointsInPolygon'+str(i)+'.shp')#QgsProcessing.TEMPORARY_OUTPUT
             }
             outputs['CountPointsInPolygon'] = processing.run('native:countpointsinpolygon', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
             
@@ -300,7 +300,7 @@ class segmentationAspectAlgorithm():
             alg_params = {
                 'CALC_METHOD': 0,  # Layer CRS
                 'INPUT': outputs['FieldCalculator']['OUTPUT'],
-                'OUTPUT': os.path.join(self.f, 'AddGeometryAttributes'+str(i)+'.gpkg')
+                'OUTPUT': os.path.join(self.f, 'AddGeometryAttributes'+str(i)+'.shp')
             }
             outputs['AddGeometryAttributes'] = processing.run('qgis:exportaddgeometrycolumns', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
                         
@@ -311,7 +311,7 @@ class segmentationAspectAlgorithm():
                 'INPUT_RASTER': outputs['SinRasterCalculator']['OUTPUT'],
                 'RASTER_BAND': 1,
                 'STATISTICS': [1],  # Sum
-                'OUTPUT': os.path.join(self.f, 'SinZonalStatistics'+str(i)+'.gpkg')
+                'OUTPUT': os.path.join(self.f, 'SinZonalStatistics'+str(i)+'.shp')
             }
             outputs['SinZonalStatistics'] = processing.run('native:zonalstatisticsfb', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -326,7 +326,7 @@ class segmentationAspectAlgorithm():
                 'INPUT_RASTER': outputs['CosRasterCalculator']['OUTPUT'],
                 'RASTER_BAND': 1,
                 'STATISTICS': [1,0],  # Sum,Count
-                'OUTPUT': os.path.join(self.f, 'zonalstat'+str(i)+'.gpkg')
+                'OUTPUT': os.path.join(self.f, 'zonalstat'+str(i)+'.shp')
             }
             outputs['CosZonalStatistics'] = processing.run('native:zonalstatisticsfb', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -334,9 +334,9 @@ class segmentationAspectAlgorithm():
 
 
             alg_params = {
-                'INPUT': os.path.join(self.f, 'zonalstat'+str(i)+'.gpkg'),
+                'INPUT': os.path.join(self.f, 'zonalstat'+str(i)+'.shp'),
                 'METHOD': 1,  # Structure
-                'OUTPUT': os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'.gpkg')
+                'OUTPUT': os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'.shp')
             }
             outputs['FixGeometriesZonalStatistics'] = processing.run('native:fixgeometries', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -344,9 +344,18 @@ class segmentationAspectAlgorithm():
             feedback.setCurrentStep(5)
             if feedback.isCanceled():
                 return {}
+            
+            alg_params = {
+                    "INPUT": os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'.shp'),
+                    "DROP_M_VALUES": True,
+                    "DROP_Z_VALUES": True,
+                    "OUTPUT": os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'_2d.shp')
+            }
+
+            outputs['FixGeometriesZonalStatistics_2d'] = processing.run("native:dropmzvalues", alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
             alg_params = {
-                'INPUT': os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'.gpkg'),
+                'INPUT': os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'_2d.shp'),
             }
             outputs['gdp'],outputs['crs']=SZ_utils.load_geopackage(alg_params['INPUT'])
 
@@ -455,27 +464,83 @@ class Functions():
         df = pd.DataFrame(rows)
 
         return df
+        
 
-    def adjacent_matrix(parameters):
-        gdf = parameters['INPUT'].reset_index(drop=True)
-        geometries = [wkt.loads(wkt_str) for wkt_str in gdf['geom']]
+    # def adjacent_matrix(parameters):
+    #     gdf = parameters['INPUT'].reset_index(drop=True)
+    #     geometries = [wkt.loads(wkt_str) for wkt_str in gdf['geom']]
 
-        # Create spatial index and reverse map
-        tree = STRtree(geometries)
-        geom_index_map = {geom: i for i, geom in enumerate(geometries)}
+    #     # Create spatial index and reverse map
+    #     tree = STRtree(geometries)
+    #     geom_index_map = {geom: i for i, geom in enumerate(geometries)}
 
-        rows = []
-        for i, geom in enumerate(geometries):
-            neighbors = tree.query(geom)
-            for neighbor in neighbors:
-                    if neighbor is not None:
-                        adj_geom=tree.geometries.take(neighbor)
-                        if geom != adj_geom:
-                            j = geom_index_map.get(adj_geom)
-                            if geom.touches(adj_geom):
-                                rows.append({'focal': i, 'neighbor': j})
+    #     rows = []
+    #     for i, geom in enumerate(geometries):
+    #         neighbors = tree.query(geom)
+    #         for neighbor in neighbors:
+    #                 if neighbor is not None:
+    #                     adj_geom=tree.geometries.take(neighbor)
+    #                     if geom != adj_geom:
+    #                         j = geom_index_map.get(adj_geom)
+    #                         if geom.touches(adj_geom):
+    #                             rows.append({'focal': i, 'neighbor': j})
 
         return pd.DataFrame(rows)
+    
+    def adjacent_matrix(parameters):
+        gdf = parameters['INPUT'].reset_index(drop=True)
+
+        geometries = []
+        for wkt_str in gdf['geom']:
+            if pd.isnull(wkt_str):
+                geometries.append(None)
+            else:
+                geom = wkt.loads(wkt_str)
+                if geom is None or geom.is_empty:
+                    geometries.append(None)
+                else:
+                    geometries.append(geom)
+
+        valid_items = [(i, geom) for i, geom in enumerate(geometries) if geom is not None]
+        valid_indices = [item[0] for item in valid_items]
+        valid_geoms = [item[1] for item in valid_items]
+
+        tree = STRtree(valid_geoms)
+
+        rows = []
+
+        for local_i, geom in enumerate(valid_geoms):
+            global_i = valid_indices[local_i]
+
+            candidates = tree.query(geom)
+
+            for candidate in candidates:
+                # Shapely 2.x returns integer indexes
+                if isinstance(candidate, (int, np.integer)):
+                    local_j = int(candidate)
+                    adj_geom = valid_geoms[local_j]
+                    global_j = valid_indices[local_j]
+
+                # Shapely 1.x returns geometries
+                else:
+                    adj_geom = candidate
+                    try:
+                        local_j = valid_geoms.index(adj_geom)
+                        global_j = valid_indices[local_j]
+                    except ValueError:
+                        continue
+
+                if global_i == global_j:
+                    continue
+
+                try:
+                    if geom.touches(adj_geom):
+                        rows.append({'focal': global_i, 'neighbor': global_j})
+                except Exception as e:
+                    print(f"Skipping geometry pair {global_i}-{global_j}: {e}")
+                    continue
+
+        return pd.DataFrame(rows, columns=['focal', 'neighbor'])
     
     def I_calculator(parameters):
         df=parameters['INPUT']

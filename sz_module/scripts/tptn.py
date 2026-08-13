@@ -67,7 +67,9 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Index', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Cutoff percentile (if empty use the YOUDEN index)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True))
-        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
+        #self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
+        self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
+
 
     def process(self, parameters, context, feedback):
         self.f=tempfile.gettempdir()
@@ -96,16 +98,23 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         if parameters['testN'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
    
-        parameters['out'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
-        if parameters['out'] is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
+        #parameters['out'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
+        #if parameters['out'] is None:
+        #    raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
+        
+        parameters['folder'] = self.parameterAsString(parameters, self.OUTPUT3, context)
+        if parameters['folder'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
+        
+        parameters['out']=os.path.join(parameters['folder'], 'confusion_matrix.gpkg')
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
             'field1': parameters['field1'],
             'lsd' : parameters['fieldlsd'],
             'testN':parameters['testN'],
-            'fold':self.f
+            'fold':self.f,
+            'OUT': parameters['folder']
         }
 
         outputs['df'],outputs['nomi'],outputs['crs']=Functions.load(alg_params)
