@@ -228,7 +228,8 @@ class CoreAlgorithm_cv():
         if feedback.isCanceled():
             return {}
 
-        results['out'] = parameters['out']
+        results[self.OUTPUT] = parameters['out']
+        results[self.OUTPUT3] = parameters['folder']
 
         fileName = parameters['out']
         layer1 = QgsVectorLayer(fileName,"test","ogr")
@@ -250,6 +251,5 @@ class CoreAlgorithm_cv():
             return {}
 
         return results
-
 
 
