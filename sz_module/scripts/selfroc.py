@@ -133,8 +133,5 @@ class Functions():
         plt.ylabel('True Positive Rate')
         plt.title('ROC')
         plt.legend(loc="lower right")
-        try:
-            fig.savefig(os.path.join(parameters['OUT'], 'roc.pdf'))
-        except:
-            os.mkdir(parameters['OUT'])
-            fig.savefig(os.path.join(parameters['OUT'], 'roc.pdf'))
+        os.makedirs(parameters['OUT'], exist_ok=True)
+        fig.savefig(os.path.join(parameters['OUT'], 'roc.pdf'))
