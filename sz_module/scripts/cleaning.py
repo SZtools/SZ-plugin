@@ -191,10 +191,9 @@ class Functions():
         geot=ds.GetGeoTransform()
         newXNumPxl=np.round(abs(parameters['xmax']-parameters['xmin'])/(abs(geot[1]))).astype(int)
         newYNumPxl=np.round(abs(parameters['ymax']-parameters['ymin'])/(abs(geot[5]))).astype(int)
-        try:
-            os.system('gdal_translate -of GTiff -ot Float32 -strict -outsize ' + str(newXNumPxl) +' '+ str(newYNumPxl) +' -projwin ' +str(parameters['xmin'])+' '+str(parameters['ymax'])+' '+ str(parameters['xmax']) + ' ' + str(parameters['ymin']) +' -co COMPRESS=DEFLATE -co PREDICTOR=1 -co ZLEVEL=6 ' + parameters['INPUT_RASTER_LAYER'] +' '+ os.path.join(f,'sizedslopexxx.tif'))
-        except:
-            raise ValueError
+        exit_code = os.system('gdal_translate -of GTiff -ot Float32 -strict -outsize ' + str(newXNumPxl) +' '+ str(newYNumPxl) +' -projwin ' +str(parameters['xmin'])+' '+str(parameters['ymax'])+' '+ str(parameters['xmax']) + ' ' + str(parameters['ymin']) +' -co COMPRESS=DEFLATE -co PREDICTOR=1 -co ZLEVEL=6 ' + parameters['INPUT_RASTER_LAYER'] +' '+ os.path.join(f,'sizedslopexxx.tif'))
+        if exit_code != 0:
+            raise RuntimeError('gdal_translate failed while resizing the raster')
         del ds
         ds1=gdal.Open(os.path.join(f,'sizedslopexxx.tif'))
         if ds1 is None:
@@ -214,14 +213,12 @@ class Functions():
         layer=QgsVectorLayer(parameters['INPUT_VECTOR_LAYER'], '', 'ogr')
         features=layer.getFeatures()
         count=0
+        XY=None
         for feature in features:
             count +=1
             geom = feature.geometry().asPoint()
             xy=np.array([geom[0],geom[1]])
-            try:
-                XY=np.vstack((XY,xy))
-            except:
-                XY=xy
+            XY=xy.reshape(1, -1) if XY is None else np.vstack((XY,xy))
         gtdem= ds1.GetGeoTransform()
         size=np.array([abs(gtdem[1]),abs(gtdem[5])])
         OS=np.array([gtdem[0],gtdem[3]])
