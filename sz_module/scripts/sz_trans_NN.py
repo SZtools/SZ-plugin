@@ -189,7 +189,8 @@ class CoreAlgorithmNN_trans():
         if feedback.isCanceled():
             return {}
 
-        results['out'] = parameters['out']
+        results[self.OUTPUT] = parameters['out']
+        results[self.OUTPUT3] = parameters['folder']
 
         fileName = parameters['out']
         layer1 = QgsVectorLayer(fileName,"transfer","ogr")
@@ -232,6 +233,5 @@ class CoreAlgorithmNN_trans():
             return {}
 
         return results
-
 
 
