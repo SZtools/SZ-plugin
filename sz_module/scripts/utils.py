@@ -30,39 +30,28 @@ __date__ = '2024-11-01'
 __copyright__ = '(C) 2024 by Giacomo Titti'
 
 import matplotlib.pyplot as plt
+import fiona
+import numpy as np
+import os
 import pandas as pd
+import sqlite3
 from sklearn.metrics import roc_curve
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, f1_score, cohen_kappa_score
 from scipy.stats import pearsonr
-from copy import copy
 from shapely.geometry import shape
+from shapely.wkt import dumps
 from qgis.core import (QgsVectorLayer,
                        QgsFields,
                        QgsField,
                        QgsProject,
                        QgsVectorFileWriter,
-                       QgsWkbTypes,
                        QgsFeature,
                        QgsGeometry,
                        QgsProcessingContext,
+                       QgsProcessingUtils,
 )
-import numpy as np
-import pandas as pd
 from qgis.PyQt.QtCore import QVariant
-import os
-import sqlite3
-from shapely.geometry import shape
-from shapely.wkt import dumps
-import fiona
-
-
-import pandas as pd
-import fiona
-
-from qgis.core import QgsVectorLayer
-from shapely.geometry import shape
-from shapely.wkt import dumps
 
 class SZ_utils():
     def generate_ghost_input(input,output):
@@ -81,24 +70,6 @@ class SZ_utils():
         del writer
         del layer
 
-    # def load_geopackage(file_path, table_name='file'):
-    #     print('loading dataframe')
-    #     layer = QgsVectorLayer(file_path, 'Input Layer', 'ogr')
-    #     crs=layer.crs()
-    #     input_gpkg = file_path
-    #     with fiona.open(input_gpkg) as source:
-    #         records = []
-    #         for feature in source:
-    #             properties = feature['properties']
-    #             geom_wkt = dumps(shape(feature['geometry']))
-    #             properties['geom'] = geom_wkt  
-    #             records.append(properties)
-    #     df = pd.DataFrame(records)
-    #     del layer
-    #     del source
-    #     del records
-    #     return df,crs
-    
     def load_geopackage(file_path, table_name='file'):
         print('loading dataframe')
 
@@ -163,8 +134,12 @@ class SZ_utils():
             return None
 
     def load_cv(directory,parameters):
-        SZ_utils.generate_ghost_input(parameters['INPUT_VECTOR_LAYER'],os.path.join(directory,'file.gpkg'))
-        gdp,crs=SZ_utils.load_geopackage(os.path.join(directory,'file.gpkg'))
+        temporary_input = QgsProcessingUtils.generateTempFilename('sz_input.gpkg')
+        SZ_utils.generate_ghost_input(
+            parameters['INPUT_VECTOR_LAYER'],
+            temporary_input,
+        )
+        gdp,crs=SZ_utils.load_geopackage(temporary_input)
         if 'time' in parameters:
             if parameters['time']==None:
                 df=pd.DataFrame(gdp[parameters['nomi']].copy())
@@ -174,7 +149,6 @@ class SZ_utils():
             df=pd.DataFrame(gdp[parameters['nomi']].copy())
         try:
             lsd=gdp[parameters['lsd']]
-            #try:
             if parameters['family']=='gaussian' and parameters['scale']=='log_scale':
                 lsd[lsd>0]=np.log(lsd[lsd>0])
             elif parameters['family']=='gaussian' and parameters['scale']=='linear_scale':
@@ -187,10 +161,8 @@ class SZ_utils():
                 print('do not scale target')
             else:
                 lsd[lsd>0]=1
-            #except:
-            #    lsd[lsd>0]=1
             df['y']=lsd#.astype(int)
-        except:
+        except KeyError:
             print('no target required')
         df['ID']=gdp.index
         df['geom']=gdp['geom']
@@ -225,11 +197,8 @@ class SZ_utils():
         plt.ylabel('True Positive Rate')
         plt.title('ROC')
         plt.legend(loc="lower right")
-        try:
-            fig.savefig(os.path.join(parameters['OUT'], 'fig_fit.png'))
-        except:
-            os.mkdir(parameters['OUT'])
-            fig.savefig(os.path.join(parameters['OUT'], 'fig_fit.png'))
+        os.makedirs(parameters['OUT'], exist_ok=True)
+        fig.savefig(os.path.join(parameters['OUT'], 'fig_fit.png'))
 
     def stamp_cv(parameters):
         print('plotting....')
@@ -249,11 +218,6 @@ class SZ_utils():
             yt = y_v[test_ind[i]]
             st = scores_v[test_ind[i]]
 
-            # # Skip folds with only one class in test set
-            # if len(np.unique(yt)) < 2:
-            #     print(f"ROC fold {i+1}: skipped (only one class in test set)")
-            #     continue
-
             fprv, tprv, treshv = roc_curve(yt, st)
             aucv = roc_auc_score(yt, st)
             print("ROC", str(i), "AUC=", aucv)
@@ -266,20 +230,6 @@ class SZ_utils():
             f1_tot = f1_score(yt, y_pred)
             ck_tot = cohen_kappa_score(yt, y_pred)
             print("F1=", f1_tot, "K=", ck_tot, "Thr=", best_thr)
-
-
-        # for i in range(len(test_ind)):
-        #     fprv, tprv, treshv = roc_curve(y_v[test_ind[i]],scores_v[test_ind[i]])
-        #     aucv=roc_auc_score(y_v[test_ind[i]],scores_v[test_ind[i]])
-        #     print('ROC '+ str(i) +' AUC=',aucv)
-        #     j = tprv - fprv
-        #     idx = int(np.argmax(j))
-        #     best_thr = float(treshv[idx])# x YOUDEN INDEX
-        #     suscept01 = copy(scores_v[test_ind[i]])
-        #     y_pred = (suscept01 > best_thr).astype(int)
-        #     f1_tot = f1_score(y_v[test_ind[i]], y_pred)
-        #     ck_tot = cohen_kappa_score(y_v[test_ind[i]], y_pred)
-
             plt.plot(fprv, tprv,lw=lw, alpha=0.5, label='ROC fold '+str(i+1)+' AUC = %0.2f, F1 = %0.2f, K = %0.2f\nThr = %0.4g' %(aucv, f1_tot,ck_tot, best_thr))
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
@@ -287,11 +237,8 @@ class SZ_utils():
         plt.ylabel('True Positive Rate')
         plt.legend(loc="lower right")
         print('ROC curve figure = ',os.path.join(parameters['OUT'], 'fig_cv.pdf'))
-        try:
-            fig.savefig(os.path.join(parameters['OUT'], 'fig_cv.pdf'))
-        except:
-            os.mkdir(parameters['OUT'])
-            fig.savefig(os.path.join(parameters['OUT'], 'fig_cv.pdf'))
+        os.makedirs(parameters['OUT'], exist_ok=True)
+        fig.savefig(os.path.join(parameters['OUT'], 'fig_cv.pdf'))
 
     def stamp_qq(parameters):
         print('plotting....')
@@ -323,11 +270,8 @@ class SZ_utils():
         plt.legend(loc='center left', bbox_to_anchor=(1, 0.5),fontsize='small')
         plt.tight_layout()
         print('QQ figure = ',os.path.join(parameters['OUT'], 'fig_qq.pdf'))
-        try:
-            fig.savefig(os.path.join(parameters['OUT'], 'fig_qq.pdf'))
-        except:
-            os.mkdir(parameters['OUT'])
-            fig.savefig(os.path.join(parameters['OUT'], 'fig_qq.pdf'))
+        os.makedirs(parameters['OUT'], exist_ok=True)
+        fig.savefig(os.path.join(parameters['OUT'], 'fig_qq.pdf'))
 
     def stamp_qq_fit(parameters):
         print('plotting....')
@@ -348,48 +292,10 @@ class SZ_utils():
         plt.legend(bbox_to_anchor =(0.5,-0.3), loc='lower center',fontsize='small')
         plt.tight_layout()
         print('QQ figure = ',os.path.join(parameters['OUT'], 'fig_qq_fit.pdf'))
-        try:
-            fig.savefig(os.path.join(parameters['OUT'], 'fig_qq_fit.pdf'))
-        except:
-            os.mkdir(parameters['OUT'])
-            fig.savefig(os.path.join(parameters['OUT'], 'fig_qq_fit.pdf'))
+        os.makedirs(parameters['OUT'], exist_ok=True)
+        fig.savefig(os.path.join(parameters['OUT'], 'fig_qq_fit.pdf'))
 
     def save(parameters):
-        # print('writing output geopackage.....')
-        # df=parameters['df']
-        # nomi=list(df.head())
-        # fields = QgsFields()
-        # for field in nomi:
-        #     if field=='ID':
-        #         fields.append(QgsField(field, QVariant.Int))
-        #     if field=='geom':
-        #         continue
-        #     if field=='y':
-        #         fields.append(QgsField(field, QVariant.Double))
-        #     else:
-        #         fields.append(QgsField(field, QVariant.Double))
-        # transform_context = QgsProject.instance().transformContext()
-        # save_options = QgsVectorFileWriter.SaveVectorOptions()
-        # save_options.driverName = 'GPKG'
-        # save_options.fileEncoding = 'UTF-8'
-        # save_options.layerCrs = parameters['crs']
-        # writer = QgsVectorFileWriter.create(
-        #   parameters['OUT'],
-        #   fields,
-        #   QgsWkbTypes.Polygon,
-        #   parameters['crs'],
-        #   transform_context,
-        #   save_options
-        # )
-        # if writer.hasError() != QgsVectorFileWriter.NoError:
-        #     print("Error when creating gpkg: ",  writer.errorMessage())
-        # for i, row in df.iterrows():
-        #     fet = QgsFeature()
-        #     fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
-        #     fet.setAttributes(list(map(float,list(df.loc[ i, df.columns != 'geom']))))
-        #     writer.addFeature(fet)
-        # del writer
-
         print('Writing output GeoPackage...')
 
         df = parameters['df']
