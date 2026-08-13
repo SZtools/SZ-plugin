@@ -48,7 +48,7 @@ import random
 from qgis import *
 import tempfile
 import os
-from osgeo import gdal,ogr
+from osgeo import gdal,ogr,osr
 
 
 class samplerAlgorithm(QgsProcessingAlgorithm):
@@ -59,20 +59,22 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, 'Pixel width', type=QgsProcessingParameterNumber.Integer, defaultValue = 0,  minValue=0))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, 'Pixel height', type=QgsProcessingParameterNumber.Integer, defaultValue = 0,  minValue=0))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER2, 'Sample (%)', type=QgsProcessingParameterNumber.Integer, defaultValue = 0,  minValue=0))
-        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT1, 'Layer of sample', defaultValue=None, fileFilter='ESRI Shapefile (*.shp *.SHP)'))
-        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT2, 'Layer of 1-sample',  defaultValue=None, fileFilter='ESRI Shapefile (*.shp *.SHP)'))
+        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT1, 'Validation sample', defaultValue=None, fileFilter='GeoPackage (*.gpkg *.GPKG)'))
+        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT2, 'Training sample', defaultValue=None, fileFilter='GeoPackage (*.gpkg *.GPKG)'))
 
     def process(self, parameters, context, model_feedback):
-        self.f=tempfile.gettempdir()
+        self.f=tempfile.mkdtemp(prefix='SZ_sampler_')
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}
         outputs = {}
-        parameters['lsd'] = self.parameterAsVectorLayer(parameters, self.INPUT, context).source()
-        if parameters['lsd'] is None:
+        input_layer = self.parameterAsVectorLayer(parameters, self.INPUT, context)
+        if input_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-        parameters['poly'] = self.parameterAsVectorLayer(parameters, self.MASK, context).source()
-        if parameters['poly'] is None:
+        parameters['lsd'] = input_layer.source()
+        mask_layer = self.parameterAsVectorLayer(parameters, self.MASK, context)
+        if mask_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.MASK))
+        parameters['poly'] = mask_layer.source()
         parameters['w'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['w'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
@@ -94,7 +96,8 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
             'INPUT1': parameters['poly'],
             'w': parameters['w'],
             'h': parameters['h'],
-            'train': parameters['train']
+            'train': parameters['train'],
+            'fold': self.f,
         }
         v,t,xy,ref=Functions.resampler(alg_params)
         outputs['V'] = v
@@ -157,6 +160,8 @@ class samplerAlgorithm(QgsProcessingAlgorithm):
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
+        results[self.OUTPUT1] = parameters['vout']
+        results[self.OUTPUT2] = parameters['tout']
         return results
 
 class Functions():
@@ -211,7 +216,9 @@ class Functions():
         return v,t,XY,ref
 
     def array2raster(newRasterfn,pixelWidth,pixelHeight,array,oo,lsd):
-        ds = ogr.Open(lsd)
+        source_layer = QgsVectorLayer(lsd, 'input', 'ogr')
+        if not source_layer.isValid():
+            raise QgsProcessingException('Unable to open the input point layer')
         cr=np.shape(array)
         cols=cr[1]
         rows=cr[0]
@@ -229,7 +236,7 @@ class Functions():
         outband = outRaster.GetRasterBand(1)
         outband.SetNoDataValue(-9999)
         outband.WriteArray(array)
-        outRaster.SetProjection(ds.GetLayer().GetSpatialRef().ExportToWkt())
+        outRaster.SetProjection(source_layer.crs().toWkt())
         outband.FlushCache()
         del array
 
@@ -258,16 +265,16 @@ class Functions():
         sizex=newXNumPxl
         sizey=newYNumPxl
         origine=[xm,yM]
-        driverd = ogr.GetDriverByName('ESRI Shapefile')
-        ds9 = driverd.Open(lsd)
-        layer = ds9.GetLayer()
-        ref = layer.GetSpatialRef()
+        layer = QgsVectorLayer(lsd, 'input', 'ogr')
+        if not layer.isValid():
+            raise QgsProcessingException('Unable to open the input point layer')
+        ref = layer.crs().toWkt()
         count=0
         XY=None
-        for feature in layer:
+        for feature in layer.getFeatures():
             count+=1
-            geom = feature.GetGeometryRef()
-            xy=np.array([geom.GetX(),geom.GetY()])
+            point = feature.geometry().asPoint()
+            xy=np.array([point.x(),point.y()])
             XY=xy.reshape(1, -1) if XY is None else np.vstack((XY,xy))
         size=np.array([pxlw,pxlh])
         OS=np.array([xm,yM])
@@ -302,13 +309,18 @@ class Functions():
     def save(parameters):
         ref=parameters['ref']
         XY=parameters['INPUT3']
-        driver = ogr.GetDriverByName("ESRI Shapefile")
+        driver = ogr.GetDriverByName("GPKG")
         if os.path.exists(parameters['INPUT1']):
             driver.DeleteDataSource(parameters['INPUT1'])
         # create the data source
         ds=driver.CreateDataSource(parameters['INPUT1'])
+        if ds is None:
+            raise QgsProcessingException(f"Unable to create {parameters['INPUT1']}")
         # create the layer
-        layer = ds.CreateLayer("vector", ref, ogr.wkbPoint)
+        spatial_ref = osr.SpatialReference()
+        spatial_ref.ImportFromWkt(ref)
+        layer_name = os.path.splitext(os.path.basename(parameters['INPUT1']))[0]
+        layer = ds.CreateLayer(layer_name, spatial_ref, ogr.wkbPoint)
         # Add the fields we're interested in
         field_name = ogr.FieldDefn("id", ogr.OFTInteger)
         field_name.SetWidth(100)
