@@ -29,6 +29,7 @@ __author__ = 'Giacomo Titti'
 __date__ = '2024-11-01'
 __copyright__ = '(C) 2024 by Giacomo Titti'
 
+import os
 import sys
 sys.setrecursionlimit(10000)
 from qgis.PyQt.QtCore import QVariant
@@ -38,6 +39,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingMultiStepFeedback,
                        QgsProcessingParameterNumber,
                        QgsProcessingParameterFileDestination,
+                       QgsProcessingParameterFolderDestination,
                        QgsProcessingParameterVectorLayer,
                        QgsVectorLayer,
                        QgsProject,
@@ -51,9 +53,7 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterField,
                        QgsProcessingContext
                        )
-from qgis.core import *
 import numpy as np
-from qgis import *
 import pandas as pd
 from sklearn.metrics import roc_curve,confusion_matrix, ConfusionMatrixDisplay
 import tempfile
@@ -67,8 +67,8 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Index', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('Cutoff percentile (if empty use the YOUDEN index)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True))
-        #self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
-        self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
+        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output confusion matrix', fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
+        self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Diagnostic plots folder', defaultValue=None, createByDefault=True))
 
 
     def process(self, parameters, context, feedback):
@@ -78,12 +78,9 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         outputs = {}
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
-        parameters['covariates']=source.source()
-        if parameters['covariates'] is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-
         if source is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
+        parameters['covariates']=source.source()
 
         parameters['field1'] = self.parameterAsString(parameters, self.STRING, context)
         if parameters['field1'] is None:
@@ -98,15 +95,13 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         if parameters['testN'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
    
-        #parameters['out'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
-        #if parameters['out'] is None:
-        #    raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
+        parameters['out'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
+        if not parameters['out']:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
         
         parameters['folder'] = self.parameterAsString(parameters, self.OUTPUT3, context)
-        if parameters['folder'] is None:
+        if not parameters['folder']:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT3))
-        
-        parameters['out']=os.path.join(parameters['folder'], 'confusion_matrix.gpkg')
 
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
@@ -134,7 +129,8 @@ class FPAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        results['out'] = parameters['out']
+        results[self.OUTPUT] = parameters['out']
+        results[self.OUTPUT3] = parameters['folder']
  
         fileName = parameters['out']
         layer1 = QgsVectorLayer(fileName,"confusion_matrix","ogr")
@@ -190,44 +186,17 @@ class Functions():
         df['ID']=gdp['ID']
         df['geom']=gdp['geom']
         df=df.dropna(how='any',axis=0)
-        titles=list(df.head())
-        ind=titles.index(parameters['field1'])
-        dd=df.to_numpy()
-        dd_sort_index=np.argsort(dd[:, ind])[::-1]
-        dd_sort = dd[dd_sort_index]
-        df_sort = pd.DataFrame(data=dd_sort, columns=titles)
-        #xx=df_sort[parameters['field1']].to_numpy()
         x=df[parameters['field1']].to_numpy()
         y=df['y'].to_numpy()
         if parameters['testN']==0:
             fpr1, tpr1, tresh1 = roc_curve(y,x)
-            #cutoff = np.max(tpr1 - fpr1)  # x YOUDEN INDEX
             j = tpr1 - fpr1
             best_idx = int(np.argmax(j))
             cutoff = float(tresh1[best_idx])# x YOUDEN INDEX
         else:
             xx_desc = np.sort(x)[::-1]
             cutoff = float(np.percentile(xx_desc, parameters['testN']))
-            #cutoff=np.percentile(xx, parameters['testN'])
         print('cutoff: ',cutoff)
-        # df['class_cut']='positive'
-        # df['presabs']='false'
-        # df['class_cut'].iloc[np.where(x<=cutoff)[0]]='negative'
-        # df['presabs'].iloc[np.where(y==1)]='true'
-        # tp = np.where((df['class_cut']=='positive')&(df['presabs']=='true'))
-        # tn = np.where((df['class_cut']=='negative')&(df['presabs']=='true'))
-        # fp = np.where((df['class_cut']=='positive')&(df['presabs']=='false'))
-        # fn = np.where((df['class_cut']=='negative')&(df['presabs']=='false'))
-        # df['tptnfpfn']=0
-        # df['tptnfpfn'].iloc[tp[0]]=0
-        # df['tptnfpfn'].iloc[tn[0]]=1
-        # df['tptnfpfn'].iloc[fp[0]]=2
-        # df['tptnfpfn'].iloc[fn[0]]=3
-        # print('tp=', str((df['tptnfpfn'] == 0).sum()))
-        # print('tn=', str((df['tptnfpfn'] == 1).sum()))
-        # print('fp=', str((df['tptnfpfn'] == 2).sum()))
-        # print('fn=', str((df['tptnfpfn'] == 3).sum()))
-        # return df,nomi,crs
 
         y_pred = (x > cutoff).astype(int)  # 1=positive, 0=negative
 
@@ -270,25 +239,18 @@ class Functions():
 
     def save(parameters):
         df=parameters['df']
-        nomi=list(df.head())
+        nomi=list(df.columns)
         fields = QgsFields()
         for field in nomi:
-            if field=='ID':
-                fields.append(QgsField(field, QVariant.Int))
             if field=='geom':
                 continue
-            if field=='y':
+            elif field in ('ID', 'y', 'tptnfpfn'):
                 fields.append(QgsField(field, QVariant.Int))
-            if field=='tptnfpfn':
-                fields.append(QgsField(field, QVariant.Int))
-            if  field=='class_cut':
-                continue
-            if  field=='presabs':
-                continue
+            elif field in ('class_cut', 'presabs'):
+                fields.append(QgsField(field, QVariant.String))
             else:
                 fields.append(QgsField(field, QVariant.Double))
 
-        #crs = QgsProject.instance().crs()
         transform_context = QgsProject.instance().transformContext()
         save_options = QgsVectorFileWriter.SaveVectorOptions()
         save_options.driverName = 'GPKG'
@@ -304,14 +266,25 @@ class Functions():
         )
         
         if writer.hasError() != QgsVectorFileWriter.NoError:
-            print("Error when creating shapefile: ",  writer.errorMessage())
-        strings=['geom', 'class_cut', 'presabs']
-        columns_float = [item for item in df.columns if item not in strings]
+            raise QgsProcessingException(
+                f"Error creating GeoPackage: {writer.errorMessage()}"
+            )
+
+        attribute_columns = [field for field in df.columns if field != 'geom']
         for i, row in df.iterrows():
-            fet = QgsFeature()
+            fet = QgsFeature(fields)
             fet.setGeometry(QgsGeometry.fromWkt(row['geom']))
-            fet.setAttributes(list(map(float,list(df.loc[ i, columns_float]))))
-            writer.addFeature(fet)
+            attributes = []
+            for field in attribute_columns:
+                value = row[field]
+                if isinstance(value, np.generic):
+                    value = value.item()
+                attributes.append(value)
+            fet.setAttributes(attributes)
+            if not writer.addFeature(fet):
+                raise QgsProcessingException(
+                    f"Unable to write output feature {i}"
+                )
         del writer
 
     def addmap(parameters):
