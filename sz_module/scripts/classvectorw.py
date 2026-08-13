@@ -209,11 +209,8 @@ class Functions():
         classes1=classes
         tpr1=ttpr
         fpr1=ffpr
-        try:
-            file = open(os.path.join(parameters['OUTPUT'],'plotROCW.txt'),'w')#################save txt
-        except:
-            os.mkdir(parameters['OUTPUT'])
-            file = open(os.path.join(parameters['OUTPUT'],'plotROCW.txt'),'w')#################save txt
+        os.makedirs(parameters['OUTPUT'], exist_ok=True)
+        file = open(os.path.join(parameters['OUTPUT'],'plotROCW.txt'),'w')#################save txt
         var=[fpr1,tpr1]
         file.write('false positive, true positive: %s\n' %var)#################save fp,tp
         np.savetxt(os.path.join(parameters['OUTPUT'],'SIclassesW.txt'), classes1, delimiter=',')
