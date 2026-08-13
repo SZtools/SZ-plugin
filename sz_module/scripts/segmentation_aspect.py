@@ -30,37 +30,27 @@ __author__ = 'Giacomo Titti'
 __date__ = '2024-11-01'
 __copyright__ = '(C) 2024 by Giacomo Titti'
 
-from qgis.core import (QgsProcessing,
-                       QgsProcessingException,
-                       QgsProcessingParameterRasterLayer,
-                       QgsProcessingMultiStepFeedback,
-                       QgsProcessingParameterFileDestination,
-                       QgsVectorLayer,
-                       QgsProcessingParameterMultipleLayers)
-
-from qgis import processing
 import numpy as np
-from qgis import *
 import pandas as pd
 import tempfile
-import processing
+import time
 
+from qgis import processing
 from qgis.core import (
     QgsProcessingParameterFile,
     QgsProcessing,
-    QgsProcessingAlgorithm,
+    QgsProcessingException,
     QgsProcessingMultiStepFeedback,
+    QgsProcessingParameterMultipleLayers,
     QgsProcessingParameterVectorLayer,
     QgsProcessingParameterRasterLayer,
-    QgsProcessingParameterNumber
+    QgsProcessingParameterNumber,
+    QgsVectorLayer,
 )
-import processing
 from sz_module.scripts.utils import SZ_utils
-#import geopandas as gpd
 
 from shapely import wkt
 from shapely.strtree import STRtree
-import time
 
 
 
@@ -380,17 +370,6 @@ class segmentationAspectAlgorithm():
 
             outputs['adj'].to_csv(os.path.join(self.f, 'adj'+str(i)+'.csv'))
 
-            ####################################################################
-
-            # outputs['adj']=pd.read_csv('/tmp/SZ_7d2eq19g/adj0.csv')
-
-            # alg_params = {
-            #     'INPUT':'/tmp/SZ_7d2eq19g/FixGeometriesZonalStatistics0.gpkg',
-            # }
-            # outputs['gdp'],outputs['crs']=SZ_utils.load_geopackage(alg_params['INPUT'])
-
-            ####################################################################
-    
             alg_params = {
                 'INPUT':outputs['gdp'],
                 'INPUT1': outputs['adj'],
@@ -442,50 +421,6 @@ class Functions():
 
         print('V: ',V)
         return V
-    
-    def adjacent_matrix_old(parameters):
-        gdf = parameters['INPUT'].reset_index(drop=True)
-        polygon_coords = []
-
-        for wkt_str in gdf['geom']:
-            geom = wkt.loads(wkt_str)
-            poly_vertices = set()
-            for polygon in geom.geoms:
-                poly_vertices.update(polygon.exterior.coords)
-            polygon_coords.append(poly_vertices)
-
-        rows = []
-
-        for i in range(len(polygon_coords)):
-            for j in range(len(polygon_coords)):
-                if i != j and polygon_coords[i] & polygon_coords[j]:
-                    rows.append({'focal': i, 'neighbor': j})
-
-        df = pd.DataFrame(rows)
-
-        return df
-        
-
-    # def adjacent_matrix(parameters):
-    #     gdf = parameters['INPUT'].reset_index(drop=True)
-    #     geometries = [wkt.loads(wkt_str) for wkt_str in gdf['geom']]
-
-    #     # Create spatial index and reverse map
-    #     tree = STRtree(geometries)
-    #     geom_index_map = {geom: i for i, geom in enumerate(geometries)}
-
-    #     rows = []
-    #     for i, geom in enumerate(geometries):
-    #         neighbors = tree.query(geom)
-    #         for neighbor in neighbors:
-    #                 if neighbor is not None:
-    #                     adj_geom=tree.geometries.take(neighbor)
-    #                     if geom != adj_geom:
-    #                         j = geom_index_map.get(adj_geom)
-    #                         if geom.touches(adj_geom):
-    #                             rows.append({'focal': i, 'neighbor': j})
-
-        return pd.DataFrame(rows)
     
     def adjacent_matrix(parameters):
         gdf = parameters['INPUT'].reset_index(drop=True)
@@ -580,7 +515,6 @@ class Functions():
             if lip_value > 0:
                 count_above_zero += 1
         D=1/(lip_sum/count_above_zero)
-        #D=1/(su["lip"].sum()/len(su[su["point_count"]>0]))
         print('D: ',D)
         return(D)
     
