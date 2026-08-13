@@ -164,14 +164,12 @@ class Functions():
         crs=layer.crs()
         features=layer.getFeatures()
         count=0
+        XY=None
         for feature in features:
             count +=1
             geom = feature.geometry().asPoint()
             xy=np.array([geom[0],geom[1]])
-            try:
-                XY=np.vstack((XY,xy))
-            except:
-                XY=xy
+            XY=xy.reshape(1, -1) if XY is None else np.vstack((XY,xy))
         gtdem= ds1.GetGeoTransform()
         size=np.array([abs(gtdem[1]),abs(gtdem[5])])
         OS=np.array([gtdem[0],gtdem[3]])
@@ -229,10 +227,7 @@ class Functions():
                     if (parameters['INPUT2'][ii,0]>=xmin and parameters['INPUT2'][ii,0]<=xmax and parameters['INPUT2'][ii,1]>=ymin and parameters['INPUT2'][ii,1]<=ymax):
                         if ix==0:
                             XYcoord=np.vstack((XYcoord,parameters['INPUT2'][ii,:]))
-                        try:
-                            attributi[count]=attributi[count]+[float(g[ix][row[i],col[i]])]
-                        except:
-                            attributi[count]=[float(g[ix][row[i],col[i]])]
+                        attributi.setdefault(count, []).append(float(g[ix][row[i],col[i]]))
                         count+=1
             fn = os.path.join(self.f, 'stat'+str(lll[ix])+'.shp')
             if os.path.isfile(fn):
