@@ -62,25 +62,28 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterRasterLayer(self.INPUT1, self.tr('Raster'), defaultValue=None))
         self.addParameter(QgsProcessingParameterVectorLayer(self.EXTENT, self.tr('Contour polygon'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None))
         self.addParameter(QgsProcessingParameterNumber(self.NUMBER, 'Buffer radious in pixels', type=QgsProcessingParameterNumber.Integer, defaultValue = 4,  minValue=1))
-        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, self.tr('Output layer'), defaultValue=None,fileFilter='ESRI Shapefile (*.shp *.SHP)'))
+        self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, self.tr('Output layer'), defaultValue=None,fileFilter='GeoPackage (*.gpkg *.GPKG)'))
 
     def process(self, parameters, context, model_feedback):
-        self.f=tempfile.gettempdir()
+        self.f=tempfile.mkdtemp(prefix='SZ_raster_stats_')
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}
         outputs = {}
-        parameters['Slope'] = self.parameterAsRasterLayer(parameters, self.INPUT1, context).source()
-        if parameters['Slope'] is None:
+        raster_layer = self.parameterAsRasterLayer(parameters, self.INPUT1, context)
+        if raster_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT1))
-        parameters['Inventory'] = self.parameterAsVectorLayer(parameters, self.INPUT, context).source()
-        if parameters['Inventory'] is None:
+        parameters['Slope'] = raster_layer.source()
+        inventory_layer = self.parameterAsVectorLayer(parameters, self.INPUT, context)
+        if inventory_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
-        parameters['poly'] = self.parameterAsVectorLayer(parameters, self.EXTENT, context).source()
-        if parameters['poly'] is None:
+        parameters['Inventory'] = inventory_layer.source()
+        extent_layer = self.parameterAsVectorLayer(parameters, self.EXTENT, context)
+        if extent_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.EXTENT))
-        parameters['BufferRadiousInPxl'] = self.parameterAsInt(parameters, self.RADIUS, context)
+        parameters['poly'] = extent_layer.source()
+        parameters['BufferRadiousInPxl'] = self.parameterAsInt(parameters, self.NUMBER, context)
         if parameters['BufferRadiousInPxl'] is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.RADIUS))
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.NUMBER))
 
         parameters['Out'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
         if parameters['Out'] is None:
@@ -104,7 +107,8 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
             'INPUT3': outputs['raster'],
             'INPUT2': outputs['XY'],
             'INPUT1': outputs['ds1'],
-            'CRS': outputs['crs']
+            'CRS': outputs['crs'],
+            'fold': self.f,
         }
         XYcoord,attributi=Functions.indexing(alg_params)
         outputs['XYcoord'] = XYcoord
@@ -140,6 +144,7 @@ class rasterstatkernelAlgorithm(QgsProcessingAlgorithm):
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
+        results[self.OUTPUT] = parameters['Out']
         return results
 
 class Functions():
@@ -229,13 +234,13 @@ class Functions():
                             XYcoord=np.vstack((XYcoord,parameters['INPUT2'][ii,:]))
                         attributi.setdefault(count, []).append(float(g[ix][row[i],col[i]]))
                         count+=1
-            fn = os.path.join(self.f, 'stat'+str(lll[ix])+'.shp')
+            fn = os.path.join(parameters['fold'], 'stat'+str(lll[ix])+'.gpkg')
             if os.path.isfile(fn):
                 os.remove(fn)
             layerFields = QgsFields()
             layerFields.append(QgsField('ID', QVariant.Int))
             layerFields.append(QgsField(lll[ix], QVariant.Double))
-            writer = QgsVectorFileWriter(fn, 'UTF-8', layerFields, QgsWkbTypes.Point, parameters['CRS'], 'ESRI Shapefile')
+            writer = QgsVectorFileWriter(fn, 'UTF-8', layerFields, QgsWkbTypes.Point, parameters['CRS'], 'GPKG')
             XYcoords=XYcoord[1:]
             for i in range(len(XYcoords)):
                 feat = QgsFeature()
@@ -266,7 +271,7 @@ class Functions():
         layerFields.append(QgsField('average', QVariant.Double))
         layerFields.append(QgsField('range', QVariant.Double))
         fn = parameters['OUTPUT']
-        writer = QgsVectorFileWriter(fn, 'UTF-8', layerFields, QgsWkbTypes.Point, parameters['CRS'], 'ESRI Shapefile')
+        writer = QgsVectorFileWriter(fn, 'UTF-8', layerFields, QgsWkbTypes.Point, parameters['CRS'], 'GPKG')
         if writer.hasError() != QgsVectorFileWriter.NoError:
             print("Error when creating file: ",  writer.errorMessage())
         for i in range(len(parameters['INPUT2'])):
