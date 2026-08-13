@@ -31,7 +31,6 @@ __copyright__ = '(C) 2024 by Giacomo Titti'
 
 import os
 from sklearn.preprocessing import StandardScaler
-from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedKFold,LeaveOneOut,TimeSeriesSplit,KFold
 import pandas as pd
 import numpy as np
@@ -180,13 +179,28 @@ class CV_utils():
                 X_train[i] = np.where(kmeans.labels_ != test[0])[0]
                 X_test[i] = np.where(kmeans.labels_ == test[0])[0]
         elif parameters['cv_method']=='random':
-            if parameters['family']=='gaussian':
-                method=KFold(n_splits=parameters['testN'],shuffle=True)
+            regression_families = {
+                'gaussian',
+                'SVM_regressor',
+                'RF_regressor',
+                'DT_regressor',
+                'MLP_regressor',
+            }
+            if parameters['family'] in regression_families:
+                method=KFold(
+                    n_splits=parameters['testN'],
+                    shuffle=True,
+                    random_state=10,
+                )
                 for i, (train, test) in enumerate(method.split(df_scaled, y)):
                     X_train[i]=train
                     X_test[i]=test
             else:
-                method=StratifiedKFold(n_splits=parameters['testN'])
+                method=StratifiedKFold(
+                    n_splits=parameters['testN'],
+                    shuffle=True,
+                    random_state=10,
+                )
                 for i, (train, test) in enumerate(method.split(df_scaled, y)):
                     X_train[i]=train
                     X_test[i]=test
@@ -536,7 +550,7 @@ class GAM_utils():
 
 class ML_utils():
     def ML_save(classifier,fold,nomi, filename):
-        try:#RF,DT
+        if hasattr(classifier, 'feature_importances_'):#RF,DT
             regression_coeff=classifier.feature_importances_
             coeff=regression_coeff
             try:
@@ -544,7 +558,7 @@ class ML_utils():
                 tree_rules_list = tree_rules.split('\n')
                 rules_df = pd.DataFrame({'Tree Rules': tree_rules_list})
                 rules_df.to_csv(os.path.join(fold,'decision_tree_rules'+filename+'.csv'), index=False)
-            except:
+            except (AttributeError, ValueError):
                 print('no tree')
             feature_importance_df = pd.DataFrame({
                 'Feature': nomi,
@@ -552,7 +566,7 @@ class ML_utils():
             })
             feature_importance_df = feature_importance_df.sort_values(by='Importance', ascending=False)
             feature_importance_df.to_csv(os.path.join(fold,'feature_importances'+filename+'.csv'), index=False)
-        except:#SVM
+        else:#SVM
             regression_coeff=classifier.coef_
             regression_intercept=classifier.intercept_
             coeff=np.hstack((regression_intercept,regression_coeff[0]))
