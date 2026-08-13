@@ -238,7 +238,7 @@ class Functions():
             if os.path.isfile(in3):
                 os.remove(in3)
             processing.run('gdal:cliprasterbymasklayer', {'INPUT': in1,'MASK': poly, 'NODATA': -9999, 'ALPHA_BAND': False, 'CROP_TO_CUTLINE': True, 'KEEP_RESOLUTION': True, 'MULTITHREADING': True, 'OPTIONS': '', 'DATA_TYPE': 6,'OUTPUT': in3})
-        except:
+        except QgsProcessingException:
             QgsMessageLog.logMessage("Failure to save sized /tmp input", tag="WoE")
             raise ValueError  # Failure to save sized /tmp input Log Messages Panel
 
@@ -263,14 +263,12 @@ class Functions():
         layer = ds9.GetLayer()
         ref = layer.GetSpatialRef()
         count=0
+        XY=None
         for feature in layer:
             count+=1
             geom = feature.GetGeometryRef()
             xy=np.array([geom.GetX(),geom.GetY()])
-            try:
-                XY=np.vstack((XY,xy))
-            except:
-                XY=xy
+            XY=xy.reshape(1, -1) if XY is None else np.vstack((XY,xy))
         size=np.array([pxlw,pxlh])
         OS=np.array([xm,yM])
         NumPxl=(np.ceil(abs((XY-OS)/size)-1)).astype(int)#from 0 first cell
