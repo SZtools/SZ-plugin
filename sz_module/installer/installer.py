@@ -115,13 +115,9 @@ class installer():
         with open(os.path.join(dir,req), "r") as file:
             list_libraries={}
             for line in file:
-                    parts=line.split("==")
-                    try:
-                        library=parts[0]
-                        version=parts[1][:-1]
-                    except:
-                        library=parts[0][:-1]
-                        version=None
+                    parts=line.strip().split("==", 1)
+                    library=parts[0]
+                    version=parts[1] if len(parts) == 2 else None
                     list_libraries[library]=version
         return self.install(list_libraries)
 
@@ -134,11 +130,9 @@ class installer():
                     QMessageBox.Ok | QMessageBox.Cancel) == QMessageBox.Ok:
                     try:
                         log(f"Will install selected dependencies : {reqs_to_install}")
-                        try:
-                            #windows
+                        if platform.system() == 'Windows':
                             command=pip_install_reqs(self.prefix_path,self.plugin_venv,reqs_to_install,os.path.join(self.venv_path,"Scripts","pythonw.exe"))
-                        except:
-                            #linux and macos
+                        else:
                             command=pip_install_reqs(self.prefix_path,self.plugin_venv,reqs_to_install,os.path.join(self.venv_path,"bin","python"))
                         QMessageBox.information(None, "Packages successfully installed",
                                                 #"To make all parts of the plugin work it is recommended to restart your QGIS-session.")
