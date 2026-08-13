@@ -242,7 +242,8 @@ class CoreAlgorithmGAM_trans():
         feedback.setCurrentStep(5)
         if feedback.isCanceled():
             return {}
-        results['out'] = parameters['out']
+        results[self.OUTPUT1] = parameters['out']
+        results[self.OUTPUT3] = parameters['folder']
 
         fileName = parameters['out']
         layer = QgsVectorLayer(fileName,"transfer","ogr")
@@ -288,4 +289,3 @@ class CoreAlgorithmGAM_trans():
 
         return results
 
-    
