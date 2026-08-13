@@ -79,17 +79,14 @@ class segmentationAspectAlgorithm():
         parameters['lip'] = self.parameterAsVectorLayer(parameters, 'point', context)
         if parameters['lip'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, 'point'))
-        parameters['lip']=parameters['lip'].source().split('|')[0]
         
         parameters['poly_lsd'] = self.parameterAsVectorLayer(parameters, 'poly', context)
         if parameters['poly_lsd'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, 'poly'))
-        parameters['poly_lsd']=parameters['poly_lsd'].source().split('|')[0]
 
         parameters['dem'] = self.parameterAsRasterLayer(parameters, 'dem', context)
         if parameters['dem'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, 'dem'))
-        parameters['dem']=parameters['dem'].source().split('|')[0]
 
         parameters['minarea'] = self.parameterAsInt(parameters, 'minarea', context)
         if parameters['minarea'] is None:
@@ -178,9 +175,9 @@ class segmentationAspectAlgorithm():
             print(SU)
 
             alg_params = {
-                'INPUT': SU.source(),
+                'INPUT': SU,
                 'METHOD': 1,  # Structure
-                'OUTPUT': os.path.join(self.f, 'FixGeometries'+str(i)+'.shp')
+                'OUTPUT': os.path.join(self.f, 'FixGeometries'+str(i)+'.gpkg')
             }
             outputs['FixGeometries'] = processing.run('native:fixgeometries', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -188,7 +185,7 @@ class segmentationAspectAlgorithm():
             alg_params = {
                 'CALC_METHOD': 0,  # Layer CRS
                 'INPUT': outputs['FixGeometries']['OUTPUT'],
-                'OUTPUT': os.path.join(self.f, 'Area'+str(i)+'.shp')
+                'OUTPUT': os.path.join(self.f, 'Area'+str(i)+'.gpkg')
             }
             outputs['Area'] = processing.run('qgis:exportaddgeometrycolumns', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
             
@@ -197,14 +194,14 @@ class segmentationAspectAlgorithm():
             'INPUT': outputs['Area']['OUTPUT'],
             'OPERATOR': 2,  # <
             'VALUE': parameters['minarea'],
-            'OUTPUT': os.path.join(self.f, 'SUclean'+str(i)+'.shp')
+            'OUTPUT': os.path.join(self.f, 'SUclean'+str(i)+'.gpkg')
             }
             outputs['SUclean'] = processing.run('native:extractbyattribute', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
             
             alg_params = {
                 'COLUMN': ['area'],
                 'INPUT': outputs['SUclean']['OUTPUT'],
-                'OUTPUT': os.path.join(self.f, 'DropFields'+str(i)+'.shp')
+                'OUTPUT': os.path.join(self.f, 'DropFields'+str(i)+'.gpkg')
             }
             outputs['DropFields'] = processing.run('native:deletecolumn', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -215,7 +212,7 @@ class segmentationAspectAlgorithm():
                 'FIELD_TYPE': 1,  # Integer (32 bit)
                 'FORMULA': '$id',
                 'INPUT': outputs['DropFields']['OUTPUT'],
-                'OUTPUT': os.path.join(self.f, 'FieldCalculator'+str(i)+'.shp')
+                'OUTPUT': os.path.join(self.f, 'FieldCalculator'+str(i)+'.gpkg')
             }
             outputs['FieldCalculator'] = processing.run('native:fieldcalculator', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
        
@@ -229,7 +226,7 @@ class segmentationAspectAlgorithm():
                 'OVERLAY': outputs['FieldCalculator']['OUTPUT'],
                 'OVERLAY_FIELDS': [''],
                 'OVERLAY_FIELDS_PREFIX': '',
-                'OUTPUT': os.path.join(self.f, 'IntersectionA'+str(i)+'.shp')
+                'OUTPUT': os.path.join(self.f, 'IntersectionA'+str(i)+'.gpkg')
             }
             outputs['IntersectionA'] = processing.run('native:intersection', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -244,7 +241,7 @@ class segmentationAspectAlgorithm():
                 'POINTS': parameters['lip'],
                 'POLYGONS': outputs['IntersectionA']['OUTPUT'],
                 'WEIGHT': '',
-                'OUTPUT': os.path.join(self.f, 'CountPointsInPolygonA'+str(i)+'.shp')
+                'OUTPUT': os.path.join(self.f, 'CountPointsInPolygonA'+str(i)+'.gpkg')
             }
             outputs['CountPointsInPolygonA'] = processing.run('native:countpointsinpolygon', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -256,7 +253,7 @@ class segmentationAspectAlgorithm():
             alg_params = {
                 'CALC_METHOD': 0,  # Layer CRS
                 'INPUT': outputs['CountPointsInPolygonA']['OUTPUT'],
-                'OUTPUT': os.path.join(self.f, 'AddGeometryAttributesA'+str(i)+'.shp')
+                'OUTPUT': os.path.join(self.f, 'AddGeometryAttributesA'+str(i)+'.gpkg')
             }
             outputs['AddGeometryAttributesA'] = processing.run('qgis:exportaddgeometrycolumns', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -274,7 +271,7 @@ class segmentationAspectAlgorithm():
             'POINTS': parameters['lip'],
             'POLYGONS': outputs['FieldCalculator']['OUTPUT'],
             'WEIGHT': '',
-            'OUTPUT': os.path.join(self.f, 'CountPointsInPolygon'+str(i)+'.shp')#QgsProcessing.TEMPORARY_OUTPUT
+            'OUTPUT': os.path.join(self.f, 'CountPointsInPolygon'+str(i)+'.gpkg')
             }
             outputs['CountPointsInPolygon'] = processing.run('native:countpointsinpolygon', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
             
@@ -290,7 +287,7 @@ class segmentationAspectAlgorithm():
             alg_params = {
                 'CALC_METHOD': 0,  # Layer CRS
                 'INPUT': outputs['FieldCalculator']['OUTPUT'],
-                'OUTPUT': os.path.join(self.f, 'AddGeometryAttributes'+str(i)+'.shp')
+                'OUTPUT': os.path.join(self.f, 'AddGeometryAttributes'+str(i)+'.gpkg')
             }
             outputs['AddGeometryAttributes'] = processing.run('qgis:exportaddgeometrycolumns', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
                         
@@ -301,7 +298,7 @@ class segmentationAspectAlgorithm():
                 'INPUT_RASTER': outputs['SinRasterCalculator']['OUTPUT'],
                 'RASTER_BAND': 1,
                 'STATISTICS': [1],  # Sum
-                'OUTPUT': os.path.join(self.f, 'SinZonalStatistics'+str(i)+'.shp')
+                'OUTPUT': os.path.join(self.f, 'SinZonalStatistics'+str(i)+'.gpkg')
             }
             outputs['SinZonalStatistics'] = processing.run('native:zonalstatisticsfb', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -316,7 +313,7 @@ class segmentationAspectAlgorithm():
                 'INPUT_RASTER': outputs['CosRasterCalculator']['OUTPUT'],
                 'RASTER_BAND': 1,
                 'STATISTICS': [1,0],  # Sum,Count
-                'OUTPUT': os.path.join(self.f, 'zonalstat'+str(i)+'.shp')
+                'OUTPUT': os.path.join(self.f, 'zonalstat'+str(i)+'.gpkg')
             }
             outputs['CosZonalStatistics'] = processing.run('native:zonalstatisticsfb', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -324,9 +321,9 @@ class segmentationAspectAlgorithm():
 
 
             alg_params = {
-                'INPUT': os.path.join(self.f, 'zonalstat'+str(i)+'.shp'),
+                'INPUT': outputs['CosZonalStatistics']['OUTPUT'],
                 'METHOD': 1,  # Structure
-                'OUTPUT': os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'.shp')
+                'OUTPUT': os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'.gpkg')
             }
             outputs['FixGeometriesZonalStatistics'] = processing.run('native:fixgeometries', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
@@ -336,16 +333,16 @@ class segmentationAspectAlgorithm():
                 return {}
             
             alg_params = {
-                    "INPUT": os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'.shp'),
+                    "INPUT": outputs['FixGeometriesZonalStatistics']['OUTPUT'],
                     "DROP_M_VALUES": True,
                     "DROP_Z_VALUES": True,
-                    "OUTPUT": os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'_2d.shp')
+                    "OUTPUT": os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'_2d.gpkg')
             }
 
             outputs['FixGeometriesZonalStatistics_2d'] = processing.run("native:dropmzvalues", alg_params, context=context, feedback=feedback, is_child_algorithm=True)
 
             alg_params = {
-                'INPUT': os.path.join(self.f, 'FixGeometriesZonalStatistics'+str(i)+'_2d.shp'),
+                'INPUT': outputs['FixGeometriesZonalStatistics_2d']['OUTPUT'],
             }
             outputs['gdp'],outputs['crs']=SZ_utils.load_geopackage(alg_params['INPUT'])
 
