@@ -37,9 +37,8 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterVectorLayer,
                        QgsProcessingParameterField,
                        QgsProcessingParameterFolderDestination,
-                       QgsProcessingParameterField
+                       QgsVectorLayer,
                        )
-from osgeo import ogr
 import numpy as np
 from qgis import *
 import matplotlib.pyplot as plt
@@ -60,9 +59,10 @@ class statistic(QgsProcessingAlgorithm):
         feedback = QgsProcessingMultiStepFeedback(1, model_feedback)
         results = {}
         outputs = {}
-        parameters['lsd'] = self.parameterAsVectorLayer(parameters, self.INPUT, context).source()
-        if parameters['lsd'] is None:
+        input_layer = self.parameterAsVectorLayer(parameters, self.INPUT, context)
+        if input_layer is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
+        parameters['lsd'] = input_layer.source()
         parameters['outcsv'] = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
         if parameters['outcsv'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.OUTPUT))
@@ -82,23 +82,20 @@ class statistic(QgsProcessingAlgorithm):
             'PATH' : parameters['folder']
         }
         Functions.input(alg_params)
-        return{}
+        results[self.OUTPUT] = parameters['outcsv']
+        results[self.FOLDER] = parameters['folder']
+        return results
 
 class Functions():
     def input(parameters):
-        shapefile = parameters['INPUT2']
-        driver = ogr.GetDriverByName("ESRI Shapefile")
-        dataSource = driver.Open(shapefile, 0)
-        layer = dataSource.GetLayer()
-        layerDefinition = layer.GetLayerDefn()
-        list_field=[]
-        for i in range(layerDefinition.GetFieldCount()):
-            fieldname=[layerDefinition.GetFieldDefn(i).GetName()]
-            list_field=list_field+fieldname
+        layer = QgsVectorLayer(parameters['INPUT2'], 'statistics_input', 'ogr')
+        if not layer.isValid():
+            raise QgsProcessingException('Unable to open the input vector layer')
+        list_field=[field.name() for field in layer.fields()]
         count=0
         valuesrow={}
-        for feature in layer:
-            valuesrow[count] = [feature.GetField(j) for j in list_field]
+        for feature in layer.getFeatures():
+            valuesrow[count] = [feature[field] for field in list_field]
             count+=1
         count=0
         valuesfield={}
