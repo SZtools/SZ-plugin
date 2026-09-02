@@ -67,9 +67,10 @@ class CoreAlgorithmGAM_cv():
             self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=data[self.STRING1], allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
             self.addParameter(QgsProcessingParameterEnum(self.STRING4, 'Family', options=['binomial','gaussian'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING4]))
             self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Scale (for Gaussian Family only)', options=['linear scale','log scale'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING7],optional=True))
+            self.addParameter(QgsProcessingParameterEnum(self.FEATURE_SCALING, 'Feature scaling', options=['Standard scaling','No scaling'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.FEATURE_SCALING]))
             self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=data[self.STRING2]))
             self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'CV method', options=['random CV','spatial CV','temporal CV (Time Series Split)','temporal CV (Leave One Out)', 'space-time CV (Leave One Out)'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING5]))
-            self.addParameter(QgsProcessingParameterField(self.STRING6, 'Time field (for temporal CV)', parentLayerParameterName=self.INPUT, defaultValue=data[self.STRING6], allowMultiple=False,type=QgsProcessingParameterField.Any, optional=True ))
+            self.addParameter(QgsProcessingParameterField(self.STRING6, 'Year/time field to copy to output (required for temporal CV)', parentLayerParameterName=self.INPUT, defaultValue=data[self.STRING6], allowMultiple=False,type=QgsProcessingParameterField.Any, optional=True ))
             self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV: K=1 to fit, k>1 to cross-validate for spatial CV only'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=data[self.NUMBER],optional=True))
             self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=data[self.OUTPUT]))
             self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=data[self.OUTPUT3], createByDefault = True))
@@ -83,9 +84,10 @@ class CoreAlgorithmGAM_cv():
             self.addParameter(QgsProcessingParameterField(self.STRING1, 'Categorical independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any,optional=True))
             self.addParameter(QgsProcessingParameterEnum(self.STRING4, 'Family', options=['binomial','gaussian'], allowMultiple=False, usesStaticStrings=False, defaultValue=''))
             self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Scale (for Gaussian Family only)', options=['linear scale','log scale'], allowMultiple=False, usesStaticStrings=False, defaultValue='linear scale',optional=True))
+            self.addParameter(QgsProcessingParameterEnum(self.FEATURE_SCALING, 'Feature scaling', options=['Standard scaling','No scaling'], allowMultiple=False, usesStaticStrings=False, defaultValue=0))
             self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=''))
             self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'CV method', options=['random CV','spatial CV','temporal CV (Time Series Split)','temporal CV (Leave One Out)', 'space-time CV (Leave One Out)'], allowMultiple=False, usesStaticStrings=False, defaultValue=''))
-            self.addParameter(QgsProcessingParameterField(self.STRING6, 'Time field (for temporal CV)', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any, optional=True ))
+            self.addParameter(QgsProcessingParameterField(self.STRING6, 'Year/time field to copy to output (required for temporal CV)', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=False,type=QgsProcessingParameterField.Any, optional=True ))
             self.addParameter(QgsProcessingParameterNumber(self.NUMBER, self.tr('K-fold CV: K=1 to fit, k>1 to cross-validate for spatial CV only'), minValue=1,type=QgsProcessingParameterNumber.Integer,defaultValue=2,optional=True))
             self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
             self.addParameter(QgsProcessingParameterFolderDestination(self.OUTPUT3, 'Outputs folder destination', defaultValue=None, createByDefault = True))
@@ -100,6 +102,7 @@ class CoreAlgorithmGAM_cv():
         family={'0':'binomial','1':'gaussian'}
         cv_method={'0':'random','1':'spatial','2':'temporal_TSS','3':'temporal_LOO','4':'spacetime_LOO'}
         scale={'0':'linear_scale','1':'log_scale'}
+        feature_scaling={'0':True,'1':False}
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -132,6 +135,10 @@ class CoreAlgorithmGAM_cv():
         parameters['scale'] = self.parameterAsString(parameters, self.STRING7, context)
         if parameters['scale'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING7))
+
+        parameters['feature_scaling']=self.parameterAsString(parameters,self.FEATURE_SCALING,context)
+        if parameters['feature_scaling'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters,self.FEATURE_SCALING))
         
         parameters['var_interaction_A'] = self.parameterAsFields(parameters, self.STRING8, context)
         if parameters['var_interaction_A'] is None:
@@ -153,8 +160,8 @@ class CoreAlgorithmGAM_cv():
         if parameters['cv_method'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING5))
         
-        parameters['time'] = self.parameterAsString(parameters, self.STRING6, context)
-        if parameters['time'] is None:
+        parameters['year_field'] = self.parameterAsString(parameters, self.STRING6, context)
+        if parameters['year_field'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING6))
 
         parameters['testN'] = self.parameterAsInt(parameters, self.NUMBER, context)
@@ -174,6 +181,7 @@ class CoreAlgorithmGAM_cv():
         if cv_method[parameters['cv_method']]=='random' or cv_method[parameters['cv_method']]=='spatial':
             parameters['time']=None
         else:
+            parameters['time']=parameters['year_field']
             if parameters['time']=='':
                 log(f"Time field is missing for temporal CV")
                 raise RuntimeError("Time field is missing for temporal CV")
@@ -196,12 +204,17 @@ class CoreAlgorithmGAM_cv():
         if feedback.isCanceled():
             return {}
         
+        predictor_names=parameters['field3']+parameters['field1']+parameters['field2']+tensor
         alg_params = {
             'INPUT_VECTOR_LAYER': parameters['covariates'],
-            'nomi': parameters['field3']+parameters['field1']+parameters['field2']+tensor,
+            'nomi':predictor_names,
             'lsd' : parameters['fieldlsd'],
             'family':family[parameters['family']],
-            'time':parameters['time'],
+            'time':(
+                parameters['year_field']
+                if parameters['year_field'] not in predictor_names
+                else None
+            ),
             'scale':scale[parameters['scale']],
         }
 
@@ -238,6 +251,7 @@ class CoreAlgorithmGAM_cv():
             'continuous':parameters['field1'],
             'tensor': tensor,
             'family':family[parameters['family']],
+            'feature_scaling':feature_scaling[parameters['feature_scaling']],
             'cv_method':cv_method[parameters['cv_method']],
             'time':parameters['time']
         }

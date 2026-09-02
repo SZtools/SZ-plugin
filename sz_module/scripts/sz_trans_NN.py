@@ -56,6 +56,7 @@ class CoreAlgorithmNN_trans():
         self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
         self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
         self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'NN algorithm', options=['MLP Classifier','MLP Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
+        self.addParameter(QgsProcessingParameterEnum(self.STRING6, 'Feature scaling', options=['Standard scaler','No scaling'], allowMultiple=False, usesStaticStrings=False, defaultValue=0))
         self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Scale (for MLPRegressor only)', options=['linear scale','log scale'], allowMultiple=False, usesStaticStrings=False, defaultValue='linear scale',optional=True))
         self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT1, self.tr('Input layer for transferability'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None, optional=False))
         self.addParameter(QgsProcessingParameterFileDestination(self.OUTPUT, 'Output test/fit',fileFilter='GeoPackage (*.gpkg *.GPKG)', defaultValue=None))
@@ -70,6 +71,7 @@ class CoreAlgorithmNN_trans():
 
         NN={'0':'MLP_classifier','1':'MLP_regressor'}
         scale={'0':'linear_scale','1':'log_scale'}
+        feature_scaling={'0':True,'1':False}
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -90,6 +92,10 @@ class CoreAlgorithmNN_trans():
         parameters['family'] = self.parameterAsString(parameters, self.STRING5, context)
         if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING5))
+
+        parameters['feature_scaling'] = self.parameterAsString(parameters, self.STRING6, context)
+        if parameters['feature_scaling'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING6))
         
         parameters['scale'] = self.parameterAsString(parameters, self.STRING7, context)
         if parameters['scale'] is None:
@@ -135,6 +141,7 @@ class CoreAlgorithmNN_trans():
             'df':outputs['df'],
             'family':NN[parameters['family']],
             'cv_method':'',
+            'feature_scaling':feature_scaling[parameters['feature_scaling']],
         }
         outputs['prob'],outputs['test_ind'],outputs['predictors_weights']=CV_utils.cross_validation(alg_params,algorithm,classifier[NN[parameters['family']]])
 
@@ -233,5 +240,4 @@ class CoreAlgorithmNN_trans():
             return {}
 
         return results
-
 

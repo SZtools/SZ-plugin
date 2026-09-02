@@ -60,6 +60,7 @@ class CoreAlgorithmML_trans():
             self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=data[self.STRING], allowMultiple=True,type=QgsProcessingParameterField.Any))
             self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=data[self.STRING2]))
             self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVM Classifier','DT Classifier','RF Classfier','SVM Regressor','DT Regressor','RF Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING5]))
+            self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Feature scaling', options=['Standard scaler','No scaling'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING7]))
             self.addParameter(QgsProcessingParameterEnum(self.STRING6, 'Class weight (for RF classifier and DT classifier)', options=['Balanced','Not balanced'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING6],optional=True))
             self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Estimators (for RF classifier and RF regressor)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True,defaultValue=data[self.NUMBER1]))
             self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT1, self.tr('Input layer for transferability'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=data[self.INPUT1], optional=False))
@@ -70,6 +71,7 @@ class CoreAlgorithmML_trans():
             self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
             self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
             self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVM Classifier','DT Classifier','RF Classfier','SVM Regressor','DT Regressor','RF Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=None))
+            self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Feature scaling', options=['Standard scaler','No scaling'], allowMultiple=False, usesStaticStrings=False, defaultValue=0))
             self.addParameter(QgsProcessingParameterEnum(self.STRING6, 'Class weight (for RF classifier and DT classifier)', options=['Balanced','Not balanced'], allowMultiple=False, usesStaticStrings=False, defaultValue=0,optional=True))
             self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Estimators (for RF classifier and RF regressor)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True,defaultValue=10000))
             self.addParameter(QgsProcessingParameterVectorLayer(self.INPUT1, self.tr('Input layer for transferability'), types=[QgsProcessing.TypeVectorPolygon], defaultValue=None, optional=False))
@@ -85,6 +87,7 @@ class CoreAlgorithmML_trans():
 
         ML={'0':'SVM_classifier','1':'DT_classifier','2':'RF_classifier','3':'SVM_regressor','4':'DT_regressor','5':'RF_regressor'}
         weight={'0':'balanced','1':None}
+        feature_scaling={'0':True,'1':False}
 
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
@@ -106,6 +109,10 @@ class CoreAlgorithmML_trans():
         parameters['family'] = self.parameterAsString(parameters, self.STRING5, context)
         if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING5))
+
+        parameters['feature_scaling'] = self.parameterAsString(parameters, self.STRING7, context)
+        if parameters['feature_scaling'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING7))
         
         parameters['estimators'] = self.parameterAsInt(parameters, self.NUMBER1, context)
         if parameters['estimators'] is None:
@@ -164,6 +171,7 @@ class CoreAlgorithmML_trans():
             'df':outputs['df'],
             'family':ML[parameters['family']],
             'cv_method':'',
+            'feature_scaling':feature_scaling[parameters['feature_scaling']],
         }
 
         outputs['prob'],outputs['test_ind'],outputs['predictors_weights']=CV_utils.cross_validation(alg_params,algorithm,classifier[ML[parameters['family']]])
@@ -262,5 +270,4 @@ class CoreAlgorithmML_trans():
             return {}
 
         return results
-
 

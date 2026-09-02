@@ -61,6 +61,7 @@ class CoreAlgorithm_cv():
             self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=data[self.STRING], allowMultiple=True,type=QgsProcessingParameterField.Any))
             self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=data[self.STRING2]))
             self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVM Classifier','DT Classifier','RF Classfier','SVM Regressor','DT Regressor','RF Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING5]))
+            self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Feature scaling', options=['Standard scaler','No scaling'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING7]))
             self.addParameter(QgsProcessingParameterEnum(self.STRING6, 'Class weight (for RF classifier and DT classifier)', options=['Balanced','Not balanced'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING6],optional=True))
             self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Estimators (for RF classifier and RF regressor)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True,defaultValue=data[self.NUMBER1]))
             self.addParameter(QgsProcessingParameterEnum(self.STRING3, 'CV method', options=['random CV','spatial CV','temporal CV (Time Series Split)','temporal CV (Leave One Out)', 'space-time CV (Leave One Out)'], allowMultiple=False, usesStaticStrings=False, defaultValue=data[self.STRING3]))
@@ -73,6 +74,7 @@ class CoreAlgorithm_cv():
             self.addParameter(QgsProcessingParameterField(self.STRING, 'Independent variables', parentLayerParameterName=self.INPUT, defaultValue=None, allowMultiple=True,type=QgsProcessingParameterField.Any))
             self.addParameter(QgsProcessingParameterField(self.STRING2, 'Field of dependent variable (0 for absence, > 0 for presence)', parentLayerParameterName=self.INPUT, defaultValue=None))
             self.addParameter(QgsProcessingParameterEnum(self.STRING5, 'ML algorithm', options=['SVM Classifier','DT Classifier','RF Classfier','SVM Regressor','DT Regressor','RF Regressor'], allowMultiple=False, usesStaticStrings=False, defaultValue=None))
+            self.addParameter(QgsProcessingParameterEnum(self.STRING7, 'Feature scaling', options=['Standard scaler','No scaling'], allowMultiple=False, usesStaticStrings=False, defaultValue=0))
             self.addParameter(QgsProcessingParameterEnum(self.STRING6, 'Class weight (for RF classifier and DT classifier)', options=['Balanced','Not balanced'], allowMultiple=False, usesStaticStrings=False, defaultValue=0,optional=True))
             self.addParameter(QgsProcessingParameterNumber(self.NUMBER1, self.tr('Estimators (for RF classifier and RF regressor)'), minValue=1,type=QgsProcessingParameterNumber.Integer,optional=True,defaultValue=10000))
             self.addParameter(QgsProcessingParameterEnum(self.STRING3, 'CV method', options=['random CV','spatial CV','temporal CV (Time Series Split)','temporal CV (Leave One Out)', 'space-time CV (Leave One Out)'], allowMultiple=False, usesStaticStrings=False, defaultValue=[]))
@@ -91,6 +93,7 @@ class CoreAlgorithm_cv():
         cv_method={'0':'random','1':'spatial','2':'temporal_TSS','3':'temporal_LOO','4':'spacetime_LOO'}
         ML={'0':'SVM_classifier','1':'DT_classifier','2':'RF_classifier','3':'SVM_regressor','4':'DT_regressor','5':'RF_regressor'}
         weight={'0':'balanced','1':None}
+        feature_scaling={'0':True,'1':False}
 
         source = self.parameterAsVectorLayer(parameters, self.INPUT, context)
         parameters['covariates']=source.source()
@@ -111,6 +114,10 @@ class CoreAlgorithm_cv():
         parameters['family'] = self.parameterAsString(parameters, self.STRING5, context)
         if parameters['family'] is None:
             raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING5))
+
+        parameters['feature_scaling'] = self.parameterAsString(parameters, self.STRING7, context)
+        if parameters['feature_scaling'] is None:
+            raise QgsProcessingException(self.invalidSourceError(parameters, self.STRING7))
         
         parameters['estimators'] = self.parameterAsInt(parameters, self.NUMBER1, context)
         if parameters['estimators'] is None:
@@ -181,6 +188,7 @@ class CoreAlgorithm_cv():
             'cv_method':cv_method[parameters['cv_method']],
             'time':parameters['time'],
             'family':ML[parameters['family']],
+            'feature_scaling':feature_scaling[parameters['feature_scaling']],
         }
 
         outputs['prob'],outputs['test_ind'],outputs['gam']=CV_utils.cross_validation(alg_params,algorithm,classifier[ML[parameters['family']]])
@@ -251,5 +259,3 @@ class CoreAlgorithm_cv():
             return {}
 
         return results
-
-

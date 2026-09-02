@@ -53,6 +53,7 @@ from .scripts.sz_train_cv_ML import CoreAlgorithm_cv
 from .scripts.sz_train_cv_GAM import CoreAlgorithmGAM_cv
 from .scripts.sz_train_cv_NN import CoreAlgorithmNN_cv
 from .scripts.sz_trans_GAM import CoreAlgorithmGAM_trans
+from .scripts.sz_predict_GAM import CoreAlgorithmGAM_predict
 from .scripts.sz_trans_ML import CoreAlgorithmML_trans
 from .scripts.sz_trans_NN import CoreAlgorithmNN_trans
 from .scripts.algorithms import Algorithms
@@ -91,6 +92,7 @@ class classeProvider(QgsProcessingProvider):
             'ML_cv':True,
             'GAM_cv':True,
             'GAM_trans':True,
+            'GAM_predict':True,
             'ML_trans':True,
             'SegAsp':True,
             'NN_trans':True,
@@ -105,6 +107,17 @@ class classeProvider(QgsProcessingProvider):
             'group':'02 Modelling',
             'groupId':'02 Modelling',
             'shortHelpString':"This function uses Machine Learning algorithms to model. It allows to cross-validate data by many methods. If you want just do fitting put k-fold equal to one",
+        }
+        self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
+
+        dict_of_scripts={
+            'alg':'GAM_predict',
+            'function':CoreAlgorithmGAM_predict,
+            'name':'Predict_saved_GAM',
+            'displayName':'04 Predict with saved GAM',
+            'group':'03 Transfer learning',
+            'groupId':'03 Transfer learning',
+            'shortHelpString':'Predict a new layer using a GAM model saved by the fitting tool.',
         }
         self.addAlgorithm(Instance(dict_of_scripts)) if self.active[dict_of_scripts['alg']] else print(dict_of_scripts['alg']+' is inactive')
 
@@ -335,6 +348,7 @@ class Instance(QgsProcessingAlgorithm):
     STRING7 = 'STRING7'
     STRING8 = 'STRING8'
     STRING9 = 'STRING9'
+    FEATURE_SCALING = 'FEATURE_SCALING'
     NUMBER = 'NUMBER'
     NUMBER1 = 'NUMBER1'
     NUMBER2 = 'NUMBER2'
